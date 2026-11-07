@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="灵潮修仙录">
+<meta name="theme-color" content="#16140f">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>灵潮修仙录</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+<style>
+/* Layout: one-screen phone app — status header, scrolling view, bottom tab rail; ink-wash wasteland under falling ash. Single dark look by choice. */
+:root{
+  --bg:#16140f; --panel:#1f1c15; --panel2:#29251c; --line:#3a3427;
+  --bone:#ece3cf; --mist:#a0967f; --dim:#6d6555;
+  --jade:#8fd6b5; --jade-d:#2c6652; --cin:#cf4a3c; --cin-d:#5e231d; --gold:#e3b862;
+  --r-fan:#bdb5a4; --r-ling:#7cc6e3; --r-bao:#c9a0f0; --r-xian:#e3b862;
+  --good:#8fd6b5; --bad:#e0705f;
+  --f-brush:"Ma Shan Zheng","STKaiti","KaiTi","Kaiti SC",serif;
+  --f-body:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  color-scheme:dark;
+}
+html{height:100%;box-sizing:border-box;background:var(--bg)}
+*,*::before,*::after{box-sizing:border-box}
+body{height:100%;margin:0;background:var(--bg);color:var(--bone);font-family:var(--f-body);font-size:15px;line-height:1.6;overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+b,.num{font-variant-numeric:tabular-nums}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app{position:relative;z-index:1;max-width:520px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+
+/* header */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:10px 8px}
+.who{min-width:0}
+.who .nm{font-size:12px;color:var(--mist);letter-spacing:.08em}
+.who .rl{font-family:var(--f-brush);font-size:26px;line-height:1.1;color:var(--bone);white-space:nowrap}
+.res{display:flex;gap:14px;text-align:right}
+.res .lbl{display:block;font-size:11px;color:var(--dim);letter-spacing:.12em}
+.res b{font-size:15px}
+#hStones{color:var(--gold)}
+.qi{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.qif{height:100%;width:0;background:linear-gradient(90deg,var(--jade-d),var(--jade));transition:width .2s}
+
+#view{flex:1;overflow-y:auto;overflow-x:hidden;padding-block:14px 18px;-webkit-overflow-scrolling:touch;min-height:0}
+
+/* tabs */
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);padding-block:6px 4px}
+.tab{position:relative;background:none;border:0;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:0;color:var(--dim)}
+.tab .g{font-family:var(--f-brush);font-size:24px;line-height:1.15}
+.tab .l{font-size:11px;letter-spacing:.15em}
+.tab[aria-selected="true"]{color:var(--jade)}
+.dot{position:absolute;top:4px;right:calc(50% - 20px);width:8px;height:8px;border-radius:50%;background:var(--cin);box-shadow:0 0 8px var(--cin)}
+
+h2.sec{font-family:var(--f-brush);font-weight:400;font-size:22px;margin:22px 0 10px;color:var(--bone);display:flex;align-items:baseline;gap:10px;text-wrap:balance}
+h2.sec small{font-family:var(--f-body);font-size:12px;color:var(--dim);letter-spacing:.06em}
+h2.sec:first-child{margin-top:0}
+
+.btn{border:1px solid var(--jade);background:var(--jade-d);color:var(--bone);padding:9px 16px;border-radius:4px;font-size:15px;letter-spacing:.1em}
+.btn:disabled{opacity:.38;cursor:default}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--mist)}
+.btn.red{background:var(--cin-d);border-color:var(--cin)}
+.btn.gold{background:transparent;border-color:var(--gold);color:var(--gold)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.on{background:var(--jade);color:var(--bg)}
+
+/* cultivation */
+.cult{display:flex;flex-direction:column;align-items:center;text-align:center}
+.dt-wrap{position:relative;width:min(68vw,270px);max-width:100%;aspect-ratio:1;margin-top:4px}
+.dt{position:absolute;inset:0;border:0;background:none;padding:0;border-radius:50%;touch-action:manipulation}
+.dt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.dt-g{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-brush);font-size:clamp(64px,24vw,112px);color:var(--jade);transition:transform .08s;text-shadow:0 0 24px rgba(143,214,181,.35)}
+.dt:active .dt-g{transform:scale(.93)}
+.spin{transform-origin:100px 100px;animation:spin 60s linear infinite}
+.spin.rev{animation-duration:90s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dt-wrap.full .dt-g{color:var(--gold);text-shadow:0 0 30px rgba(227,184,98,.55)}
+.ripple{position:absolute;left:50%;top:50%;width:40%;aspect-ratio:1;border-radius:50%;border:2px solid var(--jade);transform:translate(-50%,-50%) scale(.6);opacity:.8;pointer-events:none;animation:rip .6s ease-out forwards}
+@keyframes rip{to{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+.plus{position:absolute;pointer-events:none;font-family:var(--f-brush);font-size:22px;color:var(--jade);animation:up .9s ease-out forwards;white-space:nowrap}
+@keyframes up{to{transform:translateY(-60px);opacity:0}}
+.realm-name{font-family:var(--f-brush);font-size:30px;margin-top:6px}
+.qi-num{color:var(--mist);font-size:14px}
+.qi-num b{color:var(--bone)}
+.rates{display:flex;gap:18px;justify-content:center;font-size:13px;color:var(--mist);margin-top:4px}
+.rates b{color:var(--jade)}
+.break{margin-top:16px;width:100%;border:1px solid var(--line);border-radius:6px;padding:14px;background:var(--panel)}
+.break .t{font-size:13px;color:var(--mist);margin-bottom:10px}
+.break .t em{font-style:normal;color:var(--bone)}
+.break .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.gate{color:var(--cin)}
+.pill{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--mist)}
+.pill input{accent-color:var(--jade);width:18px;height:18px}
+.tip{font-size:12px;color:var(--dim);margin-top:14px;max-width:30em}
+
+/* fight */
+.zones{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-inline:-2px;scrollbar-width:none}
+.zones::-webkit-scrollbar{display:none}
+.zc{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:6px 10px;text-align:left;min-width:92px}
+.zc .zn{font-size:13px;white-space:nowrap}
+.zc .zs{font-size:11px;color:var(--dim)}
+.zc[aria-pressed="true"]{border-color:var(--cin);background:var(--cin-d)}
+.zc:disabled{opacity:.35}
+.zc.done .zs{color:var(--jade)}
+.zinfo{font-size:13px;color:var(--mist);margin:10px 0 12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.zinfo .d{flex:1 1 100%;color:var(--bone)}
+.kbar{flex:1;height:4px;background:var(--line);border-radius:2px;align-self:center;min-width:80px;overflow:hidden}
+.kbar i{display:block;height:100%;background:var(--cin)}
+.arena{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:18px 8px;border-block:1px solid var(--line);background:
+  radial-gradient(ellipse at 50% 120%,rgba(207,74,60,.12),transparent 60%)}
+.side{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.side .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.seal{width:84px;height:84px;display:grid;place-items:center;font-family:var(--f-brush);font-size:54px;line-height:1;border-radius:8px}
+.seal.jade{border:3px solid var(--jade);color:var(--jade);background:rgba(143,214,181,.06)}
+.seal.cin{background:var(--cin);color:var(--bg);transform:rotate(-4deg);box-shadow:inset 0 0 0 4px var(--cin),inset 0 0 0 6px var(--bg)}
+.seal.cin.boss{width:96px;height:96px;font-size:62px;box-shadow:inset 0 0 0 4px var(--cin),inset 0 0 0 6px var(--bg),0 0 26px rgba(207,74,60,.45)}
+.seal.cin.dead{opacity:.25;filter:grayscale(1)}
+.seal.idle{opacity:.3}
+.hit{animation:hit .25s}
+@keyframes hit{25%{translate:-6px 0}50%{translate:5px 0}75%{translate:-3px 0}}
+.vs{font-family:var(--f-brush);font-size:28px;color:var(--dim)}
+.hp{width:100%;max-width:120px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.hp i{display:block;height:100%;width:100%;transition:width .2s}
+.side.p .hp i{background:var(--jade)}
+.side.e .hp i{background:var(--cin)}
+.hpn{font-size:11px;color:var(--mist)}
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.dmg{position:absolute;font-family:var(--f-brush);font-size:24px;color:var(--bone);animation:up .8s ease-out forwards;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+.dmg.crit{color:var(--gold);font-size:32px}
+.dmg.hurt{color:var(--bad)}
+.dmg.heal{color:var(--jade)}
+.bmsg{min-height:2.6em;font-size:13px;color:var(--mist);padding:8px 2px;text-align:center}
+.bmsg b{color:var(--gold)}
+.bctl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bctl .wide{grid-column:1/-1}
+.mystats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:16px;font-size:12px;color:var(--dim);text-align:center}
+.mystats b{display:block;font-size:15px;color:var(--bone)}
+
+/* story */
+.karma{font-size:13px;color:var(--mist);margin-bottom:14px}
+.karma b{color:var(--bone)}
+.chs{display:flex;flex-direction:column;gap:0}
+.ch{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.ch .cg{font-family:var(--f-brush);font-size:30px;color:var(--dim);text-align:center}
+.ch .ct{font-size:15px}
+.ch .ch-h{font-size:12px;color:var(--dim)}
+.ch.new .cg{color:var(--cin)}
+.ch.seen .cg{color:var(--jade)}
+.ch.lock .ct{color:var(--dim)}
+
+/* bag */
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{border:1px solid var(--line);border-radius:6px;padding:10px 8px;background:var(--panel);min-width:0;min-height:86px}
+.slot .sl{font-size:11px;color:var(--dim);letter-spacing:.15em}
+.slot .sn{font-size:14px;line-height:1.35;margin:2px 0}
+.slot .ss{font-size:11px;color:var(--mist);line-height:1.4}
+.r-fan .iname,.r-fan .sn{color:var(--r-fan)}
+.r-ling .iname,.r-ling .sn{color:var(--r-ling)}
+.r-bao .iname,.r-bao .sn{color:var(--r-bao)}
+.r-xian .iname,.r-xian .sn{color:var(--r-xian)}
+.shop,.items{display:flex;flex-direction:column}
+.row2{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row2 .in{flex:1;min-width:0}
+.row2 .iname{font-size:15px}
+.row2 .istat{font-size:12px;color:var(--mist)}
+.row2 .ibtn{display:flex;gap:6px;flex-shrink:0}
+.up{color:var(--good);font-size:11px;margin-left:4px}
+.down{color:var(--dim);font-size:11px;margin-left:4px}
+.empty{color:var(--dim);font-size:13px;padding:14px 0}
+.bagbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* upgrades */
+.lv{font-size:12px;color:var(--jade);margin-left:6px}
+.save textarea{width:100%;height:84px;background:var(--panel);color:var(--bone);border:1px solid var(--line);border-radius:4px;padding:8px;font-size:12px;font-family:ui-monospace,monospace;resize:vertical;-webkit-user-select:text;user-select:text}
+.save .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.note{font-size:12px;color:var(--dim);margin:6px 0}
+
+/* toasts */
+#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 70px);z-index:30;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding-inline:max(16px,env(safe-area-inset-left,0px))}
+.toast{pointer-events:auto;background:var(--panel2);border:1px solid var(--line);color:var(--bone);font-size:13px;padding:7px 14px;border-radius:4px;max-width:440px;display:flex;gap:10px;align-items:center;animation:tin .25s ease-out;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.toast.big{border-color:var(--gold);color:var(--gold);font-family:var(--f-brush);font-size:20px}
+.toast.bad{border-color:var(--cin)}
+.toast button{background:none;border:1px solid var(--jade);color:var(--jade);border-radius:3px;padding:2px 8px;font-size:12px}
+@keyframes tin{from{transform:translateY(-8px);opacity:0}}
+
+/* overlay */
+#ov{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px));
+  background:linear-gradient(180deg,rgba(14,12,9,.82),rgba(14,12,9,.96));-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#ov .inner{width:100%;max-width:520px;margin:0 auto;flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.st-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mist);letter-spacing:.1em}
+.st-skip{background:none;border:1px solid var(--line);color:var(--mist);border-radius:3px;padding:3px 10px;font-size:12px}
+.st-seal{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-6deg);font-family:var(--f-brush);font-size:min(60vw,260px);color:var(--cin);opacity:.09;pointer-events:none;line-height:1}
+.st-sp{flex:1}
+.st-choices{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.st-choices button{text-align:left;border:1px solid var(--jade-d);background:rgba(44,102,82,.25);color:var(--bone);padding:12px 14px;border-radius:4px;font-size:15px;animation:tin .3s ease-out both}
+.st-box{border-top:1px solid var(--line);padding-top:14px;min-height:150px;position:relative}
+.st-s{font-family:var(--f-brush);font-size:24px;color:var(--jade);line-height:1.2;margin-bottom:6px}
+.st-s.cin{color:var(--cin)}
+.st-x{font-size:17px;line-height:1.85;max-width:34em;white-space:pre-wrap}
+.st-x.narr{color:var(--mist)}
+.st-more{position:absolute;right:2px;bottom:-4px;color:var(--dim);animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.2}}
+.modal{margin:auto 0;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:22px 18px;text-align:center}
+.modal h3{font-family:var(--f-brush);font-weight:400;font-size:30px;margin:0 0 8px;color:var(--gold)}
+.modal p{color:var(--mist);margin:6px 0;font-size:14px}
+.modal p b{color:var(--bone)}
+.modal .row{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.intro{margin:auto 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.intro h1{font-family:var(--f-brush);font-weight:400;font-size:clamp(48px,16vw,76px);line-height:1;margin:0;color:var(--bone)}
+.intro h1 span{color:var(--jade)}
+.intro p{color:var(--mist);margin:0;max-width:22em;font-size:14px}
+.intro input{background:transparent;border:0;border-bottom:1px solid var(--jade);color:var(--bone);font:inherit;font-size:20px;text-align:center;padding:6px;width:min(220px,80vw);-webkit-user-select:text;user-select:text}
+.intro .yr{font-size:12px;letter-spacing:.3em;color:var(--dim)}
+
+@media (prefers-reduced-motion:reduce){
+  .spin,.st-more{animation:none}
+  .ripple,.plus,.dmg,.toast,.st-choices button{animation-duration:.01s}
+}
+</style>
+
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="app">
+  <header class="top">
+    <div class="who"><div class="nm" id="hName"></div><div class="rl" id="hRealm"></div></div>
+    <div class="res">
+      <div><span class="lbl">灵石</span><b id="hStones">0</b></div>
+      <div><span class="lbl">道心</span><b id="hKarma">本心</b></div>
+    </div>
+  </header>
+  <div class="qi" aria-hidden="true"><div class="qif" id="hQi"></div></div>
+  <main id="view"></main>
+  <nav class="tabs" role="tablist">
+    <button class="tab" data-tab="cult" role="tab"><span class="g">修</span><span class="l">修炼</span></button>
+    <button class="tab" data-tab="fight" role="tab"><span class="g">斩</span><span class="l">历练</span></button>
+    <button class="tab" data-tab="story" role="tab"><span class="g">卷</span><span class="l">剧情</span><i class="dot" id="dotStory" hidden></i></button>
+    <button class="tab" data-tab="bag" role="tab"><span class="g">囊</span><span class="l">行囊</span></button>
+    <button class="tab" data-tab="ups" role="tab"><span class="g">法</span><span class="l">功法</span></button>
+  </nav>
+</div>
+<div id="toasts"></div>
+<div id="ov" hidden></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fmt(n){n=Math.floor(n);if(n<1e4)return String(n);
+  const t=(v,u)=>v.toFixed(2).replace(/\.?0+$/,'')+u;
+  if(n<1e8)return t(n/1e4,'万');if(n<1e12)return t(n/1e8,'亿');if(n<1e16)return t(n/1e12,'万亿');return n.toExponential(2);}
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- 数据 ---------- */
+const REALMS=['炼气','筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫'];
+const SUB=['初期','中期','后期','圆满'];
+const NUM=['一','二','三','四','五','六','七','八','九'];
+const STAGES=[];
+for(let i=0;i<9;i++)STAGES.push({r:0,name:'炼气'+NUM[i]+'层'});
+for(let r=1;r<8;r++)for(let j=0;j<4;j++)STAGES.push({r,name:REALMS[r]+SUB[j]});
+STAGES.push({r:8,name:'渡劫'});
+const LAST=STAGES.length-1;
+
+const ZONES=[
+ {n:'废弃地铁站',d:'青石站以北的隧道，积水里有东西在动。',mobs:[['变异鼠','鼠'],['腐尸蝠','蝠'],['污水蛭','蛭']],boss:['鼠王·裂齿','王']},
+ {n:'锈蚀高架',d:'断裂的高架桥悬在半空，钢筋上爬满了活物。',mobs:[['铁甲蜈蚣','蜈'],['废铁傀儡','傀'],['灰鸦群','鸦']],boss:['钢骨百足','百']},
+ {n:'旧城妖林',d:'人民公园疯长成了一片原始森林。',mobs:[['藤妖','藤'],['狂化灵狐','狐'],['噬灵蜂','蜂']],boss:['千年槐妖','槐']},
+ {n:'沉没港口',d:'海平面涨了十米，雾里有船灯。',mobs:[['鬼面蟹','蟹'],['雾鲨','鲨'],['溺魂','魂']],boss:['海眼蛟','蛟']},
+ {n:'坠星研究所',d:'灵潮当天第一个坠落点，围墙上还挂着警示牌。',mobs:[['失控机兵','机'],['灵化实验体','骸'],['电磁幽灵','磁']],boss:['零号','零']},
+ {n:'天坑',d:'城市中央塌出的深坑，坑底亮着赤光。',mobs:[['尸傀修士','尸'],['赤焰狼','狼'],['石魔','岩']],boss:['堕仙残躯','堕']},
+ {n:'灵源核心',d:'灵潮的源头。空气浓得像水。',mobs:[['灵潮化身','潮'],['虚空蝠鲼','虚'],['天魔影','魔']],boss:['灵潮之主','源']},
+ {n:'灵源深渊',d:'灵源之下没有底。每往下一层，守关者更强，报酬更厚。',mobs:[],boss:['深渊守关者','渊'],abyss:true}
+];
+const KILLS_FOR_BOSS=10;
+
+const RAR=[{n:'凡',c:'fan',m:1},{n:'灵',c:'ling',m:1.6},{n:'宝',c:'bao',m:2.6},{n:'仙',c:'xian',m:4.2}];
+const GN={w:['钢筋剑','锈铁长刀','骨刺匕','鲛牙刺','灵纹短剑','霜骨剑','星陨剑','青冥剑'],
+          a:['帆布斗篷','铁片甲','藤皮衣','鲛绡衣','合金道袍','玄石甲','灵潮羽衣','渊纹法袍'],
+          j:['铜钱串','兽牙坠','槐木牌','蛟珠','芯片玉','赤晶符','源石佩','深渊之眼']};
+const SLOTN={w:'兵器',a:'护甲',j:'佩饰'};
+
+const UPS=[
+ {k:'tuna',n:'吐纳术',d:'每级 +0.5 基础吐纳，随境界放大',base:10,g:1.45},
+ {k:'yinqi',n:'引气诀',d:'每级点击引气 +80%',base:8,g:1.5},
+ {k:'yujian',n:'御剑术',d:'每级攻击 +12%',base:15,g:1.5},
+ {k:'jingang',n:'金刚体',d:'每级生命、防御 +12%',base:15,g:1.5},
+ {k:'juling',n:'聚灵阵',d:'每级闭关上限 +1 小时，闭关效率 +4%',base:80,g:2,max:10}
+];
+
+/* ---------- 剧情 ---------- */
+const STORY=[
+ {id:0,title:'序章·灵潮',g:'潮',cond:()=>true,hint:'',lines:[
+  ['','二〇四九年，天空裂开了一道口子。'],
+  ['','后来人们管它叫“灵潮”。沉寂了三千年的灵气，一夜之间倒灌人间。'],
+  ['','城市塌了，草木疯长，野兽变成了吃人的妖物。'],
+  ['','三年后。地铁七号线，青石站避难所。'],
+  ['铁叔','{name}，今天轮到你去B出口拾荒。天黑前必须回来，听见没有？'],
+  ['','你在塌了一半的检票口下面，摸到一块冰凉的东西。一枚裂了缝的青色玉简。'],
+  ['','指尖碰到它的一瞬间，一个苍老的声音直接在你脑子里响起来。'],
+  ['墨老','……三百年了。总算等到一个有灵根的娃娃。'],
+  ['墨老','别怕。老夫姓墨，你叫我墨老。外头那些妖物，凡人对付不了。想活，就得修仙。'],
+  {c:[
+   {t:'「我凭什么信你？」',k:0,r:[['墨老','不信也行。等变异鼠钻进避难所那天，你再来求我。'],['','你没有扔掉玉简。']]},
+   {t:'「教我。我要护住避难所的人。」',k:1,r:[['墨老','好。心里有要护的人，道心就稳。']]},
+   {t:'「修仙，能让我比所有人都强吗？」',k:-1,r:[['墨老','哈哈哈哈，有野心。老夫喜欢。']]}
+  ]},
+  ['墨老','先学《吐纳术》。闭眼，呼吸，去找空气里那些游动的光点。'],
+  ['','你第一次看见了灵气。它们像萤火，绕着你的指尖打转。'],
+  ['','【点击丹田引气。小境界灵气满了自动突破，大境界要亲手冲关。去「历练」斩妖换灵石，在「功法」里修习。】']
+ ]},
+ {id:1,title:'第一章·阿禾',g:'禾',cond:()=>S.stage>=3,hint:'修炼至炼气四层',lines:[
+  ['','你回到避难所时，铁叔在通风口下面等你，脸色很难看。'],
+  ['铁叔','阿禾烧了两天了。不是普通的烧，她身上冒蓝光。'],
+  ['墨老','灵毒入体。这年纪的娃娃扛不住浓灵气，经脉会被撑裂。'],
+  ['墨老','以你现在的修为，可以渡一缕灵气进去，把毒引出来。代价是丹田里的灵气要散掉一半。'],
+  ['阿禾','{name}哥哥……我是不是要变成外面那些怪物了？'],
+  {c:[
+   {t:'渡灵气给她',k:1,fx:{qiMul:.5,pills:1},r:[['','你握住她的手腕，把丹田里的灵气一点点渡过去。蓝光熄了。'],['阿禾','……不烫了。'],['墨老','修为丢了还能再修，人丢了就没了。这颗破境丹，算老夫给你的。'],['','获得 破境丹 ×1']]},
+   {t:'「我先去隧道深处猎妖，换药回来」',k:-1,fx:{stones:30},r:[['','你把阿禾交给铁叔，独自下了隧道。'],['','你带回了药，还有一袋多出来的灵石。阿禾的烧退了，但她看你的眼神里多了点害怕。'],['','获得 灵石 ×30']]}
+  ]}
+ ]},
+ {id:2,title:'第二章·鼠王之后',g:'王',cond:()=>S.bossDown.includes(0),hint:'击败「鼠王·裂齿」',lines:[
+  ['','鼠王倒下的时候，整条隧道都安静了。'],
+  ['铁叔','三年了……那东西叼走了我们十一个人。'],
+  ['铁叔','{name}，从今天起，你就是青石站的仙师。'],
+  ['墨老','别飘。炼气只是摸到门槛，筑基才算入道。想筑基，你需要更多资源。'],
+  ['墨老','往北走。锈蚀高架上有一支商队，专门倒卖妖兽材料。'],
+  ['铁叔','高架上全是蜈蚣。拿着这个，我们攒了三年的。'],
+  {fx:{pills:1,stones:40}},
+  ['','获得 破境丹 ×1、灵石 ×40']
+ ]},
+ {id:3,title:'第三章·锈色商队',g:'商',cond:()=>S.bossDown.includes(1),hint:'击败「钢骨百足」',lines:[
+  ['','钢骨百足的尸体卡在两段断桥之间。几辆改装卡车从雾里开了出来。'],
+  ['红姐','好身手。我是红姐，这支商队管事的。那条百足的甲壳卖不卖？'],
+  ['红姐','顺便提醒你一句。你这种身上带灵光的人，天黑后最好别落单。'],
+  ['红姐','有一伙人叫“天穹会”，专抓有灵根的活人。听说是拿去炼丹。'],
+  ['墨老','……天穹会。他们居然还在。'],
+  {c:[
+   {t:'把玉简的事告诉红姐',k:1,fx:{stones:120},r:[['红姐','带着前辈残魂的玉简？你心真大。行，这份信任我记下了，灵石你拿着。'],['','获得 灵石 ×120']]},
+   {t:'什么都不说，卖掉甲壳就走',k:0,fx:{stones:80},r:[['红姐','嘴严是好事。这世道，嘴严的人活得久。'],['','获得 灵石 ×80']]}
+  ]},
+  ['','卡车开远了。你问墨老天穹会是什么，他没有回答。']
+ ]},
+ {id:4,title:'第四章·槐下旧事',g:'槐',cond:()=>S.bossDown.includes(2),hint:'击败「千年槐妖」',lines:[
+  ['','千年槐妖的根系一寸寸枯死，露出埋在地下的一块石碑。'],
+  ['','碑上刻着一个篆字：墨。'],
+  ['墨老','……'],
+  ['墨老','这棵槐树，是老夫三百年前亲手种下的。'],
+  ['墨老','那时候这里还是一座道观。我和师兄在树下论道，说要让天下人都能修仙。'],
+  ['墨老','后来，我们做了一件蠢事。'],
+  ['','他没有再说下去。玉简上的裂纹，好像又深了一点。'],
+  {fx:{pills:1}},
+  ['','在石碑下找到 破境丹 ×1']
+ ]},
+ {id:5,title:'第五章·雾港',g:'雾',cond:()=>S.bossDown.includes(3),hint:'击败「海眼蛟」',lines:[
+  ['','海眼蛟沉下去之后，雾散了。港口里停着一艘挂白旗的船。'],
+  ['','旗上是一只眼睛，天穹会的标记。船舱里关着二十几个人，手腕上都烙着编号。'],
+  ['墨老','他们在收集灵根。船上那几箱灵石，够你修很久。'],
+  ['墨老','船员马上就会回来。你只来得及做一件事。'],
+  {c:[
+   {t:'劈开牢门，放人',k:1,fx:{pills:2},r:[['','你劈开铁锁。人们涌向码头，散进雾里。'],['','一个老人临走前塞给你两颗丹药：“我以前是药剂师。”'],['','获得 破境丹 ×2']]},
+   {t:'搬走灵石',k:-1,fx:{stones:4000},r:[['','你扛起箱子离开的时候，身后有人在喊救命。'],['墨老','……走吧。'],['','获得 灵石 ×4000']]}
+  ]}
+ ]},
+ {id:6,title:'第六章·零号',g:'零',cond:()=>S.bossDown.includes(4),hint:'击败「零号」',lines:[
+  ['','研究所最深处，一个少女模样的东西跪在碎玻璃里。她的胸口在发光，那是一枚人造金丹。'],
+  ['零号','你……打赢了我。'],
+  ['零号','天穹会造了我。他们想用我当钥匙，打开灵源。'],
+  ['零号','我不想当钥匙。可除了这个，我没有别的用处。'],
+  ['墨老','她那枚金丹，是用三百个人的灵根炼的。吞了它，你的丹田会立刻满盈。'],
+  {c:[
+   {t:'放过她',k:1,r:[['零号','……为什么？'],['','你说不出为什么。你只是觉得，她不该只是一把钥匙。'],['零号','我会记住你的名字，{name}。']]},
+   {t:'吞噬金丹',k:-2,fx:{qiFill:1},r:[['','光熄灭了。那股力量冲进你的经脉，滚烫，发苦。'],['墨老','……你终究还是走了这条路。'],['','丹田灵气已满']]}
+  ]}
+ ]},
+ {id:7,title:'第七章·堕仙',g:'堕',cond:()=>S.bossDown.includes(5),hint:'击败「堕仙残躯」',lines:[
+  ['','堕仙残躯倒下，露出一张苍老的脸。玉简剧烈地震了一下。'],
+  ['墨老','师兄……'],
+  ['墨老','{name}，是时候告诉你了。'],
+  ['墨老','三百年前，我和师兄想把灵源里的灵气引出来，分给天下人。'],
+  ['墨老','我们失败了。灵源反噬，师兄成了堕仙，我只剩一缕残魂，被封在玉简里。'],
+  ['墨老','我们留下的封印撑了三百年。二〇四九年，它裂开了。'],
+  ['墨老','灵潮，是我们闯的祸。'],
+  {c:[
+   {t:'「你想补救，我就陪你走完」',k:1,r:[['墨老','……谢谢你，娃娃。']]},
+   {t:'「那些死掉的人，你拿什么还？」',k:0,r:[['墨老','还不了。所以我才要你走到最后。']]},
+   {t:'「那灵源，就由我来拿」',k:-1,r:[['墨老','你和当年的我，真像。']]}
+  ]}
+ ]},
+ {id:8,title:'终章·灵源',g:'源',cond:()=>S.bossDown.includes(6),hint:'击败「灵潮之主」',lines:[
+  ['','灵潮之主化作光尘。灵源就在你面前，像一颗跳动的心脏。'],
+  ['墨老','走到这一步了。封了它，灵气会慢慢退去，世界变回原样。'],
+  ['墨老','或者，你可以成为它的主人。'],
+  {c:[
+   {t:'封印灵源',k:1,r:[['','你把手按在灵源上。墨老的残魂从玉简里飘出来，挡在你前面。'],['墨老','封印，用我来补。你还年轻，修为留着，替我看看以后的世界。'],['','玉简碎了。']]},
+   {t:'驯服灵源，让灵气留在人间',k:0,r:[['','你没有封它，也没有占它。你在灵源四周布下阵法，让灵气缓缓流出。'],['墨老','让天下人都能修仙……三百年前我想做的事，你做成了。']]},
+   {t:'吞下灵源',k:-2,r:[['','灵源涌进你的身体。那一刻，你听见了全城所有妖物的心跳。'],['墨老','{name}——！'],['','玉简在你掌心沉默了。']]}
+  ]},
+  ['',()=>S.karma>=3?'后来，青石站的孩子们都学会了吐纳。阿禾成了第一个筑基的人，她说是跟{name}学的。':S.karma<=-3?'后来，城里的人提起{name}这个名字，都会压低声音。':'后来，废墟上长出了新的城。没人记得灵潮那年发生过什么，你也不常提起。'],
+  ['','—— 灵潮平息 ——'],
+  ['','但灵源之下，还有一道更深的裂缝。'],
+  ['','【「灵源深渊」已开启：层数无尽，越深越强。修到渡劫圆满后可以飞升轮回，带着仙缘重修。】']
+ ]}
+];
+
+/* ---------- 存档 ---------- */
+const KEY='lingchao_save_v1';
+function fresh(){return {v:1,name:'',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0},pills:0,
+  gear:{w:null,a:null,j:null},bag:[],bossDown:[],kills:[0,0,0,0,0,0,0,0],abyss:0,karma:0,seen:[],pending:[],
+  rebirth:0,usePill:false,last:Date.now(),started:false,uid:1,taps:0,slain:0};}
+function hydrate(d){const f=fresh();const o=Object.assign(f,d||{});o.ups=Object.assign(fresh().ups,(d&&d.ups)||{});o.gear=Object.assign(fresh().gear,(d&&d.gear)||{});
+  if(!Array.isArray(o.kills)||o.kills.length<8)o.kills=fresh().kills;return o;}
+function load(){try{const t=localStorage.getItem(KEY);if(t)return hydrate(JSON.parse(t));}catch(e){}return fresh();}
+function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+let S=fresh();
+
+/* ---------- 数值 ---------- */
+const req=s=>Math.floor(40*Math.pow(1.36,s));
+const rb=()=>1+0.25*S.rebirth;
+const idleRate=()=>(0.5+0.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb();
+const tapGain=()=>(1+0.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb();
+const realmIdx=()=>STAGES[S.stage].r;
+const zScale=z=>z>=7?Math.pow(2.7,6)*1.5*Math.pow(1.12,S.abyss):Math.pow(2.7,z);
+const pillCost=()=>Math.ceil(25*Math.pow(2.6,realmIdx()));
+const qiPillCost=()=>Math.ceil(6*Math.pow(2.6,realmIdx()));
+const upCost=u=>Math.ceil(u.base*Math.pow(u.g,S.ups[u.k]));
+const karmaName=()=>S.karma>=3?'仁心':S.karma<=-3?'魔心':'本心';
+
+function stats(){const g=Math.pow(1.19,S.stage)*rb(),u=S.ups;
+  let atk=8*g*(1+0.12*u.yujian),hp=60*g*(1+0.12*u.jingang),def=3*g*(1+0.12*u.jingang),crit=0.08;
+  for(const k of ['w','a','j']){const it=S.gear[k];if(it){atk+=it.atk||0;def+=it.def||0;hp+=it.hp||0;crit+=it.crit||0;}}
+  if(S.karma<=-3)crit+=0.07;
+  return {atk,hp,def,crit:Math.min(crit,0.6),heal:S.karma>=3?0.45:0.35};}
+
+function nextInfo(){const s=S.stage;if(s>=LAST)return {final:true};
+  const r0=STAGES[s].r,r1=STAGES[s+1].r,major=r1>r0;let gate=null,ch=1;
+  if(major){const need=Math.min(r1-1,6);if(!S.bossDown.includes(need))gate=ZONES[need].boss[0];
+    ch=0.6-0.03*r1;if(S.karma>=3)ch+=0.05;if(S.usePill&&S.pills>0)ch+=0.25;ch=Math.min(ch,0.95);}
+  return {major,gate,ch,name:STAGES[s+1].name};}
+
+function addQi(x,quiet){S.qi+=x;let moved=false;
+  for(;;){const need=req(S.stage);if(S.qi<need)break;const ni=nextInfo();
+    if(ni.final||ni.major){S.qi=need;break;}S.qi-=need;S.stage++;moved=true;}
+  if(moved){if(!quiet)toast('突破至 '+STAGES[S.stage].name);checkStory(quiet);if(TAB==='cult')render();}}
+
+function breakthrough(){const need=req(S.stage);if(S.qi<need)return;const ni=nextInfo();
+  if(ni.final)return ascend();
+  if(ni.gate){toast('瓶颈：需先击败「'+ni.gate+'」','','bad');return;}
+  const usedPill=ni.major&&S.usePill&&S.pills>0;if(usedPill)S.pills--;
+  if(Math.random()<ni.ch){S.qi-=need;S.stage++;toast('破境！踏入 '+STAGES[S.stage].name,'','big');checkStory();}
+  else{S.qi=Math.floor(S.qi*0.6);toast('冲关失败，灵气溃散了四成。'+(usedPill?'破境丹已耗去。':''),'','bad');}
+  if(S.pills<=0)S.usePill=false;render();save();}
+
+function ascend(){
+  modal(`<h3>飞升</h3><p>你已修至渡劫圆满，天门在头顶打开。</p><p>飞升后轮回重修：境界、灵石、功法、装备与历练进度清空，剧情与深渊记录保留。</p><p>获得 <b>仙缘 +1</b>：修为、攻防生命永久 <b>+25%</b>（当前 ${S.rebirth} 重）。</p>`,
+   [{t:'再等等',cls:'ghost'},{t:'飞升轮回',cls:'gold',fn:()=>{
+     const keep={name:S.name,seen:S.seen,karma:S.karma,abyss:S.abyss,rebirth:S.rebirth+1,uid:S.uid,started:true,slain:S.slain,taps:S.taps};
+     S=Object.assign(fresh(),keep);C.on=false;C.auto=false;C.e=null;C.z=0;
+     toast('第 '+S.rebirth+' 世，重入凡尘。','','big');render();save();}}]);}
+
+/* ---------- 战斗 ---------- */
+const C={z:0,e:null,php:0,on:false,auto:false,cdS:0,cdH:0,acc:0,wait:0,msg:'选一处险地，开始斩妖。'};
+function zoneUnlocked(i){return i===0||S.bossDown.includes(i-1);}
+function mkEnemy(z,boss){const sc=zScale(z);let n,g,m=1;
+  if(z===7){n='深渊·第'+(S.abyss+1)+'层';g='渊';boss=true;}
+  else if(boss){[n,g]=ZONES[z].boss;}
+  else{[n,g]=pick(ZONES[z].mobs);m=0.8+Math.random()*0.4;}
+  const hm=boss?(z===7?3.2:4.5):1,am=boss?1.6:1,hp=40*sc*m*hm;
+  let st=4*Math.pow(2.6,Math.min(z,6))*m*(boss?10:1);if(z===7)st=4*Math.pow(2.6,6)*12*Math.pow(1.1,S.abyss);
+  return {n,g,hp,max:hp,atk:6*sc*m*am,def:2*sc*m*(boss?1.3:1),boss,z,stones:Math.ceil(st)};}
+const dmgF=(a,d)=>a*a/(a+d)*(0.9+Math.random()*0.2);
+
+function startFight(boss){if(C.z>0&&!zoneUnlocked(C.z))return;
+  C.e=mkEnemy(C.z,boss||C.z===7);C.php=stats().hp;C.on=true;C.acc=0;C.cdS=Math.min(C.cdS,2);C.wait=0;
+  C.msg=(C.e.boss?'首领现身：':'遭遇 ')+'<b>'+C.e.n+'</b>';updateFight(true);}
+function step(){const st=stats(),e=C.e;
+  let d=dmgF(st.atk,e.def);const cr=Math.random()<st.crit;if(cr)d*=1.8;e.hp-=d;fxNum(d,'e',cr?'crit':'');hitSeal('eSeal');
+  if(e.hp<=0)return win();
+  const d2=dmgF(e.atk,st.def);C.php-=d2;fxNum(d2,'p','hurt');hitSeal('pSeal');
+  if(C.php<=0)return lose();
+  if(C.auto){if(C.cdS<=0)sword();if(C.php<st.hp*0.45&&C.cdH<=0)heal();}}
+function sword(){if(!C.on||C.cdS>0)return;const st=stats(),e=C.e;const d=dmgF(st.atk*3,e.def*0.5);e.hp-=d;C.cdS=6;fxNum(d,'e','crit','御剑 ');hitSeal('eSeal');if(e.hp<=0)win();updateFight();}
+function heal(){if(!C.on||C.cdH>0)return;const st=stats();const h=st.hp*st.heal;C.php=Math.min(st.hp,C.php+h);C.cdH=14;fxNum(h,'p','heal','+');updateFight();}
+function win(){const e=C.e;C.on=false;S.slain++;S.stones+=e.stones;
+  let extra='';
+  if(e.z<7){S.kills[e.z]++;}
+  if(e.boss&&e.z<7&&!S.bossDown.includes(e.z)){S.bossDown.push(e.z);extra=' · 新的险地已开启';toast('击败首领「'+e.n+'」','','big');checkStory();}
+  if(e.z===7){S.abyss++;}
+  const dropChance=e.boss?1:0.22;let dropTxt='';
+  if(Math.random()<dropChance){const it=mkItem(e.z,e.boss);
+    if(S.bag.length>=40){S.stones+=it.sell;dropTxt=' · 行囊已满，'+it.n+' 自动售出';}
+    else{S.bag.push(it);dropTxt=' · 掉落 <span style="color:var(--r-'+RAR[it.r].c+')">'+it.n+'</span>';
+      if(it.r>=2||betterThanEquipped(it))toast('获得 '+it.n+(betterThanEquipped(it)?'（更强）':''));}}
+  C.msg='斩杀 '+e.n+'，灵石 <b>+'+fmt(e.stones)+'</b>'+dropTxt+extra;
+  if(C.auto)C.wait=900;updateFight(true);}
+function lose(){C.on=false;C.auto=false;C.php=0;C.msg='败退……'+C.e.n+' 太强了。回去闭关，或换身装备再来。';updateFight(true);}
+function battleUpdate(dt){
+  C.cdS=Math.max(0,C.cdS-dt);C.cdH=Math.max(0,C.cdH-dt);
+  if(!C.on&&C.auto&&C.wait>0){C.wait-=dt*1000;if(C.wait<=0){
+    const bossReady=C.z<7&&S.kills[C.z]>=KILLS_FOR_BOSS&&!S.bossDown.includes(C.z);startFight(bossReady);}}
+  if(!C.on)return;C.acc+=dt;while(C.acc>=0.6&&C.on){C.acc-=0.6;step();}}
+
+/* ---------- 装备 ---------- */
+function rollRar(boss){const r=Math.random();if(boss)return r<0.08?3:r<0.35?2:r<0.75?1:0;return r<0.015?3:r<0.09?2:r<0.32?1:0;}
+function mkItem(z,boss){const r=rollRar(boss),slot=pick(['w','a','j']),sc=zScale(z)*RAR[r].m*(0.85+Math.random()*0.3);
+  const it={id:S.uid++,slot,r,n:(r?RAR[r].n+'·':'')+GN[slot][Math.min(z,7)]+(z===7?' +'+(S.abyss):''),z,
+    sell:Math.ceil(2*Math.pow(2.6,Math.min(z,6))*RAR[r].m*(z===7?Math.pow(1.1,S.abyss)*2:1))};
+  if(slot==='w')it.atk=Math.round(5*sc);
+  else if(slot==='a'){it.def=Math.round(2.4*sc);it.hp=Math.round(18*sc);}
+  else{it.hp=Math.round(12*sc);it.atk=Math.round(1.5*sc);it.crit=+(0.01+0.015*r).toFixed(3);}
+  return it;}
+const power=it=>it?(it.atk||0)+(it.def||0)*1.6+(it.hp||0)*0.15+(it.crit||0)*stats().atk*2:0;
+const betterThanEquipped=it=>power(it)>power(S.gear[it.slot]);
+function statText(it){const p=[];if(it.atk)p.push('攻 +'+fmt(it.atk));if(it.def)p.push('防 +'+fmt(it.def));if(it.hp)p.push('血 +'+fmt(it.hp));if(it.crit)p.push('暴击 +'+(it.crit*100).toFixed(1)+'%');return p.join('　');}
+
+/* ---------- 剧情 ---------- */
+function checkStory(quiet){for(const ch of STORY){if(S.seen.includes(ch.id)||S.pending.includes(ch.id))continue;
+  if(ch.cond()){S.pending.push(ch.id);if(!quiet&&S.started)toast('新剧情：'+ch.title,'观看',()=>playStory(ch.id));}}
+  dotUpdate();}
+function dotUpdate(){$('#dotStory').hidden=!S.pending.length;}
+let SC=null;
+function applyFx(fx){if(!fx)return;
+  if(fx.stones)S.stones+=fx.stones;if(fx.pills)S.pills+=fx.pills;
+  if(fx.qiMul)S.qi=Math.floor(S.qi*fx.qiMul);if(fx.qiFill)S.qi=Math.max(S.qi,req(S.stage));}
+function playStory(id){const ch=STORY[id];if(!ch)return;
+  SC={id,q:ch.lines.slice(),typing:null,full:'',shown:'',choice:false};
+  const ov=$('#ov');ov.hidden=false;
+  ov.innerHTML=`<div class="inner" id="stIn"><div class="st-top"><span>${ch.title}</span><button class="st-skip" id="stSkip">跳过</button></div>
+   <div class="st-seal">${ch.g}</div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
+   <div class="st-box"><div class="st-s" id="stS"></div><div class="st-x" id="stX"></div><div class="st-more" id="stM">▾</div></div></div>`;
+  $('#stSkip').onclick=e=>{e.stopPropagation();skipStory();};
+  $('#stIn').onclick=e=>{if(SC.choice)return;if(SC.typing){finishType();return;}nextLine();};
+  nextLine();}
+function nextLine(){
+  while(SC.q.length&&!Array.isArray(SC.q[0])&&SC.q[0].fx&&!SC.q[0].c){applyFx(SC.q.shift().fx);}
+  if(!SC.q.length)return endStory();
+  const L=SC.q.shift();
+  if(!Array.isArray(L)&&L.c)return showChoices(L.c);
+  const sp=L[0]?L[0].replaceAll('{name}',S.name):'';let tx=typeof L[1]==='function'?L[1]():L[1];tx=tx.replaceAll('{name}',S.name);
+  const s=$('#stS'),x=$('#stX');s.textContent=sp;s.hidden=!sp;s.className='st-s'+(sp==='零号'||sp==='红姐'?' cin':'');
+  x.className='st-x'+(sp?'':' narr');x.textContent='';$('#stM').hidden=true;
+  SC.full=tx;let i=0;clearInterval(SC.typing);
+  if(reduce){x.textContent=tx;SC.typing=null;$('#stM').hidden=false;return;}
+  SC.typing=setInterval(()=>{i++;x.textContent=tx.slice(0,i);if(i>=tx.length)finishType();},30);}
+function finishType(){clearInterval(SC.typing);SC.typing=null;$('#stX').textContent=SC.full;$('#stM').hidden=false;}
+function showChoices(cs){SC.choice=true;$('#stM').hidden=true;
+  const box=$('#stC');box.innerHTML=cs.map((c,i)=>`<button data-i="${i}" style="animation-delay:${i*80}ms">${esc(c.t)}</button>`).join('');
+  box.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();const c=cs[+b.dataset.i];
+    S.karma+=c.k||0;applyFx(c.fx);box.innerHTML='';SC.choice=false;SC.q=(c.r||[]).concat(SC.q);nextLine();});}
+function skipStory(){if(SC.choice)return;clearInterval(SC.typing);SC.typing=null;
+  while(SC.q.length){const L=SC.q[0];if(!Array.isArray(L)&&L.c)break;SC.q.shift();if(!Array.isArray(L)&&L.fx)applyFx(L.fx);}
+  if(SC.q.length){showChoices(SC.q.shift().c);$('#stS').hidden=true;$('#stX').textContent='';}else endStory();}
+function endStory(){const id=SC.id;clearInterval(SC.typing);
+  if(!S.seen.includes(id))S.seen.push(id);S.pending=S.pending.filter(x=>x!==id);
+  $('#ov').hidden=true;$('#ov').innerHTML='';SC=null;
+  if(id===0){S.started=true;checkStory();}
+  dotUpdate();render();save();}
+
+/* ---------- 弹窗 / 提示 ---------- */
+function modal(html,btns){const ov=$('#ov');ov.hidden=false;
+  ov.innerHTML=`<div class="inner"><div class="modal">${html}<div class="row">${btns.map((b,i)=>`<button class="btn ${b.cls||''}" data-i="${i}">${b.t}</button>`).join('')}</div></div></div>`;
+  ov.querySelectorAll('.modal .row button').forEach(el=>el.onclick=()=>{ov.hidden=true;ov.innerHTML='';const b=btns[+el.dataset.i];b.fn&&b.fn();});}
+function toast(t,act,fn,cls){if(typeof fn==='string'){cls=fn;fn=null;}if(typeof act==='string'&&!fn&&(act==='big'||act==='bad')){cls=act;act='';}
+  const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();
+  const d=document.createElement('div');d.className='toast '+(cls||'');d.textContent=t;
+  if(act&&fn){const b=document.createElement('button');b.textContent=act;b.onclick=()=>{d.remove();fn();};d.appendChild(b);}
+  box.appendChild(d);setTimeout(()=>d.remove(),act&&fn?6000:2600);}
+
+/* ---------- 视图 ---------- */
+let TAB='cult';const view=$('#view');const VIEWS={};
+function ringSVG(){let ticks='';for(let i=0;i<48;i++){const a=i/48*Math.PI*2,r1=i%4?96:92,r2=99;
+  ticks+=`<line x1="${100+Math.cos(a)*r1}" y1="${100+Math.sin(a)*r1}" x2="${100+Math.cos(a)*r2}" y2="${100+Math.sin(a)*r2}" stroke="var(--line)" stroke-width="${i%4?1:2}"/>`;}
+  let tri='';const G='☰☱☲☳☴☵☶☷';for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/2;tri+=`<text x="${100+Math.cos(a)*78}" y="${100+Math.sin(a)*78}" font-size="10" fill="var(--dim)" text-anchor="middle" dominant-baseline="central">${G[i]}</text>`;}
+  return `<svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="dtgr"><stop offset="0" style="stop-color:var(--jade-d);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--bg);stop-opacity:0"/></radialGradient></defs>
+   <circle cx="100" cy="100" r="70" fill="url(#dtgr)"/><g class="spin">${ticks}</g><g class="spin rev">${tri}</g>
+   <circle cx="100" cy="100" r="86" fill="none" stroke="var(--line)" stroke-width="3"/>
+   <circle id="dtP" cx="100" cy="100" r="86" fill="none" stroke="var(--jade)" stroke-width="3" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="540.35" transform="rotate(-90 100 100)"/></svg>`;}
+VIEWS.cult=()=>`<section class="cult">
+  <div class="dt-wrap" id="dtWrap"><button class="dt" id="dt" aria-label="点击丹田引气">${ringSVG()}<span class="dt-g" id="dtG">${STAGES[S.stage].name[0]}</span></button></div>
+  <div class="realm-name">${STAGES[S.stage].name}</div>
+  <div class="qi-num"><b id="cQi"></b> / <span id="cReq"></span> 灵气</div>
+  <div class="rates"><span>吐纳 <b id="cIdle"></b> /秒</span><span>引气 <b id="cTap"></b> /次</span></div>
+  <div class="break" id="cBreak"></div>
+  <p class="tip">${S.rebirth?'第 '+(S.rebirth+1)+' 世 · 仙缘 +'+(S.rebirth*25)+'% · ':''}点丹田引气。小境界灵气满了自动突破；跨大境界要亲手冲关，有失败的风险。</p></section>`;
+let breakSig='';
+function breakHTML(){const ni=nextInfo(),full=S.qi>=req(S.stage);
+  if(ni.final)return `<div class="t">渡劫已至圆满。灵气满盈后，可破开天门。</div><div class="row"><button class="btn gold" data-act="break" ${full?'':'disabled'}>飞升</button></div>`;
+  if(!ni.major)return `<div class="t">下一层：<em>${ni.name}</em>　灵气满后自动突破</div>`;
+  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">瓶颈：需先在历练中击败「${ni.gate}」</div>`;
+  return `<div class="t">下一境：<em>${ni.name}</em>　成功率 <em>${Math.round(ni.ch*100)}%</em>　失败散去四成灵气</div>
+   <div class="row"><button class="btn ${full?'gold':''}" data-act="break" ${full?'':'disabled'}>冲击${REALMS[STAGES[S.stage+1].r]}</button>
+   ${S.pills>0?`<label class="pill"><input type="checkbox" id="usePill" data-act="pill" ${S.usePill?'checked':''}>服用破境丹 +25%（余 ${S.pills}）</label>`:''}</div>`;}
+
+function zoneChip(i){const z=ZONES[i],un=i===7?S.bossDown.includes(6):zoneUnlocked(i);const done=S.bossDown.includes(i);
+  const sub=!un?'未开启':i===7?'已至 '+S.abyss+' 层':done?'首领已斩':'斩妖 '+Math.min(S.kills[i],KILLS_FOR_BOSS)+'/'+KILLS_FOR_BOSS;
+  return `<button class="zc ${done?'done':''}" data-act="zone" data-arg="${i}" aria-pressed="${C.z===i}" ${un?'':'disabled'}><div class="zn">${z.n}</div><div class="zs">${sub}</div></button>`;}
+VIEWS.fight=()=>{const z=ZONES[C.z];const rec=C.z===7?'渡劫以上':STAGES[Math.min(C.z*5+1,LAST)].name;
+  const k=Math.min(S.kills[C.z],KILLS_FOR_BOSS);
+  return `<section class="fight">
+  <div class="zones">${ZONES.map((_,i)=>zoneChip(i)).join('')}</div>
+  <div class="zinfo"><span class="d">${z.d}</span><span>建议境界：${rec}</span>${C.z<7?`<span class="kbar" title="首领进度"><i style="width:${k/KILLS_FOR_BOSS*100}%"></i></span>`:''}</div>
+  <div class="arena">
+    <div class="side p"><div class="seal jade" id="pSeal">${esc(S.name[0]||'我')}</div><div class="nm">${esc(S.name)}</div><div class="hp"><i id="pHp"></i></div><div class="hpn num" id="pHpN"></div></div>
+    <div class="vs">斩</div>
+    <div class="side e"><div class="seal cin idle" id="eSeal">?</div><div class="nm" id="eName">—</div><div class="hp"><i id="eHp"></i></div><div class="hpn num" id="eHpN"></div></div>
+    <div class="fx" id="fx"></div>
+  </div>
+  <div class="bmsg" id="bMsg"></div>
+  <div class="bctl">
+    <button class="btn" id="bGo" data-act="go"></button>
+    <button class="btn red" id="bBoss" data-act="boss">挑战首领</button>
+    <button class="btn ghost" id="bSword" data-act="sword">御剑</button>
+    <button class="btn ghost" id="bHeal" data-act="heal">回春</button>
+    <button class="btn ghost wide" id="bAuto" data-act="auto">自动斩妖</button>
+  </div>
+  <div class="mystats" id="myStats"></div></section>`;};
+
+VIEWS.story=()=>`<h2 class="sec">卷宗 <small>灵潮三年 · 青石站</small></h2>
+  <div class="karma">道心：<b>${karmaName()}</b>（${S.karma>0?'+':''}${S.karma}）　${S.karma>=3?'回春之术更强，冲关更稳。':S.karma<=-3?'出手更狠，暴击更高。':'选择会改变道心。仁心与魔心各有加成。'}</div>
+  <div class="chs">${STORY.map(ch=>{const seen=S.seen.includes(ch.id),pend=S.pending.includes(ch.id);
+    const cls=pend?'new':seen?'seen':'lock';
+    return `<div class="ch ${cls}"><div class="cg">${pend||seen?ch.g:'·'}</div><div><div class="ct">${pend||seen?ch.title:'？？？'}</div><div class="ch-h">${pend?'新的篇章':seen?'已读':'开启条件：'+ch.hint}</div></div>
+      ${pend?`<button class="btn sm gold" data-act="play" data-arg="${ch.id}">观看</button>`:seen?`<button class="btn sm ghost" data-act="play" data-arg="${ch.id}">重温</button>`:''}</div>`;}).join('')}</div>`;
+
+VIEWS.bag=()=>{const st=stats();const bag=S.bag.slice().sort((a,b)=>betterThanEquipped(b)-betterThanEquipped(a)||b.r-a.r||power(b)-power(a));
+  const worse=S.bag.filter(it=>!betterThanEquipped(it)).length;
+  return `<h2 class="sec">法身 <small>攻 ${fmt(st.atk)} · 防 ${fmt(st.def)} · 血 ${fmt(st.hp)} · 暴击 ${(st.crit*100).toFixed(1)}%</small></h2>
+  <div class="slots">${['w','a','j'].map(k=>{const it=S.gear[k];return `<div class="slot ${it?'r-'+RAR[it.r].c:''}"><div class="sl">${SLOTN[k]}</div>${it?`<div class="sn">${it.n}</div><div class="ss">${statText(it).replaceAll('　','<br>')}</div>`:'<div class="ss">空</div>'}</div>`;}).join('')}</div>
+  <h2 class="sec">坊市 <small>红姐的商队</small></h2>
+  <div class="shop">
+    <div class="row2"><div class="in"><div class="iname">破境丹 <span class="lv">持有 ${S.pills}</span></div><div class="istat">冲击大境界时服用，成功率 +25%</div></div><button class="btn sm" data-act="buyPill" ${S.stones>=pillCost()?'':'disabled'}>${fmt(pillCost())} 灵石</button></div>
+    <div class="row2"><div class="in"><div class="iname">聚气丹</div><div class="istat">立刻获得本层所需灵气的 25%</div></div><button class="btn sm" data-act="buyQi" ${S.stones>=qiPillCost()?'':'disabled'}>${fmt(qiPillCost())} 灵石</button></div>
+  </div>
+  <h2 class="sec bagbar"><span>行囊 <small>${S.bag.length}/40</small></span>${worse?`<button class="btn sm ghost" data-act="sellWorse">出售 ${worse} 件较弱装备</button>`:''}</h2>
+  <div class="items">${bag.length?bag.map(it=>{const up=betterThanEquipped(it);return `<div class="row2 r-${RAR[it.r].c}"><div class="in"><div class="iname">${it.n}${up?'<span class="up">▲ 更强</span>':''}</div><div class="istat">${SLOTN[it.slot]}　${statText(it)}</div></div>
+    <div class="ibtn"><button class="btn sm ${up?'':'ghost'}" data-act="equip" data-arg="${it.id}">装备</button><button class="btn sm ghost" data-act="sell" data-arg="${it.id}">售 ${fmt(it.sell)}</button></div></div>`;}).join(''):'<div class="empty">空空如也。去历练里斩妖，有几率掉落装备，首领必掉。</div>'}</div>`;};
+
+let resetArm=false,importArm=false;
+VIEWS.ups=()=>`<h2 class="sec">功法 <small>以灵石参悟</small></h2>
+  <div class="shop">${UPS.map(u=>{const lv=S.ups[u.k],max=u.max&&lv>=u.max,c=upCost(u);
+    return `<div class="row2"><div class="in"><div class="iname">${u.n}<span class="lv">第 ${lv} 重</span></div><div class="istat">${u.d}</div></div>
+    <button class="btn sm" data-act="up" data-arg="${u.k}" ${max||S.stones<c?'disabled':''}>${max?'已圆满':fmt(c)+' 灵石'}</button></div>`;}).join('')}</div>
+  <h2 class="sec">存档 <small>自动保存在这台手机的浏览器里</small></h2>
+  <div class="save">
+    <p class="note">清理浏览器数据会丢档。换手机或想备份时，导出存档码，保存到备忘录里。</p>
+    <textarea id="saveBox" placeholder="点「导出」生成存档码；或把存档码粘贴到这里再点「导入」"></textarea>
+    <div class="row">
+      <button class="btn sm" data-act="export">导出并复制</button>
+      <button class="btn sm ghost" data-act="import">${importArm?'确认覆盖当前进度':'导入'}</button>
+      <button class="btn sm ${resetArm?'red':'ghost'}" data-act="reset">${resetArm?'再点一次，删档重来':'删档重来'}</button>
+    </div>
+    <p class="note">已斩妖 ${fmt(S.slain)} · 引气 ${fmt(S.taps)} 次 · 深渊 ${S.abyss} 层 · 第 ${S.rebirth+1} 世</p>
+  </div>`;
+
+function render(){const prev=view.dataset.tab===TAB?view.scrollTop:0;view.innerHTML=VIEWS[TAB]();view.dataset.tab=TAB;view.scrollTop=prev;
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===TAB));
+  breakSig='';live();if(TAB==='fight')updateFight(true);}
+
+function live(){const need=req(S.stage);
+  $('#hName').textContent=(S.name||'无名')+(S.rebirth?' · 第'+(S.rebirth+1)+'世':'');
+  $('#hRealm').textContent=STAGES[S.stage].name;$('#hStones').textContent=fmt(S.stones);$('#hKarma').textContent=karmaName();
+  $('#hQi').style.width=Math.min(100,S.qi/need*100)+'%';
+  if(TAB==='cult'){const p=Math.min(1,S.qi/need);
+    const el=$('#cQi');if(!el)return;el.textContent=fmt(S.qi);$('#cReq').textContent=fmt(need);
+    $('#cIdle').textContent=idleRate()<10?idleRate().toFixed(1):fmt(idleRate());
+    $('#cTap').textContent=tapGain()<10?tapGain().toFixed(1):fmt(tapGain());
+    $('#dtP').setAttribute('stroke-dashoffset',540.35*(1-p));$('#dtWrap').classList.toggle('full',p>=1);
+    const sig=[S.stage,p>=1,S.pills,S.usePill,S.bossDown.length,S.karma>=3].join();
+    if(sig!==breakSig){breakSig=sig;$('#cBreak').innerHTML=breakHTML();}}
+  if(TAB==='fight')updateFight();}
+
+function updateFight(full){if(TAB!=='fight'||!$('#pHp'))return;const st=stats(),e=C.e;
+  const php=C.on||C.php>0?C.php:st.hp;
+  $('#pHp').style.width=Math.max(0,php/st.hp*100)+'%';$('#pHpN').textContent=fmt(Math.max(0,php))+' / '+fmt(st.hp);
+  const es=$('#eSeal');
+  if(e){es.textContent=e.g;es.className='seal cin'+(e.boss?' boss':'')+(e.hp<=0?' dead':'')+(!C.on&&e.hp>0?' idle':'');
+    $('#eName').textContent=e.n;$('#eHp').style.width=Math.max(0,e.hp/e.max*100)+'%';$('#eHpN').textContent=fmt(Math.max(0,e.hp))+' / '+fmt(e.max);}
+  else{es.textContent='?';es.className='seal cin idle';$('#eName').textContent='—';$('#eHp').style.width='0';$('#eHpN').textContent='';}
+  if(full)$('#bMsg').innerHTML=C.msg;
+  const go=$('#bGo');go.textContent=C.on?'撤退':C.z===7?'下探第 '+(S.abyss+1)+' 层':'斩妖';go.className='btn'+(C.on?' ghost':'');
+  const bb=$('#bBoss');const bossOk=C.z<7&&S.kills[C.z]>=KILLS_FOR_BOSS;bb.hidden=C.z===7;bb.disabled=C.on||!bossOk;
+  bb.textContent=bossOk?(S.bossDown.includes(C.z)?'再战首领':'挑战首领'):'首领 '+Math.min(S.kills[C.z],KILLS_FOR_BOSS)+'/'+KILLS_FOR_BOSS;
+  const sw=$('#bSword');sw.disabled=!C.on||C.cdS>0;sw.textContent=C.cdS>0?'御剑 '+Math.ceil(C.cdS)+'s':'御剑 ×3';
+  const hl=$('#bHeal');hl.disabled=!C.on||C.cdH>0;hl.textContent=C.cdH>0?'回春 '+Math.ceil(C.cdH)+'s':'回春 +'+Math.round(st.heal*100)+'%';
+  const au=$('#bAuto');au.className='btn wide '+(C.auto?'on':'ghost');au.textContent=C.auto?'自动斩妖中（自动施法）':'自动斩妖';
+  if(full)$('#myStats').innerHTML=`<div>攻击<b>${fmt(st.atk)}</b></div><div>防御<b>${fmt(st.def)}</b></div><div>生命<b>${fmt(st.hp)}</b></div><div>暴击<b>${(st.crit*100).toFixed(0)}%</b></div>`;}
+
+function fxNum(n,side,cls,pre){if(TAB!=='fight')return;const box=$('#fx');if(!box)return;
+  const d=document.createElement('span');d.className='dmg '+(cls||'');d.textContent=(pre||'')+fmt(Math.max(1,n));
+  d.style.left=(side==='e'?62+Math.random()*16:8+Math.random()*16)+'%';d.style.top=(18+Math.random()*30)+'%';
+  box.appendChild(d);setTimeout(()=>d.remove(),850);}
+function hitSeal(id){if(TAB!=='fight'||reduce)return;const el=$('#'+id);if(!el)return;el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit');}
+
+/* ---------- 交互 ---------- */
+const ACT={
+  break:()=>breakthrough(),
+  pill:(a,el)=>{S.usePill=el.checked;breakSig='';live();},
+  zone:a=>{const z=+a;if(C.z===z)return;C.on=false;C.auto=false;C.e=null;C.php=0;C.z=z;C.msg=z===7?'深渊每层只有一个守关者。每过一层，它们更强。':'选一处险地，开始斩妖。';render();},
+  go:()=>{if(C.on){C.on=false;C.auto=false;C.msg='你退出了战斗。';updateFight(true);}else startFight(false);},
+  boss:()=>startFight(true),
+  sword:()=>sword(),heal:()=>heal(),
+  auto:()=>{C.auto=!C.auto;if(C.auto&&!C.on){const b=C.z<7&&S.kills[C.z]>=KILLS_FOR_BOSS&&!S.bossDown.includes(C.z);startFight(b);}updateFight(true);},
+  play:a=>playStory(+a),
+  equip:a=>{const i=S.bag.findIndex(x=>x.id===+a);if(i<0)return;const it=S.bag[i];S.bag.splice(i,1);if(S.gear[it.slot])S.bag.push(S.gear[it.slot]);S.gear[it.slot]=it;toast('装备 '+it.n);render();save();},
+  sell:a=>{const i=S.bag.findIndex(x=>x.id===+a);if(i<0)return;S.stones+=S.bag[i].sell;S.bag.splice(i,1);render();save();},
+  sellWorse:()=>{let g=0,n=0;S.bag=S.bag.filter(it=>{if(!betterThanEquipped(it)){g+=it.sell;n++;return false;}return true;});S.stones+=g;toast('出售 '+n+' 件，灵石 +'+fmt(g));render();save();},
+  buyPill:()=>{const c=pillCost();if(S.stones<c)return;S.stones-=c;S.pills++;render();save();},
+  buyQi:()=>{const c=qiPillCost();if(S.stones<c)return;S.stones-=c;addQi(req(S.stage)*0.25);render();save();},
+  up:a=>{const u=UPS.find(x=>x.k===a);const c=upCost(u);if(S.stones<c||(u.max&&S.ups[a]>=u.max))return;S.stones-=c;S.ups[a]++;toast(u.n+' 精进至第 '+S.ups[a]+' 重');render();save();},
+  export:()=>{save();let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){}
+    const box=$('#saveBox');box.value=code;
+    const done=()=>toast('存档码已复制，粘贴到备忘录保存');
+    const fail=()=>{box.focus();box.select();toast('已生成，请长按全选后手动复制');};
+    try{navigator.clipboard.writeText(code).then(done,fail);}catch(e){fail();}},
+  import:()=>{const v=$('#saveBox').value.trim();if(!v){toast('先把存档码粘贴进上面的框里','bad');return;}
+    let d=null;try{d=JSON.parse(decodeURIComponent(escape(atob(v.replace(/^LC1\./,'')))));}catch(e){}
+    if(!d||typeof d.stage!=='number'){toast('存档码无法识别，请检查是否复制完整','bad');return;}
+    if(!importArm){importArm=true;const keep=v;render();$('#saveBox').value=keep;return;}
+    importArm=false;S=hydrate(d);C.on=false;C.auto=false;C.e=null;C.z=0;save();toast('存档已导入：'+STAGES[S.stage].name,'big');dotUpdate();render();},
+  reset:()=>{if(!resetArm){resetArm=true;render();setTimeout(()=>{if(resetArm){resetArm=false;if(TAB==='ups')render();}},4000);return;}
+    resetArm=false;try{localStorage.removeItem(KEY);}catch(e){}S=fresh();C.on=false;C.auto=false;C.e=null;C.z=0;render();intro();}
+};
+view.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.id==='dt')return;if(b.disabled)return;
+  if(b.dataset.act!=='import'&&importArm){importArm=false;}
+  ACT[b.dataset.act]&&ACT[b.dataset.act](b.dataset.arg,b);});
+view.addEventListener('change',e=>{if(e.target.id==='usePill')ACT.pill(null,e.target);});
+view.addEventListener('pointerdown',e=>{const dt=e.target.closest('#dt');if(!dt)return;e.preventDefault();
+  const g=tapGain();S.taps++;addQi(g);
+  const wrap=$('#dtWrap');if(!wrap)return;const r=wrap.getBoundingClientRect();
+  if(!reduce){const rp=document.createElement('span');rp.className='ripple';wrap.appendChild(rp);setTimeout(()=>rp.remove(),620);}
+  const p=document.createElement('span');p.className='plus';p.textContent='+'+(g<10?g.toFixed(1):fmt(g));
+  p.style.left=(e.clientX-r.left-12)+'px';p.style.top=(e.clientY-r.top-20)+'px';wrap.appendChild(p);setTimeout(()=>p.remove(),920);
+  burst(e.clientX,e.clientY);live();});
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{TAB=b.dataset.tab;resetArm=false;importArm=false;view.scrollTop=0;render();}));
+
+/* ---------- 背景：落灰与灵光 ---------- */
+const cv=$('#bg'),cx=cv.getContext('2d');let W=0,H=0,P=[],B=[];
+function rs(){const dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0);}
+function seed(){P=[];for(let i=0;i<70;i++)P.push(mkP(true));}
+function mkP(init){const jade=Math.random()<0.22;return {x:Math.random()*W,y:init?Math.random()*H:(jade?H+10:-10),r:jade?1+Math.random()*1.6:0.6+Math.random()*1.8,
+  vy:jade?-(8+Math.random()*14):(10+Math.random()*18),vx:(Math.random()-.5)*8,jade,a:jade?.25+Math.random()*.45:.12+Math.random()*.25,ph:Math.random()*6};}
+function burst(x,y){if(reduce)return;for(let i=0;i<10;i++){const a=Math.random()*Math.PI*2,s=40+Math.random()*80;B.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1});}}
+function drawBg(dt){cx.clearRect(0,0,W,H);
+  const g=cx.createRadialGradient(W/2,H*1.05,0,W/2,H*1.05,H*0.9);g.addColorStop(0,'rgba(120,70,40,.16)');g.addColorStop(1,'rgba(22,20,15,0)');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  for(const p of P){p.y+=p.vy*dt;p.ph+=dt;p.x+=(p.vx+Math.sin(p.ph)*6)*dt;
+    if(p.y>H+12||p.y<-12||p.x<-12||p.x>W+12)Object.assign(p,mkP(false));
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,6.283);cx.fillStyle=p.jade?`rgba(143,214,181,${p.a})`:`rgba(190,180,160,${p.a})`;cx.fill();}
+  for(let i=B.length-1;i>=0;i--){const b=B[i];b.life-=dt*1.6;b.x+=b.vx*dt;b.y+=b.vy*dt;b.vy-=30*dt;if(b.life<=0){B.splice(i,1);continue;}
+    cx.beginPath();cx.arc(b.x,b.y,1.8,0,6.283);cx.fillStyle=`rgba(143,214,181,${b.life*.8})`;cx.fill();}}
+addEventListener('resize',()=>{rs();seed();});
+
+/* ---------- 主循环 ---------- */
+let lastT=performance.now(),uiAcc=0,bgAcc=0;
+function loop(t){const dt=Math.min(1,(t-lastT)/1000);lastT=t;
+  if(S.started){addQi(idleRate()*dt);battleUpdate(dt);}
+  uiAcc+=dt;if(uiAcc>0.15){uiAcc=0;live();}
+  if(!reduce){bgAcc+=dt;if(bgAcc>1/40){drawBg(bgAcc);bgAcc=0;}}
+  requestAnimationFrame(loop);}
+
+function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.started||sec<90)return;
+  const capH=8+S.ups.juling,eff=0.6+0.04*S.ups.juling,t=Math.min(sec,capH*3600);
+  const before=STAGES[S.stage].name,gain=idleRate()*t*eff;addQi(gain,true);
+  const h=Math.floor(t/3600),m=Math.floor(t%3600/60);
+  modal(`<h3>闭关归来</h3><p>你闭关了 <b>${h?h+' 小时 ':''}${m} 分</b>${sec>capH*3600?'（上限 '+capH+' 小时）':''}</p><p>吸纳灵气 <b>${fmt(gain)}</b></p>${before!==STAGES[S.stage].name?`<p>境界 ${before} → <b>${STAGES[S.stage].name}</b></p>`:''}${nextInfo().major&&S.qi>=req(S.stage)?'<p>丹田已满，可以冲关了。</p>':''}`,
+    [{t:'出关',cls:'gold',fn:()=>{render();if(S.pending.length)toast('有新剧情可看','观看',()=>playStory(S.pending[0]));}}]);save();}
+
+function intro(){const ov=$('#ov');ov.hidden=false;
+  ov.innerHTML=`<div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮</div><h1>灵潮<span>修仙</span>录</h1>
+   <p>天裂之后第三年。你是地铁避难所里的一个拾荒者。</p>
+   <input id="nmIn" maxlength="6" placeholder="你的名字" autocomplete="off">
+   <button class="btn gold" id="nmGo">踏入灵潮</button></div></div>`;
+  const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');S.name=v||pick(['林砚','苏迟','沈野','陆青','顾川']);save();playStory(0);};
+  $('#nmGo').onclick=go;$('#nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});}
+
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{lastT=performance.now();offline();}});
+addEventListener('pagehide',save);
+setInterval(()=>{if(S.started)save();},5000);
+
+function start(data){S=data&&data.S?hydrate(data.S):load();
+  rs();seed();if(reduce)drawBg(0);render();dotUpdate();
+  if(!S.name||!S.started){if(S.name&&!S.seen.includes(0))playStory(0);else intro();}
+  else{offline();checkStory(true);}
+  requestAnimationFrame(t=>{lastT=t;loop(t);});}
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+})();
+</script>
+
+</body>
+</html>
