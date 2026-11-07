@@ -328,6 +328,17 @@ h2.sec:first-child{margin-top:0}
 @keyframes pt{from{transform:translate(var(--x),var(--y));opacity:0}20%{opacity:1}to{transform:translate(0,0);opacity:.2}}
 #ov.talk .st-top{display:none}
 .wlab::before{content:"";position:absolute;left:0;right:0;top:0;height:130px;background:linear-gradient(rgba(6,5,4,.6),rgba(6,5,4,0))}
+.slots3{display:grid;gap:8px;margin-bottom:6px}
+.sl3{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--panel)}
+.sl3.cur{border-color:var(--jade)}
+.sl3 .no{width:34px;height:34px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;font-family:var(--f-brush);font-size:20px;border:1px solid var(--line);color:var(--mist)}
+.sl3.cur .no{border-color:var(--jade);color:var(--jade)}
+.sl3 .in{flex:1;min-width:0}
+.sl3 .iname{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl3 .iname.dim{color:var(--dim)}
+.sl3 .istat{font-size:12px;color:var(--mist)}
+.sl3 .ibtn{display:flex;gap:6px;flex-shrink:0}
+.curtag{font-size:12px;color:var(--jade);border:1px solid var(--jade-d);border-radius:3px;padding:2px 8px}
 
 </style>
 </head>
@@ -2028,7 +2039,8 @@ const UPS=[
 ];
 
 /* ---------- 存档 ---------- */
-const KEY='lingchao_save_v1';
+const SLOTS=3,SLOT_KEY='lingchao_slot';const slotKey=n=>n===1?'lingchao_save_v1':'lingchao_save_v1_s'+n;
+let SLOT=(()=>{try{const n=+localStorage.getItem(SLOT_KEY);return n>=1&&n<=SLOTS?n:1;}catch(e){return 1;}})();
 function fresh(){return {v:3,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:0,
   gear:{w:null,a:null,j:null},bag:[],bossDown:[],kills:[0,0,0,0,0,0,0,0],abyss:0,karma:0,seen:[],pending:[],flags:{},visited:[0],
   expo:0,special:null,dt:{lv:0,slots:[]},rebirth:0,usePill:false,last:Date.now(),started:false,uid:1,taps:0,slain:0,hunts:0,
@@ -2042,8 +2054,16 @@ function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign
   if(o.seen.includes('ratking')&&!o.flags.duel_zhou&&!o.special)o.special='zhou';
   delete o.run;if(typeof o.hpF!=='number')o.hpF=1;if(typeof o.mpF!=='number')o.mpF=1;
   return o;}
-function load(){try{const t=localStorage.getItem(KEY);if(t)return hydrate(JSON.parse(t));}catch(e){}return fresh();}
-function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t)return hydrate(JSON.parse(t));}catch(e){}return fresh();}
+function save(){S.last=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S));}catch(e){}}
+function slotInfo(n){if(n===SLOT)return S.name?{name:S.name,realm:STAGES[S.stage].name,last:Date.now(),started:S.started,reb:S.rebirth}:null;
+  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
+function ago(t){const s=(Date.now()-t)/1000;return s<90?'刚刚':s<3600?Math.floor(s/60)+' 分钟前':s<86400?Math.floor(s/3600)+' 小时前':Math.floor(s/86400)+' 天前';}
+let delArm=0;
+function switchSlot(n){if(BT||n===SLOT)return;if(S.name)save();SLOT=n;try{localStorage.setItem(SLOT_KEY,String(n));}catch(e){}
+  const ov=$('#ov');ov.hidden=true;ov.innerHTML='';ov.className='';$('#toasts').innerHTML='';SC=null;EVC=null;delArm=0;resetArm=false;importArm=false;
+  S=load();WD.M=null;TAB='world';render();dotUpdate();
+  if(!S.name||!S.started){if(S.name&&!S.seen.includes('prologue'))playStory('prologue');else intro();}else{toast('已切换到存档 '+n+'：'+S.name,'big');offline();daily();checkStory(true);}}
 let S=fresh();
 
 /* ---------- 数值 ---------- */
@@ -2351,10 +2371,14 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id)));
   ${STORY.map(ch=>{const seen=S.seen.includes(ch.id),pend=S.pending.includes(ch.id),cls=(pend?'new':seen?'seen':'lock')+(ch.side?' side':'');
     return `<div class="ch ${cls}"><div class="th"><canvas data-scene="${ch.bg}"></canvas><span>${pend||seen?ch.g:''}</span></div><div><div class="ct">${pend||seen?ch.title:(ch.side?'行路·？？？':'？？？')}</div><div class="ch-h">${pend?'新的篇章':seen?'已读':'开启条件：'+ch.hint}</div></div>
      ${pend?`<button class="btn sm gold" data-act="play" data-arg="${ch.id}">观看</button>`:seen?`<button class="btn sm ghost" data-act="play" data-arg="${ch.id}">重温</button>`:''}</div>`;}).join('')}
-  <h2 class="sec" style="margin-top:26px">存档 <small>自动保存在这台手机的浏览器里</small></h2>
+  <h2 class="sec" style="margin-top:26px">存档 <small>共 ${SLOTS} 个存档位，自动保存在这台手机的浏览器里</small></h2>
+  <div class="slots3">${Array.from({length:SLOTS},(_,i)=>{const n=i+1,inf=slotInfo(n),cur=n===SLOT;
+    return `<div class="sl3 ${cur?'cur':''}"><div class="no">${n}</div><div class="in">${inf?`<div class="iname">${esc(inf.name)}<span class="lv">${inf.realm}${inf.reb?' · 第'+(inf.reb+1)+'世':''}</span></div><div class="istat">${cur?'正在游玩':'上次游玩 '+ago(inf.last)}</div>`:'<div class="iname dim">空存档位</div><div class="istat">从头开一个新角色</div>'}</div>
+     <div class="ibtn">${cur?'<span class="curtag">当前</span>':inf?`<button class="btn sm" data-act="slot" data-arg="${n}">读取</button><button class="btn sm ${delArm===n?'red':'ghost'}" data-act="slotDel" data-arg="${n}">${delArm===n?'确认删除':'删除'}</button>`:`<button class="btn sm gold" data-act="slot" data-arg="${n}">新开</button>`}</div></div>`;}).join('')}</div>
+  <p class="note">每个存档位是一段独立的修行：境界、剧情、委托、装备互不影响。切换时会先保存当前进度；没在玩的存档也会照常累积闭关收益。</p>
   <div class="save"><p class="note">清理浏览器数据会丢档。换手机或想备份时，导出存档码，存到备忘录里。</p>
    <textarea id="saveBox" placeholder="点「导出」生成存档码；或把存档码粘贴到这里再点「导入」"></textarea>
-   <div class="row"><button class="btn sm" data-act="export">导出并复制</button><button class="btn sm ghost" data-act="import">${importArm?'确认覆盖当前进度':'导入'}</button><button class="btn sm ${resetArm?'red':'ghost'}" data-act="reset">${resetArm?'再点一次，删档重来':'删档重来'}</button></div>
+   <div class="row"><button class="btn sm" data-act="export">导出并复制</button><button class="btn sm ghost" data-act="import">${importArm?'确认覆盖当前进度':'导入'}</button><button class="btn sm ${resetArm?'red':'ghost'}" data-act="reset">${resetArm?'再点一次，清空存档 '+SLOT:'清空当前存档重来'}</button></div>
    <p class="note">已斩妖 ${fmt(S.slain)} · 引气 ${fmt(S.taps)} 次 · 击退追兵 ${S.hunts} 次 · 深渊 ${S.abyss} 层 · 第 ${S.rebirth+1} 世</p></div>`;;};
 
 function paintAll(){view.querySelectorAll('canvas[data-scene]').forEach(cv=>paintTo(cv,cv.dataset.scene));}
@@ -2400,11 +2424,13 @@ const ACT={
  import:()=>{const v=$('#saveBox').value.trim();if(!v){toast('先把存档码粘贴进上面的框里','bad');return;}let d=null;
    try{d=JSON.parse(decodeURIComponent(escape(atob(v.replace(/^LC1\./,'')))));}catch(e){}if(!d||typeof d.stage!=='number'){toast('存档码无法识别，请检查是否复制完整','bad');return;}
    if(!importArm){importArm=true;render();$('#saveBox').value=v;return;}importArm=false;S=hydrate(d);WD.M=null;save();toast('存档已导入：'+STAGES[S.stage].name,'big');dotUpdate();render();},
+ slot:a=>switchSlot(+a),
+ slotDel:a=>{const n=+a;if(n===SLOT)return;if(delArm!==n){delArm=n;render();setTimeout(()=>{if(delArm===n){delArm=0;if(TAB==='story')render();}},4000);return;}delArm=0;try{localStorage.removeItem(slotKey(n));}catch(e){}toast('存档 '+n+' 已删除');render();},
  reset:()=>{if(!resetArm){resetArm=true;render();setTimeout(()=>{if(resetArm){resetArm=false;if(TAB==='story')render();}},4000);return;}
-   resetArm=false;try{localStorage.removeItem(KEY);}catch(e){}S=fresh();WD.M=null;TAB='world';render();intro();}
+   resetArm=false;try{localStorage.removeItem(slotKey(SLOT));}catch(e){}S=fresh();WD.M=null;TAB='world';render();intro();}
 };
 
-view.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;if(b.dataset.act!=='import')importArm=false;ACT[b.dataset.act]&&ACT[b.dataset.act](b.dataset.arg,b);});
+view.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;if(b.dataset.act!=='import')importArm=false;if(b.dataset.act!=='slotDel')delArm=0;ACT[b.dataset.act]&&ACT[b.dataset.act](b.dataset.arg,b);});
 view.addEventListener('change',e=>{if(e.target.id==='usePill'){S.usePill=e.target.checked;breakSig='';live();}});
 view.addEventListener('pointerdown',e=>{const st=e.target.closest('#cstage');if(!st||e.target.closest('button'))return;e.preventDefault();
   const g=tapGain();S.taps++;addQi(g);const r=st.getBoundingClientRect();
@@ -2433,13 +2459,14 @@ function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.s
   modal(`<h3>闭关归来</h3><p>你闭关了 <b>${h?h+' 小时 ':''}${m} 分</b>${sec>capH*3600?'（上限 '+capH+' 小时）':''}</p><p>吸纳灵气 <b>${fmt(gain)}</b></p>${before!==STAGES[S.stage].name?`<p>境界 ${before} → <b>${STAGES[S.stage].name}</b></p>`:''}${ready?`<p>玉台上有 <b>${ready}</b> 样东西温养好了。</p>`:''}${nextInfo().major&&S.qi>=req(S.stage)?'<p>丹田已满，可以冲关了。</p>':''}`,
    [{t:'出关',cls:'gold',fn:()=>{render();const p=S.pending.find(id=>{const c=STORY.find(x=>x.id===id);return c&&!c.side;});if(p)toast('有新剧情可看','观看',()=>playStory(p));}}],cultScene());save();}
 function intro(){const ov=$('#ov');ov.hidden=false;ov.className='vn';let g=S.gender||'m';
-  ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮</div><h1>灵潮<span>修仙</span>录</h1>
+  let back=null;for(let n=1;n<=SLOTS;n++){if(n===SLOT)continue;const inf=slotInfo(n);if(inf&&(!back||inf.last>back.last))back=Object.assign({n},inf);}
+  ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮${SLOT>1?' · 存档 '+SLOT:''}</div><h1>灵潮<span>修仙</span>录</h1>
    <p>天裂之后第三年。你是地铁避难所里的一个拾荒者。</p><div class="seg"><button data-g="m" aria-pressed="${g==='m'}">少年</button><button data-g="f" aria-pressed="${g==='f'}">少女</button></div>
-   <input id="nmIn" maxlength="6" placeholder="你的名字" autocomplete="off"><button class="btn gold" id="nmGo">踏入灵潮</button></div></div>`;
+   <input id="nmIn" maxlength="6" placeholder="你的名字" autocomplete="off"><button class="btn gold" id="nmGo">踏入灵潮</button>${back?`<button class="btn sm ghost" id="nmBack">返回存档 ${back.n}（${esc(back.name)}）</button>`:''}</div></div>`;
   requestAnimationFrame(()=>paintTo($('#vbg'),'sky'));
   ov.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{g=b.dataset.g;ov.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));});
   const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');S.gender=g;S.name=v||pick(g==='f'?['苏迟','沈青','林晚','顾宁']:['林砚','陆川','沈野','顾行']);S.lastDaily=new Date().toDateString();save();playStory('prologue');};
-  $('#nmGo').onclick=go;$('#nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});}
+  $('#nmGo').onclick=go;if(back)$('#nmBack').onclick=()=>switchSlot(back.n);$('#nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{lastT=performance.now();offline();}});
 addEventListener('pagehide',save);setInterval(()=>{if(S.started)save();},5000);
 function start(data){S=data&&data.S?hydrate(data.S):load();TAB='world';render();dotUpdate();
