@@ -299,7 +299,6 @@ h2.sec:first-child{margin-top:0}
 .start-card .btn{margin-top:6px}
 .tag{font-size:12px;color:var(--gold);border:1px solid rgba(227,184,98,.5);border-radius:3px;padding:1px 8px}
 /* 青石站 */
-.sstage{aspect-ratio:16/8}
 .sinfo{position:absolute;left:12px;bottom:10px;right:12px;font-size:13px;text-shadow:0 1px 3px #000}
 .sinfo .tt{font-family:var(--f-brush);font-size:26px;line-height:1.1}
 .npcs{display:flex;gap:10px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:none}
@@ -317,6 +316,41 @@ h2.sec:first-child{margin-top:0}
 .qcard .istat{font-size:12px;color:var(--mist)}
 .qcard .qp{color:var(--jade)}
 @media (prefers-reduced-motion:reduce){.reach{animation:none}}
+
+/* 站台行走 */
+.wstage{aspect-ratio:16/10;cursor:pointer;touch-action:pan-y}
+.world{position:absolute;left:0;top:0;bottom:0;will-change:transform}
+.world>canvas.bgc{position:absolute;inset:0;width:100%;height:100%}
+.walker{position:absolute;bottom:2%;height:50%;aspect-ratio:1;transform:translateX(-50%);pointer-events:none;z-index:3}
+.walker .wi{width:100%;height:100%}
+.walker svg{width:100%;height:100%;overflow:visible;display:block}
+.walker.flip .wi{transform:scaleX(-1)}
+.walking .wi{animation:wbob .2s ease-in-out infinite alternate}
+@keyframes wbob{to{translate:0 -3%}}
+.lgA,.lgB{transform-box:fill-box;transform-origin:50% 0}
+.walking .lgA{animation:lgA .4s ease-in-out infinite alternate}
+.walking .lgB{animation:lgA .4s ease-in-out infinite alternate-reverse}
+@keyframes lgA{from{transform:rotate(26deg)}to{transform:rotate(-26deg)}}
+.wnpc{position:absolute;bottom:3%;height:60%;aspect-ratio:100/160;transform:translateX(-50%);background:none;border:0;padding:0;z-index:2}
+.wnpc .fig{display:block;width:100%;height:100%}
+.wnpc .fig svg{width:100%;height:100%;display:block;overflow:visible}
+.wnpc .tagn{position:absolute;left:50%;top:-14%;transform:translateX(-50%);white-space:nowrap;font-size:11px;background:rgba(10,8,6,.75);border:1px solid rgba(255,255,255,.15);border-radius:3px;padding:0 6px;color:var(--bone)}
+.wnpc .mk,.mog .mk{position:absolute;left:50%;top:-150%;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--bg);font-size:14px;line-height:20px;text-align:center;box-shadow:0 0 10px rgba(227,184,98,.8);animation:mkb 1.2s ease-in-out infinite}
+.wnpc .mk.rd,.mog .mk.rd{background:var(--jade)}
+@keyframes mkb{50%{translate:0 -4px}}
+.mog{position:absolute;bottom:24%;height:40%;aspect-ratio:140/220;transform:translateX(-50%);background:none;border:0;padding:0;z-index:4;opacity:.8;transition:left .35s ease-out}
+.mog svg{width:100%;height:100%;display:block;animation:gfl 3s ease-in-out infinite}
+.mog.flip svg{transform:scaleX(-1)}
+.mog .mk{top:-14%}
+@keyframes gfl{50%{translate:0 -6%}}
+.wspot{position:absolute;bottom:58%;transform:translateX(-50%);background:rgba(10,8,6,.72);border:1px solid rgba(227,184,98,.55);color:var(--gold);border-radius:12px;padding:2px 9px;font-size:11px;white-space:nowrap;z-index:2}
+.wspot::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(227,184,98,.7);border-bottom:0}
+.truck{position:absolute;bottom:4%;width:auto;height:34%;transform:translateX(-50%);pointer-events:none;z-index:1}
+.truck svg{height:100%;width:auto;display:block}
+.wstage .sinfo{z-index:5;pointer-events:none;top:8px;bottom:auto;font-size:12px}
+.whint{position:absolute;right:10px;top:10px;font-size:11px;color:rgba(236,227,207,.7);text-shadow:0 1px 3px #000;pointer-events:none;z-index:5}
+.mapsvg .walking .lgA,.mapsvg .walking .lgB{animation-duration:.25s}
+@media (prefers-reduced-motion:reduce){.walking .wi,.walking .lgA,.walking .lgB,.mog svg,.wnpc .mk,.mog .mk{animation:none}}
 
 </style>
 </head>
@@ -566,7 +600,7 @@ function heroSprite(f){const back=f?`<path d="M50 40 C48 18 92 16 92 40 L97 86 L
   const hair=f?`<path d="M49 46 C47 24 62 20 72 22 C86 22 94 32 92 46 C84 38 74 34 64 37 C58 40 54 43 49 46 Z" fill="#26201b"/>`
   :`<path d="M47 46 C44 22 66 16 78 20 C92 22 98 34 94 48 L88 38 L84 46 L78 32 L72 44 L66 30 L60 44 L54 34 Z" fill="#26201b"/>`;
   return svgS(`${shadow(70,28)}<path d="M54 74 C38 76 24 70 14 80 C26 78 36 86 52 84 Z" fill="#4f9c7f"/>${back}
-   <rect x="56" y="98" width="11" height="28" fill="#2c2a26"/><rect x="73" y="98" width="11" height="28" fill="#2c2a26"/><path d="M54 126 L69 126 L69 131 L52 131 Z M71 126 L88 126 L90 131 L71 131 Z" fill="#1a1714"/>
+   <g class="lgB"><rect x="73" y="98" width="11" height="28" fill="#24221f"/><path d="M71 126 L88 126 L90 131 L71 131 Z" fill="#1a1714"/></g><g class="lgA"><rect x="56" y="98" width="11" height="28" fill="#2c2a26"/><path d="M54 126 L69 126 L69 131 L52 131 Z" fill="#1a1714"/></g>
    <path d="M50 68 L90 68 L95 104 L45 104 Z" fill="#5f6152"/><path d="M70 70 L70 104" stroke-width="1.5"/><path d="M50 70 L42 92 L50 96" fill="#5f6152"/>
    <path d="M52 66 Q70 76 88 66 L90 74 Q70 84 50 74 Z" fill="#4f9c7f"/>
    <circle cx="70" cy="44" r="21" fill="${SKIN}"/>${hair}<ellipse cx="82" cy="47" rx="2.6" ry="3.6" fill="#2a2018" stroke="none"/><path d="M77 40 L86 41" stroke-width="2"/><path d="M80 57 L85 56" stroke-width="1.6"/>
@@ -664,6 +698,61 @@ function enemySVG(name,boss,tint){let d=LOOK[name];if(!d)d=LOOK['天魔影'];d=O
   const inner=(ARCH[d.a]||E_human)(d);
   const defs='<filter id="ef" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
   return svgS(inner,defs);}
+
+/* ---------- 青石站长站台（可行走） ---------- */
+SCN.platform=function(c,w,h,R){skyG(c,w,h,'#0d110f','#1a1f1a');
+  c.fillStyle='#1d231f';c.fillRect(0,h*.13,w,h*.66);
+  c.strokeStyle='rgba(255,255,255,.035)';c.lineWidth=1;for(let x=0;x<w;x+=h*.07){c.beginPath();c.moveTo(x,h*.13);c.lineTo(x,h*.79);c.stroke();}
+  for(let y=h*.19;y<h*.79;y+=h*.07){c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+  c.fillStyle='rgba(120,150,130,.06)';c.fillRect(0,h*.5,w,h*.05);
+  c.fillStyle='#090c0a';c.fillRect(0,0,w,h*.13);
+  for(let x=h*.5;x<w;x+=h*.95){const broken=R()<.3;if(!broken)glow(c,x+h*.14,h*.13,h*.45,'rgba(200,240,220,.10)');c.fillStyle=broken?'#2a302c':'#dcf2e8';c.fillRect(x,h*.105,h*.28,h*.02);}
+  for(let x=h*.9;x<w-h*.4;x+=h*1.3){c.fillStyle='#252b26';c.fillRect(x,h*.13,h*.12,h*.66);c.fillStyle='rgba(255,255,255,.05)';c.fillRect(x,h*.13,h*.02,h*.66);c.fillStyle='#1a1f1b';c.fillRect(x-h*.01,h*.72,h*.14,h*.07);}
+  [.24,.56,.84].forEach(f=>{const x=w*f;c.fillStyle='#244236';c.fillRect(x-h*.22,h*.2,h*.44,h*.09);c.strokeStyle='#4f8a73';c.lineWidth=2;c.strokeRect(x-h*.22,h*.2,h*.44,h*.09);
+    c.fillStyle='#d6eee2';c.font=Math.round(h*.055)+'px "Ma Shan Zheng","Noto Serif SC",serif';c.textAlign='center';c.textBaseline='middle';c.fillText('青石站',x,h*.247);});
+  c.strokeStyle='rgba(70,58,44,.9)';c.lineWidth=1.5;c.beginPath();c.moveTo(0,h*.34);const seg=h*.6;for(let x=0;x<w;x+=seg)c.quadraticCurveTo(x+seg/2,h*.4,x+seg,h*.34);c.stroke();
+  for(let x=seg/2;x<w;x+=seg){glow(c,x,h*.37,h*.18,'rgba(240,160,80,.2)');c.fillStyle='#f3b766';c.beginPath();c.arc(x,h*.372,Math.max(2,h*.013),0,6.28);c.fill();}
+  c.fillStyle='#131713';c.fillRect(0,h*.79,w,h);c.fillStyle='rgba(224,184,58,.55)';for(let x=0;x<w;x+=h*.12)c.fillRect(x,h*.79,h*.07,h*.012);
+  c.fillStyle='rgba(255,255,255,.03)';for(let i=0;i<40;i++)c.fillRect(R()*w,h*(.82+R()*.15),h*(.05+R()*.1),1);
+  /* 通风道 */ const vx=w*.035;c.fillStyle='#050706';arch(c,vx,h*.79,h*.32,h*.5);c.fill();c.strokeStyle='#39433d';c.lineWidth=3;c.stroke();
+  c.strokeStyle='rgba(120,140,130,.35)';c.lineWidth=2;for(let i=-3;i<=3;i++){c.beginPath();c.moveTo(vx+i*h*.04,h*.36);c.lineTo(vx+i*h*.04,h*.79);c.stroke();}
+  glow(c,vx,h*.6,h*.2,'rgba(143,214,181,.18)');
+  /* 帐篷区 */ const cols=['#4a4436','#3b4a44','#5a3b32','#454a52','#52482e'];
+  for(let i=0;i<6;i++){const tx=w*(.1+i*.035+R()*.01),tw=h*(.34+R()*.12),th=h*(.24+R()*.08),by=h*.8;c.fillStyle=cols[i%5];c.beginPath();c.moveTo(tx-tw/2,by);c.lineTo(tx,by-th);c.lineTo(tx+tw/2,by);c.fill();
+    c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.moveTo(tx,by-th);c.lineTo(tx+tw/2,by);c.lineTo(tx+tw*.08,by);c.fill();}
+  c.strokeStyle='#5a5040';c.lineWidth=1;c.beginPath();c.moveTo(w*.11,h*.55);c.lineTo(w*.26,h*.53);c.stroke();[.13,.16,.2,.23].forEach(f=>{c.fillStyle=pick2(R,['#8a6a5a','#5a6a7a','#8a8060']);c.fillRect(w*f,h*.545,h*.06,h*.08);});
+  /* 粥棚 */ const sx=w*.335;c.fillStyle='#3a2e22';c.fillRect(sx-h*.36,h*.58,h*.72,h*.21);c.fillStyle='#4a3a2a';c.fillRect(sx-h*.38,h*.56,h*.76,h*.03);
+  for(let i=0;i<6;i++){c.fillStyle=i%2?'#c8b48a':'#8a3a2a';c.beginPath();c.moveTo(sx-h*.4+i*h*.135,h*.36);c.lineTo(sx-h*.4+(i+1)*h*.135,h*.36);c.lineTo(sx-h*.4+(i+1)*h*.135,h*.42);c.lineTo(sx-h*.4+i*h*.135,h*.42);c.fill();}
+  c.strokeStyle='#2a2018';c.lineWidth=3;c.beginPath();c.moveTo(sx-h*.38,h*.36);c.lineTo(sx-h*.38,h*.58);c.moveTo(sx+h*.38,h*.36);c.lineTo(sx+h*.38,h*.58);c.stroke();
+  c.fillStyle='#2a2a2e';c.beginPath();c.ellipse(sx,h*.55,h*.12,h*.035,0,0,6.28);c.fill();c.fillRect(sx-h*.12,h*.48,h*.24,h*.07);glow(c,sx,h*.5,h*.16,'rgba(255,190,120,.25)');
+  c.strokeStyle='rgba(230,230,230,.25)';c.lineWidth=2;for(let i=-1;i<=1;i++){c.beginPath();c.moveTo(sx+i*h*.05,h*.47);c.bezierCurveTo(sx+i*h*.05+8,h*.43,sx+i*h*.05-8,h*.41,sx+i*h*.05,h*.37);c.stroke();}
+  c.fillStyle='#e8dcc0';c.font=Math.round(h*.07)+'px "Ma Shan Zheng",serif';c.textAlign='center';c.fillText('粥',sx,h*.68);
+  /* 告示板 */ const bx=w*.5;c.fillStyle='#5a4228';c.fillRect(bx-h*.24,h*.42,h*.48,h*.3);c.strokeStyle='#2a1e12';c.lineWidth=3;c.strokeRect(bx-h*.24,h*.42,h*.48,h*.3);
+  c.fillRect(bx-h*.2,h*.72,h*.03,h*.07);c.fillRect(bx+h*.17,h*.72,h*.03,h*.07);
+  for(let i=0;i<7;i++){c.save();c.translate(bx-h*.18+R()*h*.34,h*.45+R()*h*.2);c.rotate((R()-.5)*.3);c.fillStyle=pick2(R,['#e8e0cc','#f0e6b0','#d8e0e8']);c.fillRect(0,0,h*.08,h*.06);c.fillStyle='#c8483a';c.beginPath();c.arc(h*.04,h*.006,2,0,6.28);c.fill();c.restore();}
+  /* 火堆 */ const fx=w*.665;glow(c,fx,h*.76,h*.3,'rgba(255,140,60,.3)');c.fillStyle='#3a3430';for(let i=0;i<7;i++){const a=i/7*6.28;c.beginPath();c.arc(fx+Math.cos(a)*h*.07,h*.79+Math.sin(a)*h*.015,h*.022,0,6.28);c.fill();}
+  c.fillStyle='#ff9a4a';c.beginPath();c.moveTo(fx-h*.04,h*.785);c.quadraticCurveTo(fx-h*.03,h*.71,fx,h*.68);c.quadraticCurveTo(fx+h*.03,h*.72,fx+h*.04,h*.785);c.fill();c.fillStyle='#ffe08a';c.beginPath();c.moveTo(fx-h*.018,h*.785);c.quadraticCurveTo(fx,h*.73,fx+h*.018,h*.785);c.fill();
+  /* 发电机 */ const gx=w*.6;c.fillStyle='#3a4038';c.fillRect(gx-h*.13,h*.62,h*.26,h*.17);c.fillStyle='#2a2e28';c.fillRect(gx-h*.1,h*.65,h*.08,h*.08);c.strokeStyle='#5a6a5a';c.lineWidth=2;c.strokeRect(gx-h*.13,h*.62,h*.26,h*.17);c.fillStyle='#8fd6b5';c.fillRect(gx+h*.05,h*.66,h*.03,h*.02);
+  /* 北出口楼梯 */ const ex=w*.93;c.fillStyle=lg(c,ex,0,w,0,[[0,'rgba(255,240,200,0)'],[1,'rgba(255,240,200,.28)']]);c.beginPath();c.moveTo(ex,h*.13);c.lineTo(w,0);c.lineTo(w,h*.79);c.lineTo(ex+h*.1,h*.79);c.fill();
+  for(let i=0;i<8;i++){c.fillStyle=i%2?'#262b26':'#2e342e';c.fillRect(ex+i*h*.07,h*.79-(i+1)*h*.07,w,h*.07);}
+  c.fillStyle='#e0b83a';c.fillRect(ex-h*.06,h*.3,h*.2,h*.07);c.fillStyle='#1a1408';c.font=Math.round(h*.045)+'px "Noto Serif SC",serif';c.textAlign='center';c.fillText('北出口',ex+h*.04,h*.335);
+  for(let i=0;i<9;i++)person(c,R()*w*.9+w*.05,h*(.62+R()*.05),h*.13,'rgba(8,10,8,.55)');
+  vign(c,w,h,.35);};
+function pick2(R,a){return a[Math.floor(R()*a.length)];}
+/* 站台上的 NPC 小人：立绘的头 + 简单身体 */
+const NPC_LOOK={tie:{c:'#6a5638',l:'#2e2a24',w:1.15},he:{c:'#d9a441',l:'#3a3a3e',w:.8,small:1},hong:{c:'#a8352a',l:'#2a2224',w:1},zero:{c:'#dfe5ea',l:'#9aa8b0',w:.95},zhou:{c:'#24262a',l:'#1a1b1e',w:1},guo:{c:'#3a4a5a',l:'#2a2a2a',w:1}};
+function npcFigure(k){const L=NPC_LOOK[k]||NPC_LOOK.tie;const bw=34*L.w,top=L.small?82:74;
+  let head=(PORTRAIT[k]||PORTRAIT.tie)();head=head.replace('<svg viewBox="0 0 200 240"','<svg x="12" y="'+(L.small?16:4)+'" width="76" height="'+(L.small?74:84)+'" viewBox="38 28 124 150"');
+  return `<svg viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="50" cy="155" rx="${bw*.8}" ry="4" fill="rgba(0,0,0,.45)"/>
+   <g stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"><rect x="${50-bw*.36}" y="${top+44}" width="${bw*.3}" height="${150-top-44}" fill="${L.l}"/><rect x="${50+bw*.06}" y="${top+44}" width="${bw*.3}" height="${150-top-44}" fill="${L.l}"/>
+   <path d="M${50-bw/2} ${top+10} Q50 ${top} ${50+bw/2} ${top+10} L${50+bw/2+4} ${top+50} L${50-bw/2-4} ${top+50} Z" fill="${L.c}"/>
+   <path d="M${50-bw/2} ${top+12} L${50-bw/2-8} ${top+40} M${50+bw/2} ${top+12} L${50+bw/2+8} ${top+40}" stroke="${L.c}" stroke-width="8"/></g>${head}</svg>`;}
+function moGhost(){let h=PORTRAIT.mo();return h.replace('<svg viewBox="0 0 200 240"','<svg viewBox="30 20 140 220"');}
+function truckSVG(){return `<svg viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g stroke="${INK}" stroke-width="3" stroke-linejoin="round">
+  <rect x="6" y="20" width="130" height="74" fill="#6a2a22"/><path d="M136 40 L180 40 L206 64 L206 94 L136 94 Z" fill="#8a3a2a"/><path d="M146 48 L176 48 L194 66 L146 66 Z" fill="#8fc6d6"/>
+  <rect x="14" y="30" width="114" height="30" fill="#5a221c"/><path d="M30 34 L60 54 L90 34" fill="none" stroke="#e3b862" stroke-width="4"/>
+  <circle cx="44" cy="98" r="15" fill="#1a1714"/><circle cx="44" cy="98" r="6" fill="#5a5a5a"/><circle cx="172" cy="98" r="15" fill="#1a1714"/><circle cx="172" cy="98" r="6" fill="#5a5a5a"/>
+  <path d="M110 20 L110 0 L130 8 L110 16" fill="#cf4a3c"/></g></svg>`;}
 
 /* ================= 剧情 ================= */
 const SPK={mo:'墨老',tie:'铁叔',he:'阿禾',hong:'红姐',zero:'零号',zhou:'周烈',zhou2:'周烈',tq:'天穹会执事',sx:'堕仙'};
@@ -1593,8 +1682,15 @@ function mapSVG(){const r=S.run;const Y=n=>372-n.r*55;let s='';
      <circle cx="${n.x}" cy="${Y(n)}" r="${rad}" fill="rgba(14,11,8,.88)" stroke="${cur?'#8fd6b5':T.c}" stroke-width="${cur?4:2.5}"/>
      <text x="${n.x}" y="${Y(n)+1}" text-anchor="middle" dominant-baseline="central" font-family="Ma Shan Zheng,STKaiti,KaiTi,serif" font-size="${n.t==='boss'?24:18}" fill="${T.c}">${g}</text>
      ${n.qid?`<circle cx="${n.x+rad-3}" cy="${Y(n)-rad+3}" r="5" fill="#e3b862" stroke="#1b1712" stroke-width="1.5"/>`:''}
-     ${cur?`<path d="M${n.x-6} ${Y(n)-rad-12} L${n.x+6} ${Y(n)-rad-12} L${n.x} ${Y(n)-rad-4} Z" fill="#8fd6b5"/>`:''}</g>`;});
-  return `<svg viewBox="0 0 300 400" class="mapsvg">${s}</svg>`;}
+     </g>`;});
+  const cn=r.nodes[r.pos];s+=tokSVG(cn.x,Y(cn)-(cn.t==='boss'?23:17)+4);
+  return `<svg viewBox="0 0 300 400" class="mapsvg" id="mapsvg">${s}</svg>`;}
+function tokSVG(x,y){return `<g id="tok" transform="translate(${x} ${y})" style="pointer-events:none"><ellipse cx="0" cy="0" rx="10" ry="3" fill="rgba(0,0,0,.55)"/><g class="tf">${heroSprite(S.gender==='f').replace('<svg viewBox="0 0 140 140"','<svg x="-19" y="-36" width="38" height="38" viewBox="0 0 140 140"')}</g></g>`;}
+let TOKBUSY=false;
+function tokWalk(id,done){const r=S.run,tok=document.getElementById('tok');if(!tok||reduce){done();return;}const Y=n=>372-n.r*55;const A=r.nodes[r.pos],B=r.nodes[id];
+  const x0=A.x,y0=Y(A)-(A.t==='boss'?23:17)+4,x1=B.x,y1=Y(B)-(B.t==='boss'?23:17)+4;TOKBUSY=true;tok.classList.add('walking');tok.querySelector('.tf').setAttribute('transform',x1<x0?'scale(-1 1)':'');
+  const t0=performance.now(),D=Math.max(420,Math.hypot(x1-x0,y1-y0)*6);const f=t=>{const k=Math.min(1,(t-t0)/D);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    tok.setAttribute('transform',`translate(${x0+(x1-x0)*e} ${y0+(y1-y0)*e-Math.abs(Math.sin(k*Math.PI*4))*3})`);if(k<1)requestAnimationFrame(f);else{TOKBUSY=false;done();}};requestAnimationFrame(f);}
 function exploreHTML(){const z=C.z;
   if(C.mode==='explore'&&C.e&&S.run)return fightStageHTML()+`<div class="bctl">${C.on?`<button class="btn ghost" id="bSword" data-act="sword">御剑</button><button class="btn ghost" id="bHeal" data-act="heal">回春</button><button class="btn ghost wide" id="bAuto" data-act="auto">自动施法</button>`
     :`<button class="btn gold wide" data-act="back">返回地图</button>`}</div><div class="mystats" id="myStats"></div>`;
@@ -1644,17 +1740,48 @@ VIEWS.bag=()=>{const st=stats();const bag=S.bag.slice().sort((a,b)=>better(b)-be
   <h2 class="sec"><span>行囊 <small>${S.bag.length}/40</small></span>${worse?`<button class="btn sm ghost" data-act="sellWorse">出售 ${worse} 件较弱装备</button>`:''}</h2>
   ${bag.length?bag.map(it=>{const up=better(it);return `<div class="row2 r-${RAR[it.r].c}"><div class="in"><div class="iname">${itemName(it)}${up?'<span class="up">▲ 更强</span>':''}</div><div class="istat">${SLOTN[it.slot]}　${statText(it)}</div></div>
    <div class="ibtn"><button class="btn sm ${up?'':'ghost'}" data-act="equip" data-arg="${it.id}">装备</button><button class="btn sm ghost" data-act="sell" data-arg="${it.id}">售 ${fmt(it.sell)}</button></div></div>`;}).join(''):'<div class="empty">空空如也。去探索或巡猎，有几率掉落装备，首领必掉。</div>'}`;};
-VIEWS.station=()=>{const npcs=Object.keys(NPCS).filter(k=>safe(NPCS[k].unlock));const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id)));const done=QUESTS.filter(q=>qDone(q.id)).length;
-  return `<div class="stage sstage"><canvas class="bgc" data-scene="shelter"></canvas><div class="sinfo"><div class="tt">青石站</div><div>人口 <b>${S.pop}</b> · 你的名号：<b>${stTier()}</b></div></div></div>
-  <div class="npcs">${npcs.map(k=>{const mark=QUESTS.some(q=>q.npc===k&&qSt(q.id)==='ready')?'?':QUESTS.some(q=>q.npc===k&&qAvail(q))?'!':'';
-    return `<button class="npc" data-act="talk" data-arg="${k}"><span class="face">${(PORTRAIT[k]||PORTRAIT.mo)()}</span><span class="nm">${NPCS[k].name}</span>${mark?`<span class="mk ${mark==='?'?'rd':''}">${mark}</span>`:''}</button>`;}).join('')}</div>
-  <h2 class="sec">委托 <small>进行中 ${act.length} · 已完成 ${done}</small></h2>
+const SPOTS=()=>[
+ {k:'vent',x:.035,label:'通风道 · 修炼',act:()=>{TAB='cult';render();}},
+ {k:'he',x:.21,npc:1},
+ {k:'stall',x:.335,label:'粥棚',act:()=>toast(pick(['王婶给你盛了一碗粥，稠得能立住筷子。','粥棚前的队伍比昨天短了些。','王婶说：“仙师，多吃点，你瘦了。”']))},
+ {k:'tie',x:.455,npc:1},
+ {k:'board',x:.5,label:'告示板 · 委托',act:()=>{const q=$('#qlist');if(q)q.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});}},
+ {k:'gen',x:.6,label:'发电机',act:()=>toast(F('guoJoined')?'郭师傅钻在发电机底下，只露出两条腿：“别吵，马上就好。”':'发电机嗡嗡作响，时好时坏。')},
+ {k:'zhou',x:.69,npc:1},{k:'zero',x:.76,npc:1},{k:'hong',x:.83,npc:1},
+ {k:'exit',x:.965,label:'北出口 · 历练',act:()=>{TAB='fight';render();}}
+].filter(s=>!s.npc||safe(NPCS[s.k].unlock));
+function npcMark(k){return QUESTS.some(q=>q.npc===k&&qSt(q.id)==='ready')?'?':QUESTS.some(q=>q.npc===k&&qAvail(q))?'!':'';}
+VIEWS.station=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id)));const done=QUESTS.filter(q=>qDone(q.id)).length;const sp=SPOTS();const npcs=Object.keys(NPCS).filter(k=>safe(NPCS[k].unlock));
+  return `<div class="stage wstage" id="wstage"><div class="world" id="world"><canvas class="bgc" id="wbg"></canvas>
+   ${safe(NPCS.hong.unlock)?`<div class="truck" style="left:89%">${truckSVG()}</div>`:''}
+   ${sp.map(o=>o.npc?`<button class="wnpc" data-walk="${o.k}" style="left:${o.x*100}%" aria-label="${NPCS[o.k].name}"><span class="fig">${npcFigure(o.k)}</span><span class="tagn">${npcMark(o.k)?`<b class="mk ${npcMark(o.k)==='?'?'rd':''}">${npcMark(o.k)}</b>`:''}${NPCS[o.k].name}</span></button>`
+     :`<button class="wspot" data-walk="${o.k}" style="left:${o.x*100}%"><span>${o.label}</span></button>`).join('')}
+   <button class="mog" id="ghost" data-walk="mo" aria-label="墨老">${moGhost()}${npcMark('mo')?`<b class="mk ${npcMark('mo')==='?'?'rd':''}">${npcMark('mo')}</b>`:''}</button>
+   <div class="walker" id="walker"><div class="wi">${heroSprite(S.gender==='f')}</div></div></div>
+   <div class="sinfo"><div>人口 <b>${S.pop}</b> · 名号 <b>${stTier()}</b></div></div><div class="whint">点地面走动，点人物交谈</div></div>
+  <div class="npcs">${npcs.map(k=>`<button class="npc" data-walk="${k}"><span class="face">${(PORTRAIT[k]||PORTRAIT.mo)()}</span><span class="nm">${NPCS[k].name}</span>${npcMark(k)?`<span class="mk ${npcMark(k)==='?'?'rd':''}">${npcMark(k)}</span>`:''}</button>`).join('')}</div>
+  <h2 class="sec" id="qlist">委托 <small>进行中 ${act.length} · 已完成 ${done}</small></h2>
   ${act.length?act.map(q=>{const st=qSt(q.id);return `<div class="qcard ${st==='ready'?'ready':''}"><div class="in"><div class="iname">${q.title}<span class="lv">${NPCS[q.npc].name}</span></div><div class="istat">${q.desc}</div><div class="istat qp">${qProgText(q)}</div></div>
-    ${st==='ready'?`<button class="btn sm gold" data-act="talk" data-arg="${q.npc}">交付</button>`:q.obj.type==='fight'?`<button class="btn sm red" data-act="qfight" data-arg="${q.id}" ${C.on?'disabled':''}>迎战</button>`:(q.obj.type==='node'||q.obj.type==='run')?`<button class="btn sm ghost" data-act="goz" data-arg="${q.obj.z}">前往</button>`:''}</div>`;}).join(''):'<p class="empty">点上面的人和他们聊聊。头顶有「!」的人有事相托，「?」的人在等你回话。</p>'}
+    ${st==='ready'?`<button class="btn sm gold" data-walk="${q.npc}">交付</button>`:q.obj.type==='fight'?`<button class="btn sm red" data-act="qfight" data-arg="${q.id}" ${C.on?'disabled':''}>迎战</button>`:(q.obj.type==='node'||q.obj.type==='run')?`<button class="btn sm ghost" data-act="goz" data-arg="${q.obj.z}">前往</button>`:''}</div>`;}).join(''):'<p class="empty">在站台上走走，和大家聊聊。头上有「!」的人有事相托，「?」的人在等你回话。</p>'}
   <h2 class="sec">声望</h2>
   <div class="row2"><div class="in"><div class="iname">青石站 <span class="lv">${S.rep.station}</span></div><div class="istat">名号「${stTier()}」。声望越高，铁叔每天送来的补给越多。</div></div></div>
   <div class="row2"><div class="in"><div class="iname">红鹞商队 <span class="lv">${S.rep.caravan}</span></div><div class="istat">坊市折扣 ${Math.round((1-disc())*100)}%</div></div></div>
   <div class="row2"><div class="in"><div class="iname">天穹会 <span class="lv">${S.rep.tq}</span></div><div class="istat">${S.rep.tq<=-4?'他们已经把你列为头号仇敌。':S.rep.tq<0?'他们记住了你的名字。':'他们还不太在意你。'}</div></div></div>`;};
+/* ---------- 站台行走 ---------- */
+const WK={x:0,tx:0,raf:0,cb:null,ww:0,sw:0,sh:0,face:1};
+function wkSetup(){const st=$('#wstage');if(!st)return;const r=st.getBoundingClientRect();if(r.width<2)return;WK.sw=r.width;WK.sh=r.height;WK.ww=Math.round(Math.max(r.width*2.2,r.height*4.6));
+  $('#world').style.width=WK.ww+'px';paintTo($('#wbg'),'platform');WK.x=(typeof S.stX==='number'?S.stX:.45)*WK.ww;wkDraw();}
+function wkDraw(){const h=$('#walker');if(!h)return;h.style.left=WK.x+'px';h.classList.toggle('flip',WK.face<0);
+  const g=$('#ghost');if(g){g.style.left=(WK.x-WK.face*WK.sh*.32)+'px';g.classList.toggle('flip',WK.face<0);}
+  const cam=Math.max(0,Math.min(WK.ww-WK.sw,WK.x-WK.sw/2));$('#world').style.transform=`translateX(${-cam}px)`;}
+function wkGo(x,cb,faceTo){cancelAnimationFrame(WK.raf);const h=$('#walker');if(!h)return;WK.tx=Math.max(WK.sh*.2,Math.min(WK.ww-WK.sh*.2,x));WK.cb=cb;
+  if(Math.abs(WK.tx-WK.x)>2)WK.face=WK.tx>WK.x?1:-1;h.classList.add('walking');let last=performance.now();const sp=WK.sh*(reduce?6:1.25);
+  const f=t=>{const dt=Math.min(.05,(t-last)/1000);last=t;const d=WK.tx-WK.x,stp=sp*dt;
+    if(Math.abs(d)<=stp){WK.x=WK.tx;if(faceTo!==undefined)WK.face=faceTo;wkDraw();const w=$('#walker');if(w)w.classList.remove('walking');S.stX=WK.x/WK.ww;const c=WK.cb;WK.cb=null;if(c)c();return;}
+    WK.x+=Math.sign(d)*stp;wkDraw();WK.raf=requestAnimationFrame(f);};WK.raf=requestAnimationFrame(f);}
+function wkTo(k){if(TAB!=='station'){TAB='station';render();}if(k==='mo'){npcTalk('mo');return;}const o=SPOTS().find(s=>s.k===k);if(!o)return;
+  const st=$('#wstage');if(st&&st.getBoundingClientRect().top<0)st.scrollIntoView({block:'start'});const nx=o.x*WK.ww;
+  if(o.npc){const side=WK.x<=nx?-1:1;wkGo(nx+side*WK.sh*.3,()=>npcTalk(k),-side);}else wkGo(nx,o.act);}
 VIEWS.story=()=>`<h2 class="sec">卷宗 <small>灵潮三年 · 青石站</small></h2>
   <div class="karma">道心：<b>${karmaName()}</b>（${S.karma>0?'+':''}${S.karma}）　${S.karma>=3?'回春更强，冲关更稳。':S.karma<=-3?'出手更狠，暴击更高。':'你的选择会改变道心。仁心与魔心各有加成。'}<br>见闻 ${S.seenEv.length} 处 · 探索 ${S.runs} 趟</div>
   ${STORY.map(ch=>{const seen=S.seen.includes(ch.id),pend=S.pending.includes(ch.id),cls=(pend?'new':seen?'seen':'lock')+(ch.side?' side':'');
@@ -1669,7 +1796,7 @@ VIEWS.story=()=>`<h2 class="sec">卷宗 <small>灵潮三年 · 青石站</small>
 function paintAll(){view.querySelectorAll('canvas[data-scene]').forEach(cv=>paintTo(cv,cv.dataset.scene));}
 function render(){const prev=view.dataset.tab===TAB?view.scrollTop:0;view.innerHTML=VIEWS[TAB]();view.dataset.tab=TAB;view.scrollTop=prev;
   document.querySelectorAll('.tab').forEach(b=>{b.setAttribute('aria-selected',b.dataset.tab===TAB);});
-  breakSig='';requestAnimationFrame(paintAll);live();if(TAB==='fight'&&$('#sprE')){drawEnemy(false);updateFight(true);}
+  breakSig='';requestAnimationFrame(()=>{paintAll();if(TAB==='station')wkSetup();});live();if(TAB==='fight'&&$('#sprE')){drawEnemy(false);updateFight(true);}
   if(TAB==='fight'){const m=view.querySelector('.zc[aria-pressed="true"]');if(m)m.scrollIntoView({block:'nearest',inline:'center'});}}
 function live(){const need=req(S.stage);
   $('#hName').textContent=(S.name||'无名')+(S.rebirth?' · 第'+(S.rebirth+1)+'世':'');$('#hRealm').textContent=STAGES[S.stage].name;
@@ -1705,7 +1832,7 @@ const ACT={
    if(z===7)C.sub='hunt';if(!S.visited.includes(z)){S.visited.push(z);checkStory();}render();},
  sub:a=>{if(busyExplore())return;if(a==='explore'&&C.mode==='hunt'&&C.on){C.on=false;C.auto=false;C.e=null;}C.sub=a;if(C.mode==='explore'){C.mode='hunt';C.e=null;}render();},
  run:()=>{if(C.on&&C.mode==='hunt'){C.on=false;C.auto=false;}startRun();},
- mv:a=>{const r=S.run;if(!r)return;if(+a===r.pos&&!r.nodes[r.pos].done){if(C.on&&C.mode==='hunt'){C.on=false;C.auto=false;}if(!C.on)resolveNode(r.nodes[r.pos]);}else moveTo(+a);},back:()=>{C.e=null;C.mode='hunt';nodeDone();},retreat:()=>retreat(),
+ mv:a=>{const r=S.run;if(!r||TOKBUSY)return;if(+a===r.pos&&!r.nodes[r.pos].done){if(C.on&&C.mode==='hunt'){C.on=false;C.auto=false;}if(!C.on)resolveNode(r.nodes[r.pos]);}else if(canMove(+a)){if(C.on&&C.mode==='hunt'){C.on=false;C.auto=false;C.e=null;}tokWalk(+a,()=>moveTo(+a));}},back:()=>{C.e=null;C.mode='hunt';nodeDone();},retreat:()=>retreat(),
  go:()=>{if(C.on){C.on=false;C.auto=false;C.e=null;C.msg='你退出了战斗。';drawEnemy();updateFight(true);}else startFight(false);},
  boss:()=>{if(S.bossDown.includes(C.z))startFight(true);},special:()=>{if(S.special){C.sub='hunt';startFight(true,S.special);render();}},
  sword:()=>sword(),heal:()=>heal(),
@@ -1732,7 +1859,9 @@ const ACT={
  reset:()=>{if(!resetArm){resetArm=true;render();setTimeout(()=>{if(resetArm){resetArm=false;if(TAB==='story')render();}},4000);return;}
    resetArm=false;try{localStorage.removeItem(KEY);}catch(e){}S=fresh();C.on=false;C.auto=false;C.e=null;C.z=0;C.mode='hunt';render();intro();}
 };
-view.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;if(b.dataset.act!=='import')importArm=false;ACT[b.dataset.act]&&ACT[b.dataset.act](b.dataset.arg,b);});
+view.addEventListener('click',e=>{const w=e.target.closest('[data-walk]');if(w){wkTo(w.dataset.walk);return;}
+  const ws=e.target.closest('#wstage');if(ws&&!e.target.closest('button')){const r=ws.getBoundingClientRect();const cam=Math.max(0,Math.min(WK.ww-WK.sw,WK.x-WK.sw/2));wkGo(e.clientX-r.left+cam);return;}
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;if(b.dataset.act!=='import')importArm=false;ACT[b.dataset.act]&&ACT[b.dataset.act](b.dataset.arg,b);});
 view.addEventListener('change',e=>{if(e.target.id==='usePill'){S.usePill=e.target.checked;breakSig='';live();}});
 view.addEventListener('pointerdown',e=>{const st=e.target.closest('#cstage');if(!st||e.target.closest('button'))return;e.preventDefault();
   const g=tapGain();S.taps++;addQi(g);const r=st.getBoundingClientRect();
@@ -1741,7 +1870,7 @@ view.addEventListener('pointerdown',e=>{const st=e.target.closest('#cstage');if(
     q.style.cssText=`left:${cx}px;top:${cy}px;--x:${Math.cos(a)*d}px;--y:${Math.sin(a)*d}px;animation-delay:${i*30}ms`;st.appendChild(q);setTimeout(()=>q.remove(),900);}}
   live();});
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.disabled)return;TAB=b.dataset.tab;resetArm=false;importArm=false;JPICK=false;view.scrollTop=0;render();}));
-let rsT=0;addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{paintAll();if(SC)paintTo($('#vbg'),SC.bg);},200);});
+let rsT=0;addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{paintAll();if(TAB==='station')wkSetup();if(SC)paintTo($('#vbg'),SC.bg);},200);});
 
 /* ---------- 随机奇遇 / 每日补给 ---------- */
 function idleEventTick(dt){if(!S.started||document.hidden||!OV_FREE())return;S.evClock=(S.evClock||0)+dt;if(S.evClock<270)return;S.evClock=0;
