@@ -625,6 +625,9 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .goalbar{border-color:rgba(216,180,104,.7);background:linear-gradient(90deg,rgba(42,28,18,.92),rgba(20,14,10,.85))}
 #jh .jh-top .btn.ghost{background:rgba(0,0,0,.35);color:#f6e2b0;border-color:#b8904a}
 
+.cstage.img .sit{bottom:16%;width:40%;filter:drop-shadow(0 8px 10px rgba(30,20,10,.55)) sepia(.12) saturate(.92) brightness(1.02)}
+.cstage.img .ring{bottom:14%;opacity:.7}
+
 </style>
 </head>
 <body>
@@ -3779,11 +3782,11 @@ function xianFigure(f,r){const W=240,H=300,[c,x]=hdCv(W,H,3);const P=robeOf(r),s
  if(f){x.strokeStyle='#e8c060';x.lineWidth=1.5;x.beginPath();x.moveTo(cx+10,34);x.lineTo(cx+22,48);x.stroke();x.fillStyle='#e05a7a';x.beginPath();x.arc(cx+22,49,2.2,0,6.283);x.fill();}
  return c;}
 heroSit=function(f){const r=realmIdx();const cv=cvMemo('xian|'+(f?1:0)+'|'+Math.min(3,r),()=>xianFigure(f,r));return `<img src="${cv.toDataURL()}" alt="${f?'少女':'少年'}盘膝修炼" draggable="false">`;};
-const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.stage>=LAST)return 'core';return r>=1?(r>=5?'xianshan':'xiulian'):_cultScene();};
+const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.stage>=LAST)return 'core';return r>=5?'xianshan':(r>=1||ART_HAVE.includes('scene_xiulian'))?'xiulian':_cultScene();};
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=[];
+const ART_HAVE=['scene_xiulian'];
 const ART_IMG={};
 function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();paintAll&&paintAll();};im.src='art/'+k+(k.startsWith('por_')?'.png':'.jpg');});}
 function SCC_CLEAR(){try{_scnCache.clear();}catch(e){}}
@@ -4984,7 +4987,7 @@ function cultScene(){const mz=maxZone();return S.stage>=LAST?'core':mz===0?'shel
 function ringSVG(){let t='';for(let i=0;i<48;i++){const a=i/48*6.283,r1=i%4?95:91;t+=`<line x1="${100+Math.cos(a)*r1}" y1="${100+Math.sin(a)*r1}" x2="${100+Math.cos(a)*99}" y2="${100+Math.sin(a)*99}" stroke="rgba(236,227,207,.35)" stroke-width="${i%4?1:2}"/>`;}
   return `<svg viewBox="0 0 200 200" aria-hidden="true"><g class="spin">${t}</g><circle cx="100" cy="100" r="86" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><circle id="dtP" cx="100" cy="100" r="86" fill="none" stroke="#8fd6b5" stroke-width="4" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="540.35" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 6px #8fd6b5)"/></svg>`;}
 VIEWS.cult=()=>`<section class="cult">
-  <div class="stage cstage" id="cstage" role="button" aria-label="点击引气"><canvas class="bgc" data-scene="${cultScene()}"></canvas>
+  <div class="stage cstage ${ART_IMG['scene_'+cultScene()]?'img':''}" id="cstage" role="button" aria-label="点击引气"><canvas class="bgc" data-scene="${cultScene()}"></canvas>
    <div class="ring">${ringSVG()}</div><div class="sit" id="sit">${heroSit(S.gender==='f')}</div>
    <div class="cname">${STAGES[S.stage].name}</div><div class="ctap">点击画面引气入体</div></div>
   <div class="qi-num"><b id="cQi"></b> / <span id="cReq"></span> 灵气</div>
