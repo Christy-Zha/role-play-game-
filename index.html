@@ -5781,6 +5781,453 @@ Object.assign(EVENTS,{soul_ghost:{title:'游魂',g:'魂',zones:'cult',lines:['�
  {t:'问它这里藏着什么',act:()=>'游魂指了指脚下。“我埋的。给你吧，我用不上了。”'+gS(zs(8))+gMat('xue',1)},
  {t:'炼化它',act:()=>{kar(-2);S.dao.mo+=1;return '它尖叫着化成了一缕阴气，被你吸了进去。'+gQi(.6);}}]}});
 
+/* ================= 第一卷·青石：按剧本改编的主线 =================
+   新存档走这一套（F('v1')）。章节沿用旧 id（prologue/mock/ahe/dongtian/ratking/zhouleave/zhuji/exposed/hunted），
+   这样后面的剧情、羁绊、委托都还能接得上；新增章节用 v1_ 开头。 */
+Object.assign(SPK,{qin:'秦婶',dong:'董文庭',wuh:'乌衡',ma:'马奶奶',liu:'大刘'});
+Object.assign(PORTRAIT,{dong:PORTRAIT.tq,wuh:PORTRAIT.tq});
+const V1=k=>S.flags[k];
+const v1Ch=id=>STORY.find(c=>c.id===id);
+function v1Set(id,o){const ch=v1Ch(id);if(!ch)return;const after0=ch.after;Object.assign(ch,o);if(o.after===undefined)ch.after=after0;
+ const a=ch.after;ch.after=()=>{try{a&&a();}catch(e){console.error(e);}rwFlush(0);};}
+function v1Add(o,beforeId){const ch=Object.assign({},o);const a=o.after;ch.after=()=>{try{a&&a();}catch(e){console.error(e);}rwFlush(0);};
+ const i=beforeId?STORY.findIndex(c=>c.id===beforeId):-1;if(i>=0)STORY.splice(i,0,ch);else STORY.push(ch);}
+const v1If=(c,A,B)=>rwIf(c,A,B||[]);
+const v1Pill=()=>S.flags.pill||'';
+
+/* 瓶颈战：炼气三层「身关」是白塔站的守门鼠，六层「生死关」是鼠潮 */
+const V1_BN={
+ 2:{bg:0,foes:()=>[mkCustom(0,{look:'变异鼠',name:'石皮鼠·守门',st:4,m:1.5,boss:true})],win:()=>{S.flags.v1bn1=1;}},
+ 5:{bg:'town',foes:()=>[mkCustom(0,{look:'变异鼠',name:'石皮鼠',st:5,m:1.1}),mkCustom(0,{look:'变异鼠',name:'铁骨鼠',st:7,m:1.6,boss:true}),mkCustom(0,{look:'变异鼠',name:'石皮鼠',st:5,m:1.1})],
+  win:()=>{S.flags.v1bn2=1;if(V1('ratJade')==='use')S.expo=Math.min(99,(S.expo||0)+30);}}
+};
+
+/* ---------- 一 · 灵潮之夜 ---------- */
+v1Set('prologue',{title:'青石·灵潮之夜',lines:[
+ {fn:()=>{S.flags.v1=1;}},
+ {fn:()=>cgShow('lingchao')},
+ {bg:'overpass'},
+ ['','天是铁锈色的。高架桥断成三截，最长的那截斜插进一栋写字楼里，楼顶长出一棵碗口粗的槐树，叶子泛着青光。'],
+ ['','灵潮之后第三年。你二十岁，五行杂灵根，觉醒三年，一直卡在炼气一层。在青石站，你是拾荒的。'],
+ ['','天黑前要带回三件物资。胶带，一件。保险丝，算半件。'],
+ ['','社区诊所的药柜早被翻过二十遍。你拆下第三格的背板，后面卡着一瓶阿莫西林。'],
+ ['@','……二。'],
+ ['','脚下的地砖「咔」地一响。砖缝里渗出一缕蓝光，像水，又像烟。你撬开地砖——底下躺着半块青白的玉简，断口参差，纹路里流着光。'],
+ ['','你隔着布把它捡起来。洞口的土是新翻的，旁边有半个比你大一圈的鞋印。'],
+ {bg:'metro'},
+ ['','回站的路上，一只铁背狼从车壳后面绕了出来。它把你扑倒在地，撬棍横在它嘴里，牙离你的脸只有一拳。'],
+ ['','胸口一烫。贴身口袋里的玉简在发热。一个苍老、沙哑的声音在你脑子里响起来——'],
+ ['mo','……左边。它左眼是瞎的。'],
+ ['','你一拳砸向狼的左眼。它看不见，没有躲。'],
+ ['','狼不动了。你跪在地上喘气，浑身是汗。'],
+ ['@','……刚才说话的，是谁？'],
+ ['mo','吵什么。老夫睡了三百年，刚醒，头疼。'],
+ {bg:'shelter'},
+ ['zhou','六点四十七。拾荒的，你知道规矩，六点半关门。'],
+ ['','站口的灯泡下，周烈扛着开了刃的消防斧，斧刃上隐隐有火光。他是站里第一个觉醒的人，炼气五层。'],
+ ['tie','行了。（拿起药瓶，眼睛亮了一下）药收了，算你三天的粥。进去吧。'],
+ ['zhou','下次再晚，门不开。我不是开玩笑。'],
+ ['','车厢门口，阿禾抱着膝盖在油灯下画画。她十一岁，是你捡回来的。你把半支红蜡笔放在她面前。'],
+ ['he','……谢谢{bro}。'],
+ ['','夜里，你把玉简举到眼前。断口那一侧，光是断的。'],
+ ['mo','这玉简原本是一整块。另一半，是被人刚刚掰走的。断口还是新的。'],
+ ['mo','拿走它的人，今晚就在你捡到它的地方。老夫看见了他的背影。他也看见了老夫。'],
+ ['@','那我该怎么办？'],
+ {c:[
+  {t:'「我凭什么信你？」',k:0,fx:{flags:{proDoubt:1},aff:{mo:-5}},r:[['mo','不信也行。等你下回被狼按在地上，再来求老夫。'],['','你没有扔掉玉简。']]},
+  {t:'「教我。我要护住站里的人。」',k:1,fx:{flags:{proGuard:1},aff:{mo:10,tie:5}},r:[['mo','好。心里有要护的人，道心就稳。']]},
+  {t:'「修仙，能让我比周烈还强吗？」',k:-1,fx:{flags:{proPower:1},aff:{mo:-3}},r:[['mo','比他强？那是最不值钱的目标。……不过，有野心是好事。']]}
+ ]},
+ ['mo','拼完整的玉简，才是完整的东西。半块，谁都不甘心。他会来找你的。'],
+ ['','【江湖页点地面行走、点人物交谈；碰到妖兽会进入回合制战斗。修为只靠历练和丹药：打妖兽、做委托直接涨修为；服下聚气丹得药力，到「修炼」页点画面炼化。去地铁站斩妖三只，下一章就会来。】']
+]});
+
+/* ---------- 二 · 粥棚 ---------- */
+v1Set('mock',{title:'青石·粥棚',cond:()=>S.seen.includes('prologue')&&((S.kills[0]||0)>=3||S.stage>=1),hint:'在废弃地铁站斩妖三只',lines:[
+ ['','粥棚搭在站厅中央，就是以前的安检口。黑板上写着今天的数：「存米 412 斤。距冬至 61 天。」'],
+ ['qin','（勺子往锅底多沉了一寸）来。铁叔说你那瓶药是好东西。小的多吃点，长个子。'],
+ ['','你端着碗要走。周烈靠在闸机上，身后是护卫队的三个人。'],
+ ['zhou','秦婶，护卫队一天吃两顿，干的是拼命的活。他呢？捡点破烂，粥比我们还稠。'],
+ ['zhou','拾荒的，三年了，站里五十多个觉醒的人，就你一个还在一层。你自己不臊吗？'],
+ ['','他一根手指戳在你的碗沿上。一缕火光窜出来，碗里的粥「滋」地沸了。你的手指烫红了，没有松手。'],
+ {c:[
+  {t:'放下碗：「那这碗，给护卫队。」',k:1,fx:{flags:{endure:1,zlFace:'轻视'},aff:{zhou:5,tie:5,qin:10}},r:[['zhou','……没意思。'],['','他转身走了。那碗粥没人动。'],['mo','能忍，好。忍不是怕，是还没到时候。']]},
+  {t:'「周烈。一年之内，我会走到你前面。」',k:0,fx:{flags:{vow:1,zlFace:'较劲'},aff:{zhou:10}},r:[['','粥棚周围一下子安静了。然后整个队伍都在笑。'],['','周烈没有笑。他把手指从碗沿上拿开。'],['zhou','好。我记着。']]},
+  {t:'把滚烫的粥扣在他手背上',k:-1,fx:{flags:{punch:1,zlFace:'敌视'},aff:{zhou:-15,tie:-5}},r:[['','粥水还没贴上去就被他手背上的火光蒸干了。下一秒，你被一拳打在小腹上，弯腰跪了下去。'],['zhou','（拍了拍手）炼气一层。'],['tie','周烈！']]}
+ ]},
+ {bg:'clan'},
+ ['','站长室。墙上挂着二号线的线路图，红笔圈了几个站，叉了更多的站。铁叔把一个缠了铁丝的罐头盒推到桌子中间。'],
+ ['tie','周烈那孩子，爸妈都死在灵潮那天。他最怕的不是妖兽，是有一天他不是站里最强的那个，就没人记得他了。'],
+ ['','盒子里垫着棉花。棉花上躺着一颗土黄色的丹药，龙眼大小，三道细细的金纹。你体内那点灵力，不由自主地朝它涌去。'],
+ ['mo','……筑基丹。三纹，下品。居然还有人炼得出这东西。'],
+ ['tie','灵潮前一个月，一个穿道袍的老头在站台上晕倒了。我给他喂了口水，他把这个塞给我，说「马上要用得着了」。'],
+ ['tie','给周烈吃了，站里就有一个真正护得住的人。拿去坊市卖了，听说能换十几吨米，全站过冬。我想了三年了。所以我想听听一个会拆药柜背板的人怎么想。'],
+ {bg:'shelter'},
+ ['@','墨老。筑基丹是什么？'],
+ ['mo','炼气修到头，体内的灵力是一池水。筑基，就是给这池水修一道堤。筑基丹是修堤的石头。'],
+ ['mo','你问怎么从一层往上走。打坐没用，杂灵根吸进来的灵气，五成漏掉。你只有两条路：杀妖兽，妖兽的灵核里有现成的灵力；或者吃丹。'],
+ ['mo','老夫的眼睛借你，你的手借老夫。先把你弄到三层。'],
+ ['','【墨老指点：战斗中会提示敌人的弱点。夜里出站猎妖，是这一卷最主要的修为来源。】']
+]});
+
+/* ---------- 三 · 另一半（萧尘初见在「宿敌·另一半」，这里接着跟踪） ---------- */
+{const rv=v1Ch('rv1');if(rv){const c0=rv.cond;rv.cond=()=>c0()&&(!F('v1')||S.seen.includes('mock'));}}
+v1Add({id:'v1_east',title:'青石·东郊',g:'郊',bg:'overpass',cond:()=>F('v1')&&S.seen.includes('rv1')&&(S.kills[0]||0)>=6,hint:'见过萧尘之后，在地铁站再斩妖几只',lines:[
+ ['','七个夜晚。编织袋里的灵核从一颗变成了七颗，米粒大小，发着淡绿的光。灵核在你掌心化开，渗进去五分，漏掉三分。'],
+ ['mo','别急。漏三分已经比头一天好了。头一天你漏八分。'],
+ ['','第七夜，你远远看见一件长到膝盖的黑大衣。萧尘。你没有叫他，跟了上去。'],
+ ['','四公里。他一次都没有回头。终点是东郊避难所——一年前它和青石站差不多，穷、乱，每天死人。'],
+ ['','现在它外面立起了一圈三米高的水泥墙，墙上每隔十米就有一盏发着淡金色光的石头灯。墙上挂着旗子，白底，绣着一颗七角星。站岗的守卫，是炼气五层。'],
+ ['xiao','我住这里。七〇二。你上周一给我登记的。你叫吴刚，还给我发了一支烟。'],
+ ['','守卫翻了半天本子，很困惑：「……是有这个号。我给你发过烟？」门开了。萧尘进去了。'],
+ ['','门关上之后，两个守卫对视了一眼：「刚才进去了一个人？」「……好像是。」'],
+ ['mo','那半块玉简在吃他。先吃别人记得他的那一部分。'],
+ ['@','那我这半块呢？'],
+ ['mo','你这半块里住的是老夫。老夫不吃人。他那半块里住的，不是老夫。'],
+ ['','墙里传来整齐的口号声，几十个人在晨练，每一拳都带着灵力的破空声。你想起青石站黑板上的那两个数：四百一十二斤。六十一天。'],
+ {fx:{flags:{v1East:1}}}
+]},'ahe');
+
+/* ---------- 四 · 阿禾的蓝光 ---------- */
+v1Set('ahe',{title:'青石·阿禾的蓝光',cond:()=>F('v1')?S.seen.includes('v1_east'):S.stage>=4,hint:'跟着萧尘去一趟东郊',lines:[
+ ['','你从东郊回来，天已经亮了。车厢门口没有人，阿禾的画板扔在地上。最上面一张：轨道下面有一道裂缝，裂缝里涂满了蓝色。角上写着「地底下有星星」。'],
+ {bg:'metro'},
+ ['','站台尽头，秦婶跪在地上，怀里抱着阿禾。她的右手从指尖到手肘爆出一条条细细的蓝线，像叶脉，一点一点往肩膀爬。'],
+ ['he','{bro}……我看到星星了。就在轨道下面。我想拿一颗给你……你天天晚上在外面，外面太黑了……'],
+ ['zhou','灵毒。都让开，别碰她的手。（压低声音）我见过三次，都是凡人碰了地里渗出来的灵液。没一个活过三天。'],
+ {bg:'shelter'},
+ ['tie','上回商队来，我用两箱罐头换了一颗「清灵丸」。他们说是仿的，药效不到三成。大概能拖两天。'],
+ ['mo','……有一个办法。这玉简里有一方洞天，太一观的丹炉只剩个底座，但炉底能「温养」：把丹放进去睡一夜，杂质烧掉，药力沉下来。三成的药，带得出五成。'],
+ ['mo','代价是灵核，你那一袋，一半要喂进去。还有——它发力的时候会发光。'],
+ {bg:'dongtian'},
+ ['','你把车厢的窗全用纸板封了，闭上眼睛。黑暗里亮起一片灰蒙蒙的空间，青石地碎了一半，中央一个三足石座。石座边坐着一个老人的影子，灰袍，很瘦。'],
+ ['@','……墨老？'],
+ ['mo','看什么看。丹。灵核，一颗一颗来。'],
+ ['','灵核投进去，石座的裂纹里亮起红光，在空中勾出半个炉身。灰褐的药丸剥落一层灰，又一层，露出淡绿的芯。纸板缝里，漏出一丝青光。'],
+ {bg:'shelter'},
+ ['','阿禾吃下那颗淡绿的丹。蓝线停在肩膀下面一寸，一点点往回退，退到手腕，不动了。'],
+ ['mo','毒压住了，拔不出来。凡人没有经脉，毒没有路走。两个办法：你用自己的灵力给她开一条路，把毒引到你身上——你五天七夜打下来的修为，就没了。或者去隐道里猎蓝鳞蛇，蛇胆能溶灵毒。慢，一来一回要一天，毒在她骨头里多渗一分。'],
+ {c:[
+  {t:'渡灵气给她',k:1,fx:{qiMul:.5,pills:1,flags:{saveHe:1},aff:{he:30,tie:15}},r:[
+   ['','你把阿禾的右手平放在掌心，把那一池浅浅的灵力探进她的手腕。蓝线像水遇到了低处，一股脑涌向你。冷，比冬天的轨道还冷。'],
+   ['','天亮的时候，阿禾的手腕上只剩一个淡淡的蓝点，像一颗痣。'],
+   ['he','{bro}，你的手好冰。'],
+   ['mo','……笨。但是是个好笨蛋。'],['','（修为散去一半）']]},
+  {t:'下隐道猎蓝鳞蛇',k:0,fx:()=>{S.flags.heScar=1;aff('he',-10,true);aff('tie',-5,true);rwFight({title:'蓝鳞蛇',bg:0,many:[{look:'污水蛭',name:'蓝鳞蛇',beast:1,st:Math.max(2,S.stage+1),m:1.4,boss:true}],noFlee:1,
+    win:()=>{gQi(.4);return '蛇胆带回来了。温养一夜，阿禾的蓝线退得干干净净。\n可每逢阴天下雨，她那只手都会疼。';},
+    lose:()=>{gQi(.1);return '你被蛇尾抽回了栅栏边。周烈一言不发地下去，带回了蛇胆。\n阿禾好了，可每逢阴天下雨，她那只手都会疼。';}});},r:[
+   ['','你拿起撬棍走到站台尽头的栅栏前。周烈靠在栅栏上，在等你。'],
+   ['zhou','隐道里的东西，护卫队三个人下去过一次，回来两个。'],
+   ['@','那你闪开。'],
+   ['','他盯着你看了很久，把腰上的军用手电筒解下来扔给你。'],
+   ['zhou','蛇怕光。别照它的眼睛，照它的尾巴。它会回头咬自己。']]}
+ ]},
+ ['','几天后的夜里，阿禾坐在车厢门口画画。这次她画的是你：一个很瘦的小人，胸口涂了一块蓝色。'],
+ ['he','{bro}，你胸口也有星星。我那天晚上从纸板缝里看到了。我谁也没告诉。……这是不是不能告诉别人的？'],
+ ['@','……对。谁也不能说。'],
+ ['','她认真地点头，把那张画撕下来，折成小块，放进油灯的火苗里。你第一次意识到：秘密是会漏的。而这一次，它漏给了一个十一岁的孩子。']
+]});
+
+/* ---------- 五 · 玉简洞天 ---------- */
+v1Set('dongtian',{title:'青石·玉简洞天',cond:()=>F('v1')?S.seen.includes('ahe'):(S.stage>=6||S.kills[0]>=6),hint:'阿禾的事过去之后',lines:[
+ ['','站口的门框上蹲着一只乌鸦。比普通乌鸦大一圈，羽毛里夹着几根银白，眼睛是金色的。它一动不动，盯着你的胸口。'],
+ ['tie','第三天了。赶不走。周烈拿石头砸，它飞走，过一会儿又回来。'],
+ ['mo','……灵鸦。别看它，从它下面走过去，当它不存在。'],
+ {bg:'dongtian'},
+ ['','洞天里，墨老坐在碎裂的边缘，双腿悬在虚空里。虚空里漂着碎瓦、半块写着字的木牌、一只空笔筒。'],
+ ['mo','今天老夫给你立规矩。第一：这块玉简，全名「太一聚宝简」，太一观的镇山之宝，里面有五重。温养是最浅的一重。后面四重什么时候开，是它说了算。你变强一点，它就醒一点。'],
+ ['mo','第二：它每发一次力，就漏一点光。灵鸦看得见。三百年前，有一种人专门养灵鸦——猎宝人。'],
+ ['','虚空里那块木牌翻了个面，上面一个字：「封」。'],
+ ['mo','太一观就是这么没的。一只灵鸦，两只，一百只。然后是人。'],
+ ['mo','第三，三不。一不在人前用。二不替别人温养——你手里的丹突然比别人的好，这本身就是一道光。三不让它饿着。你不喂它灵核，它就吃你。'],
+ ['@','萧尘那半块……饿着？'],
+ ['mo','他那半块里住着的东西，永远都饿。'],
+ {fx:{qiPills:2,flags:{dongtian:1}}},
+ ['','【「玉简」页开启：玉台温养能让丹药、灵石、法器翻倍或升品。每温养完一样，灵光外泄就涨一截，满了天穹会的人会找上门。修习「敛息诀」可以少漏一些。获得 聚气丹 ×2。】']
+]});
+
+v1Add({id:'v1_ma',title:'青石·桥洞',g:'草',bg:'port',side:1,cond:()=>F('v1')&&S.seen.includes('dongtian')&&(S.kills[0]||0)>=12,hint:'玉简洞天之后，在地铁站多走走',lines:[
+ ['mo','漏光堵不住，只能少漏。长在水边阴处的隐灵草，叶子背面是黑的。灵潮三年，地上该长出来了。'],
+ ['','护城河桥洞下搭着一个广告牌拼的棚子。七十多岁的马奶奶弯着腰，用一个戳了洞的可乐瓶给一小片黑叶子的草浇水。'],
+ ['ma','（头也不回）盐带了？放那儿，草自己拔。拔叶子大的，留根。'],
+ ['ma','这草啊，我奶奶的奶奶就种。祖上传下来一句话：三百年前有个穿灰袍子的人来要过这草，给了一个铜钱，说「以后还会有人来要」。'],
+ ['ma','（第一次正眼看你）你身上有味儿。和我奶奶说的一样，像下过雨的石头。还你。我们家等这一天等了三百年，等得快烦死了。'],
+ ['','她从兜里摸出一枚铜钱，字磨得快看不见了。玉简里，墨老一句话也没有说。'],
+ {fn:()=>{S.flags.taiyiCoin=1;if(S.ups.lianxi<6)S.ups.lianxi++;}},
+ ['','【隐灵草：敛息诀 +1 重（温养外泄更少）。获得「太一铜钱」，墨老不肯说它是什么。】'],
+ {bg:'dongtian'},
+ ['@','穿灰袍子的人，是你。'],
+ ['mo','……不是。是我师兄。'],['@','你师兄呢？'],['mo','（把铜钱的影子往虚空里一抛）在另一半里。']
+]});
+
+/* ---------- 六 · 隐道尽头（炼气三层瓶颈：身关） ---------- */
+v1Add({id:'v1_tunnel',title:'青石·隐道尽头',g:'隧',bg:'dongtian',cond:()=>F('v1')&&S.seen.includes('dongtian')&&S.stage>=2,hint:'修到炼气三层',lines:[
+ ['@','又不动了。三天了。灵力进来，转一圈，又出去。像撞在一堵墙上。'],
+ ['mo','本来就是墙。三层是炼气第一道关。单灵根的人，一条经脉一种灵气，顺着流。你体内五条路五种水，各流各的，谁也不让谁。'],
+ ['mo','可你听清楚：木生火，火生土，土生金，金生水，水生木。你要是能让它们排起队，一个推着一个转——那就是一个没有尽头的轮子。单灵根的水会流完，你的不会。'],
+ ['mo','没有书可以教。太一观收过两个杂灵根的弟子，一个疯了，一个在生死关头自己摸到了。你身后那条黑洞洞的隐道，尽头是白塔站，一年前就断了联系。'],
+ {bg:'metro'},
+ ['','凌晨三点。铁叔坐在栅栏边的工具箱上，他没睡。他从怀里掏出一张折了又折的手绘图，铅笔画的，每一处通风井、检修门都标了数字。'],
+ ['tie','我在这条隐道走了十一年。一千二百米有个检修门，能从里面关上。白塔站的站长是我徒弟，许建国。我一直想知道他们怎么样了。'],
+ ['','一千二百米。检修门半开着。地上一套地铁制服，里面只剩骨头，骨头上全是细小的牙印。名牌：白塔站·站长·许建国。'],
+ ['','他手里攥着一个笔记本：「第 39 天。有一只特别大的，头上长着像王冠的东西，会发光。它在指挥。」「第 40 天。我把剩下的人送到地面上，往东走，东郊有人收。我留下来关门。」「师父，如果你看到这个——」'],
+ ['mo','东郊的墙，是一年前开始建的。'],
+ {bg:'metro'},
+ ['','白塔站的站台上，帆布山被咬得全是洞，每个洞口都有一双眼睛在反光。几百双，都在睡觉。站长室门口，墙上的爪痕组成一个七个角的图案。'],
+ ['','一只狗那么大、背上露出石头一样灰皮的老鼠跳下轨道，挡在你和退路之间。它没有叫。它想一个人吃。'],
+ ['mo','守门的，炼气四层。今天老夫不告诉你弱点。老夫告诉你弱点，它就不是生死关头了。记住那个圆。'],
+ {fx:{flags:{xuNote:1}}},
+ ['','【瓶颈·身关：修为攒满后，到修炼页「闯关历练」迎战守门的石皮鼠。按五行相生的顺序出招，伤害会越叠越高。】']
+],after:()=>{setTimeout(()=>{const ni=nextInfo();if(ni.bn&&S.qi>=needQ()&&OV_FREE())bnFight();},500);}},'ratking');
+
+v1Add({id:'v1_wheel',title:'青石·五行轮',g:'轮',bg:'metro',cond:()=>F('v1')&&S.seen.includes('v1_tunnel')&&S.stage>=3,hint:'闯过炼气三层的身关',lines:[
+ ['','你倒在轨道上，左肩被咬穿了。灵力在体内乱撞：木的往上窜，火的往外烧，水的往下沉。'],
+ ['mo','不是你在转它们。'],
+ ['','你不再去拽。你只是让木的那一丝，轻轻碰了一下火。火亮了，余热落在土上，土挤出一点金，金冷出了水，水又浇回木上。一个圆。'],
+ ['','你的拳头上裹着五种颜色，互相追着转。一拳，石皮鼠的头骨翻了一半。站台上，几百双眼睛同时睁开了。'],
+ ['mo','跑。'],
+ ['','你照着铁叔的图跑回检修门，铁门在身后哐地关上。门外是潮水一样的抓挠声。过了很久，安静了。你和许建国的骨头并排坐着。'],
+ ['mo','它们还会来的。你杀了守门的，你的血一路滴到了这里。不是今天，是它们的王下令的那天。'],
+ {fx:{flags:{ratTimer:1}}},
+ ['','【五行轮：按五行相生的顺序出招，伤害递增。站里从今天起很安静——太安静了。】']
+]},'ratking');
+
+/* ---------- 七 · 红鹞的商队 ---------- */
+v1Add({id:'v1_caravan',title:'青石·红鹞的商队',g:'商',bg:'shelter',cond:()=>F('v1')&&S.seen.includes('v1_wheel')&&S.stage>=3,hint:'闯过身关之后',lines:[
+ ['','先是声音，一种很久没听到过的声音：引擎。一辆外面焊了钢板的公交车开到站口，车身上红漆写着「老驴」。车顶上跳下来一个穿砖色皮夹克的女人，腰上一把开山刀、一把旧手枪。'],
+ ['hong','铁叔！还活着呢？狼不吃我，嫌我骨头硬。今年的货带了：盐、抗生素、种子、电池。你们拿什么换？'],
+ ['','你把三颗铁背狼的灵核放在她的托盘天平上。她对着光看了看。'],
+ ['hong','离体不超过三天，自己杀的？……你是这站里拾荒的那个。上回来你还是一层。我叫红鹞，叫我红姐。干这行的，不记人会死。'],
+ ['hong','（压低声音）三个月前开始，有人在坊市放话，收一种会发光的古玉，价钱随便开。你们挖到了什么古怪东西，先别拿出来卖，先来问我。'],
+ ['@','谁在收？'],
+ ['','她用指尖敲了敲天平旁边那叠纸条。每张纸条上都印着一颗七角星。天穹券。'],
+ {bg:'clan'},
+ ['hong','三纹下品。坊市一颗五百块下品灵石，换成粮，大概十二吨。可我说实话：上个月有个散修拿出来一颗，当晚尸体就在下水道里。硬通货就是硬危险。'],
+ ['','门「砰」地被推开。周烈站在门口，看见了桌上的罐头盒。他的灵力朝那颗丹涌去，桌上的水杯「咔」地裂了。'],
+ ['zhou','……三年。我带着护卫队死了六个人。小张是挡在我前面死的，因为我只有五层，我护不住他。你要是早一年给我——'],
+ ['','他看到了门外的你。三层。一个月前你还是一层。'],
+ ['zhou',()=>V1('zlFace')==='敌视'?'（一拳砸在门框上，门框裂了）你也知道。':V1('zlFace')==='较劲'?'所以你说一年——你早就知道会有人帮你。':'（慢慢地）你……也知道？'],
+ ['tie','因为我知道你会怎么选。我不知道他会怎么选。'],
+ {bg:'shelter'},
+ ['','当晚，全站大会。黑板上：「存米 360 斤。距冬至 42 天。」铁叔站在砖灶上说完了这件事：给周烈，他筑基；卖了，十二吨粮。'],
+ ['tie','我不做决定。商队下回来之前，大家想一想。'],
+ ['','人群里，有人开始看向你。一个月前，你是站里少一个不少、多一个不多的拾荒的。'],
+ {c:[
+  {t:'「卖。一个人筑基护不住一百四十人，十二吨粮护得住。」',k:0,fx:{flags:{sellVote:'sell'},aff:{zhou:-20,hong:10,tie:5}},r:[['hong','（在人群后面）你会算账。']]},
+  {t:'「不卖。粮吃完就没了，一颗丹是种子，不是米。」',k:0,fx:{flags:{sellVote:'keep'},aff:{zhou:15,hong:10}},r:[['hong','（在人群后面）你会看远。']]},
+  {t:'「铁叔说了，商队回来之前。我还没想好。」',k:0,fx:{flags:{sellVote:'none'},aff:{hong:10}},r:[['','人群里一阵嘘声。'],['hong','（在人群后面）你会等。']]}
+ ]},
+ {bg:'overpass'},
+ ['','夜里，「老驴」车顶。红鹞给自己倒了一杯不知道是什么的酒，你翻上来在她旁边坐下。天上没有星星，只有一种很淡的紫。'],
+ ['hong','你身上有个东西。我不问是什么。我只告诉你：我看得出来，别人也看得出来。'],
+ ['hong','我爸是跑长途的，教我的第一件事：路上见到的人，只卖货，不卖人。灵潮那天他的车在高速上，我还没找到。所以我一直开车，开到哪算哪。'],
+ ['hong','东郊再往东三百公里是坊市，坊市再往东，有人说是海。我没见过海。等你筑了基，等我的车还能开——以后一起去看看。'],
+ {fx:()=>{S.flags.v1hong=1;S.flags.v1cY=S.year;aff('hong',10,true);}},
+ ['','【红姐登场：之后可以在站里找她说话、接委托。商队一年后回来，那时候要定下筑基丹的去处。】']
+]},'ratking');
+
+/* ---------- 八 · 鼠潮（炼气六层瓶颈：生死关） ---------- */
+v1Add({id:'v1_rats',title:'青石·鼠潮',g:'潮',bg:'metro',cond:()=>F('v1')&&S.seen.includes('v1_caravan')&&S.stage>=5,hint:'修到炼气六层',lines:[
+ ['','半个月来，你每天夜里都听得到地板下面那种声音，很轻，很密，像下雨。今天晚上，雨停了。'],
+ ['@','阿禾，去站长室，把门关上。谁叫也别开。'],
+ ['','栅栏在发抖。手电筒往里一照：从地面到拱顶全是老鼠，叠在一起，像一堵在流动的墙。你拉响了废车站铃改的警报。三年里只响过一次。'],
+ ['zhou','（冲下楼梯，斧子上已经烧起了火）……多少？'],
+ ['@','数不清。白塔站的所有。三周前我杀了它们守门的。'],
+ ['zhou',()=>V1('zlFace')==='轻视'?'你把它们引来的？（揪住你的领子）你知不知道这里有多少人！':V1('zlFace')==='较劲'?'（咬着牙笑了一下）你一个人去的。你真是个疯子。':'等打完了，我和你算。'],
+ ['','栅栏哐地一声倒了。第三波里，一只牛那么大的铁骨鼠一尾巴扫碎了大刘的车门盾牌。大刘是护卫队里最老的，炼气二层，永远站在最前面。'],
+ ['@','周烈！它的左前脚，关节是空的！尾巴扫过来之前，它的耳朵会往后贴！'],
+ ['','这一句没有墨老的提示，是你自己看出来的。周烈没有问为什么。你们背靠着背。'],
+ ['','你的灵力快耗尽了，五行轮越转越慢。你的手伸进口袋，摸到了玉简。只要你想，炉底就能把剩下的灵核烧成灵力灌进你的经脉。但那会发光，当着周烈、十一个护卫队员、楼梯口一百三十个人的面。'],
+ {c:[
+  {t:'握紧玉简，当众用',k:0,fx:{flags:{ratJade:'use'},aff:{zhou:5}},r:[['','一道青白色的光从你指缝里爆出来，照亮了半个站台。所有人都看见了。包括周烈。']]},
+  {t:'松开手，只靠自己',k:1,fx:{flags:{ratJade:'self'},aff:{zhou:10}},r:[['','你把手从口袋里拿出来。闭上眼睛，让五行轮继续转。转得很慢，像一个推了很久很久的石磨。']]}
+ ]},
+ ['','【瓶颈·生死关：修为攒满后，到修炼页「闯关历练」迎战鼠潮。】']
+],after:()=>{setTimeout(()=>{const ni=nextInfo();if(ni.bn&&S.qi>=needQ()&&OV_FREE())bnFight();},500);}},'ratking');
+
+v1Add({id:'v1_rats2',title:'青石·大刘',g:'刘',bg:'shelter',cond:()=>F('v1')&&S.seen.includes('v1_rats')&&S.stage>=6,hint:'闯过炼气六层的生死关',lines:[
+ [ '',()=>V1('ratJade')==='use'?'光灌进经脉，六层的墙像纸一样被撞破。铁骨鼠两回合就倒了。大刘活了下来，丢了一条腿。':'石磨转完了最后一圈。六层。没有光，只有你自己。可这多出来的三回合里，大刘倒下了，没有再起来。'],
+ ['','铁骨鼠倒下的那一刻，隐道深处传来一声尖叫。太长，太有节奏，像一声口哨。所有老鼠同时停住，同时转身，潮水一样退回了黑暗里。'],
+ ['','黑暗深处，很远很远的地方，有一点光亮了一下。金色的。七个角。然后灭了。'],
+ ['mo','那是它们的王。它在看你。'],
+ ['zhou','……那是什么？'],['@','你在东郊的旗子上见过吗？'],
+ ['','周烈没有回答。他也没有走。两个人就这么站着看着黑暗，直到天亮。'],
+ ['','清晨，秦婶给每个人的碗里都多倒了半勺。黑板上：「存米 341 斤。距冬至 27 天。」'],
+ ['',()=>V1('ratJade')==='use'?'大刘拄着一根拐在粥棚前排队，对你点了个头。一天之内，站里开始有人私下管你叫「发光的那个」。':'在数字下面，有人用很小的字加了一行：「大刘。」'],
+ {fx:()=>{aff('zhou',20,true);if(V1('ratJade')!=='use')S.flags.daliuDead=1;}},
+ ['mo','白塔站再往前还有一站，水闸站，在河底下。王在那里。王死了，鼠群自己就散。'],
+ ['','【去废弃地铁站深处，斩杀「鼠王·裂齿」。】']
+]},'ratking');
+
+/* ---------- 九 · 鼠王·裂齿 ---------- */
+v1Set('ratking',{title:'青石·鼠王·裂齿',cond:()=>S.bossDown.includes(0)&&(!F('v1')||S.seen.includes('v1_rats2')),hint:'斩杀「鼠王·裂齿」',after:()=>{S.flags.duel_zhou=1;},lines:[
+ ['','裂齿倒在水闸站的骨头堆上。它有一辆小汽车那么大，灰白的长毛像一个老人的头发，一只眼睛红，一只眼睛金。'],
+ ['','王冠碎了一半。碎骨里露出一枚铜钱大小的金色令牌，刻着七角星，边缘长进了骨头里——很久以前被嵌进去，一直在喂它。'],
+ ['zhou','（声音发干）有人在养它。有人把它养大了，放在白塔站。'],
+ ['@','白塔站的人逃去了东郊。东郊就是从那时候开始建墙的。'],
+ ['','一道黑影从隐道另一头走出来，拍了拍黑大衣上的水。萧尘。'],
+ ['xiao','你们打得太慢了。王冠发光的时候打王冠，这都看不出来？'],
+ ['zhou','你……是谁？'],['xiao','你记不住的。别问了。'],
+ ['xiao','我是三天前才知道的。不是所有穿白衣服的人都知道。有了这枚令牌，我能在东郊里往上走一级。拿着它去问一个人这是谁的——他会记住我。至少会记住一会儿。'],
+ ['','他的声音里第一次有了一点东西。不是情绪，是饿。'],
+ {c:[
+  {t:'「拿去。然后告诉我你问到了什么。」',k:1,fx:{flags:{token:'give'},aff:{zhou:-10}},r:[['xiao','……你会记得你对我做过的事。我也会。'],{fn:()=>{try{rwAtt(XIAO,20);}catch(e){}}}]},
+  {t:'「它属于青石站。大刘的命是它拿走的。」',k:0,fx:{flags:{token:'keep'}},r:[['xiao','好。那你就拿着它。等有人来找你要的时候，你就知道你拿的是什么了。'],{fn:()=>{try{rwAtt(XIAO,-10);}catch(e){}S.expo=Math.min(99,(S.expo||0)+10);}}]},
+  {t:'一拳把令牌砸碎在骨堆里',k:0,fx:{flags:{token:'break'},aff:{zhou:10}},r:[['xiao','……你把一个答案砸碎了。'],['@','我不要它的答案。我要它不再喂任何东西。'],['','萧尘看了你很久：「你是我见过最不贪的人。」']]}
+ ]},
+ ['xiao','你们站里的那颗丹——别那么看我。东郊里早就有人知道，商队里有人卖消息。先想好它给谁，在别人替你们想好之前。'],
+ ['','他走进了黑暗里。周烈站在水里：「……他叫什么来着？」你张了张嘴，也想不起来了。'],
+ ['mo','（很轻）萧尘。他叫萧尘。老夫替你记着。']
+]});
+
+/* ---------- 十 · 谁吃这颗丹（炼气九层的心关） ---------- */
+const V1_PILL_C=[
+ {t:'「给我。」',k:0,fx:()=>{S.flags.pill='self';S.pills+=2;aff('zhou',-40,true);},r:[
+  ['@','我是站里升得最快的人。我筑基，可以去坊市、去更远的地方，换更多的粮、更多的丹。我会回来。'],
+  ['','周烈一句话也没说，转身上了楼梯，经过董文庭身边时没有停。'],['','（获得 筑基丹，冲击筑基时 +25%）']]},
+ {t:'「给周烈。」',k:1,fx:()=>{S.flags.pill='zhou';aff('zhou',40,true);},r:[
+  ['zhou','（声音都哑了）……你另想什么办法？这世上只有这一颗！'],['@','你欠我一次。记着就行。']]},
+ {t:'「卖。让红姐带去坊市卖，不卖给天穹会。」',k:1,fx:()=>{S.flags.pill='sell';S.stones+=zsAt(maxZone(),40);rep('station',3);aff('tie',20,true);aff('qin',20,true);aff('hong',10,true);},r:[
+  ['','董文庭的笑容在一瞬间挂不住了。秦婶哭了，铁叔闭上了眼睛。'],
+  ['zhou','（看了你很久，笑了一下，很苦）……你这个人。行。各想各的办法。']]},
+ {t:'「我和周烈比一场，赢的人决定。」',k:0,need:()=>V1('sellVote')==='none',fx:()=>{S.flags.pill='duel';rwFight({title:'比一场',bg:'town',noFlee:1,many:[{look:'周烈',name:'周烈',st:Math.max(6,S.stage),m:1.3}],
+   win:()=>{S.flags.pill='self';S.pills+=2;aff('zhou',-10,true);return '周烈仰面躺在站台上，大口喘气。\n“……丹归你。我服。”\n（获得 筑基丹）';},
+   lose:()=>{S.flags.pill='sell';S.stones+=zsAt(maxZone(),40);rep('station',3);return '你躺在地上。周烈站在砖灶上大叫：“卖了！谁也别想！”\n他自己都没想到他会选这个。';}});},r:[
+  ['zhou','（把斧子扔在地上）好。不用兵器。']]},
+ {t:'（小字）「给天穹会。换十年平安。」',k:-2,fx:()=>{S.flags.pill='tq';rep('tq',2);aff('tie',-30,true);aff('zhou',-20,true);},r:[
+  ['','董文庭微笑着走下楼梯，用一块白布把罐头盒包了起来。'],['dong','明智。我们会再见的。']]}
+];
+v1Set('zhouleave',{title:'青石·谁吃这颗丹',cond:()=>F('v1')?S.seen.includes('ratking')&&S.stage>=7&&S.year>=(S.flags.v1cY||0)+1:F('duel_zhou'),hint:'修到炼气八层，等红鹞的商队回来',lines:[
+ ['','引擎声。「老驴」开到站口，车身上多了几道新的爪痕，皮卡不见了。红鹞左臂缠着绷带。'],
+ ['hong','（低声，快）他们在半路拦了我的车。不是抢，是说顺路。我不敢不让他们顺。'],
+ ['','车里下来两个穿白制服的人，胸口一颗七角星。领头的三十多岁，戴眼镜，笑得很和气。你看不透他的气息。'],
+ {bg:'clan'},
+ ['dong','天穹会东郊分部，董文庭。听说青石站遭了鼠潮，很遗憾。白塔站也是这么没的——我们东郊收留了白塔站的幸存者，现在都吃得饱，有三个已经开始修炼了。'],
+ ['tie','……许建国的人？'],['dong','对。许站长是个英雄。'],
+ ['dong','我这次来，是想提一个合作：青石站加入天穹会的庇护，每月送粮、送药、派修士守门。只换一个小东西——那颗筑基丹。一颗丹，换一个站十年平安。很划算。'],
+ ['','周烈的拳头上冒起了火，红鹞按住了他的手腕。铁叔很久之后说：「明天答复你。」'],
+ ['dong','（经过你身边，站住了）一个月从一层到七层。天穹会很喜欢你这样的人。'],
+ ['mo','（极轻）筑基中期。他在往下压。他在看你的胸口。'],
+ {bg:'shelter'},
+ ['','这一夜很长。'],
+ ['tie','那个老道士说「马上要用得着了」。我这三年一直想，用得着的是谁。我想他说的不是周烈，也不是你。是「青石站」。'],
+ {fn:()=>{if(F('xuNote')&&!F('xuGiven')){S.flags.xuGiven=1;aff('tie',30,true);SC.q.unshift(['','你把许建国的笔记本交给了铁叔。他在黑暗里翻到最后一页，「师父，如果你看到这个——」，很久没有说话。'],['tie','……他让人往东走。他信东郊。']);}}},
+ ['qin','（刷锅刷得很响）我家那口子是灵潮第二年冬天没的，不是被妖兽吃了，是饿的。他把自己那份给了小的。饿死的人不会反抗，所以谁也不记得他们。'],
+ ['zhou',()=>(avOf('zhou')>=30?'我不会求你。……但我要告诉你，大刘那天，我想的不是「要是我筑了基就好了」。我想的是「要是有两个人能护住站就好了」。我以前从来不这么想。':'我会恨你。但我不会求你。')],
+ ['he','以后大家都会有星星吗？……那{bro}你先有。你有了，就能帮别人找。'],
+ ['hong','硬通货在谁手里，谁就是靶子。你要是想把靶子放在自己身上，我的车可以带你走。'],
+ {bg:'dongtian'},
+ ['mo','九层的瓶颈，就是这个。三层是身体，六层是生死，九层是心。三百年前，太一观也有过一颗这样的东西。只有一颗。我和我师兄。师父让我们自己商量。'],
+ ['@','后来呢？'],
+ ['mo','后来太一观就没了。老夫不告诉你怎么选。只告诉你：筑基时会有一个心魔，它问的就是你今天的选择。想好你答得上来。'],
+ {bg:'shelter'},
+ ['','清晨。黑板上：「存米 298 斤。距冬至 16 天。」罐头盒放在砖灶上，盖子开着。董文庭站在入口的楼梯上，双手拢在袖子里，笑着。'],
+ ['tie','我想了一夜。我想不好。你来。'],
+ rwC(V1_PILL_C),
+ ['','你说出那句话的一瞬间，体内的五行轮「咯」地一声，像一把锁打开了。站厅里的人感觉到了一阵很轻的风。'],
+ ['mo','（很轻）……好。记住你今天说的话。它会回来问你的。'],
+ {fn:()=>{if(S.stage===7&&S.qi<needQ())S.qi=needQ();}}
+]});
+
+/* ---------- 十一 · 点化（丹没有给自己时） ---------- */
+v1Add({id:'v1_dianhua',title:'青石·点化',g:'化',bg:'dongtian',cond:()=>F('v1')&&['zhou','sell','tq'].includes(v1Pill())&&S.stage>=8&&S.qiPills>=3,hint:'丹没有留给自己——修到炼气九层，攒三颗聚气丹',lines:[
+ ['@','你说过，筑基以后它会开第二重。没有丹，我筑不了基；不筑基，它不开第二重。你早就知道。'],
+ ['mo','……老夫知道。在大会上不说，是想看你在不知道有退路的时候怎么选。'],
+ ['mo','第二重叫「点化」。温养是把一颗丹养好，点化是把一种东西变成另一种东西。三颗聚气丹，可以点化成一颗筑基丹。只是第二重本该在你筑基后自己醒——你要老夫提前把它叫醒，它会很饿，很亮。点化出来的丹只有一纹，成不成，一半看命。'],
+ {fn:()=>{if(v1Pill()==='zhou')SC.q.unshift(['','河底的隐道里，周烈拖着斧子从水里走出来。他已经筑基了，火在水里也烧得起来。'],['zhou','那天你说「我另想办法」，就是这个？你那天就知道？'],['@','不知道。'],['zhou','（很轻）……你这个疯子。']);}},
+ ['','三颗聚气丹在石座上排成三角。你双手按在石座上。裂纹一道一道亮起来——不是红色，是白色。白光越过了碎裂的边缘，虚空里的碎石、碎瓦、木牌、笔筒慢慢飘回来，拼了上去。洞天大了一圈。'],
+ ['','石座上多了一颗土黄的丹，只有一道很细很淡的金纹。墨老的影子淡了很多。'],
+ ['mo','叫醒它要力气。老夫睡一阵就好。外面——你自己去看。'],
+ ['','青石站入口的门框上，沙袋上，对面的断楼上，蓦地落满了乌鸦。上百只，全是金眼睛，一声不叫。'],
+ {fx:()=>{S.qiPills-=3;S.pills+=1;S.flags.dianhua=1;S.expo=Math.min(99,(S.expo||0)+40);}},
+ ['','【点化：聚气丹 ×3 → 筑基丹（一纹）×1。灵光外泄 +40。】']
+]},'zhuji');
+
+/* ---------- 十二 · 筑基（心魔问） ---------- */
+const V1_DEMON={
+ self:['你说你会回来。你会吗？','我不知道。我只知道今天我想变强，想得要命。','我当然会回来。我是为了青石站。'],
+ zhou:['你把它让了出去。你是大方，还是你早就知道你不需要它？','我知道我有玉简，他没有。我让的时候，心里是有底的。','我只是觉得他更需要。'],
+ sell:['你给了所有人一个冬天。明年冬天呢？','明年冬天我也不一定在。所以今年的先给了。','明年的事明年再说。'],
+ duel:['你把这个问题交给了拳头。你自己想要什么？','我想要一个不用我来做决定的世界。但没有。','我想要公平。'],
+ tq:['你知道他们是谁。你为什么还给？','因为我怕。','因为那是最划算的。']
+};
+v1Set('zhuji',{title:'青石·筑基',lines:[
+ ['','丹在腹中化开。不是暖，是重。像吞下了一块石头，石头沉到丹田，开始变大，把九层大圆满那一池满得快要溢出来的水，一点一点推到经脉的尽头。'],
+ ['','石头在你的丹田里立起来，变成了一道堤。你听见了一个声音。是你自己的声音。'],
+ {bg:'shelter'},
+ ['','你站在空无一人的站厅里，黑板上什么数字都没有。砖灶上坐着一个人——穿着洗白的冲锋衣，袖口用铁丝缝过。灵潮之夜的你，炼气一层。'],
+ ['@',()=>F('v1')?'……':'这是哪里？'],
+ {fn:()=>{if(!F('v1'))return;const D=V1_DEMON[v1Pill()]||V1_DEMON.self;SC.q.unshift(['','他抬起头，很平静：「来了。」'],['','「'+D[0]+'」'],{c:[
+   {t:D[1],k:v1Pill()==='tq'?-1:1,fx:{flags:{demon:'honest'}},r:[['','心魔沉默了很久，笑了。'],['',v1Pill()==='tq'?'「知道自己怕，下次就别只是怕。」':'「那你以后别叫它大方，叫它公平。」']]},
+   {t:'（不回答）',k:0,fx:{flags:{demon:'avoid'}},r:[['','「……或许吧。」']]},
+   {t:D[2],k:-1,fx:{flags:{demon:'lie'}},r:[['','站厅的墙开始裂开。'],['','「你在跟我说谎。我就是你。」']]}]});}},
+ ['','心魔从砖灶上跳下来，把一个东西塞进你手里——一支红蜡笔，只剩一半。'],
+ ['','「别忘了你最开始捡东西，是为了谁。」他散成了灰。'],
+ ['','你睁开眼睛。丹田里立着一道小小的堤，堤上刻着五种颜色的纹路，一个接一个地转着。你吐出一口气，在空中结成一小团白霜。五行杂灵根，三年一层，两个月筑基。'],
+ {bg:'shelter'},
+ ['','你回到青石站时，站台上摆了一桌菜。说是一桌，其实是几个罐头和一锅野菜汤。'],
+ ['tie','站里的人凑的。别嫌寒碜。'],
+ ['he','{bro}，这个给你！我编了好几天。戴着它，就不会受伤了。'],
+ {fx:{gift:'平安结'}},
+ ['','获得 佩饰「平安结」。'],
+ {fn:()=>{if(F('v1')&&(S.expo||0)<80)S.expo=Math.min(99,(S.expo||0)+20);}}
+]});
+
+/* ---------- 十三 · 猎宝人 ---------- */
+v1Set('exposed',{title:'青石·猎宝人',lines:[
+ ['','你从洞天里取出温养好的东西时，玉简的裂纹里漏出一缕青光，直冲隧道顶。'],
+ ['mo','糟了。'],
+ {bg:'shelter'},
+ ['','三天后的夜里，入口前的空地上站着三个人。两个穿白衣，一个是董文庭，手里一个泥丸大的罗盘，指针一直在转。'],
+ ['','第三个穿黑长袍，很高，很瘦，戴着铁灰色的半脸面具。左肩上蹲着一只全身银白的乌鸦。门框上、沙袋上、断楼上，上百只金眼乌鸦一动不动。'],
+ ['wuh','（声音很温和，像一个老师）老人家，你们站里有一个年轻人，身上带着一件不属于他的东西。他交出来，我们走。他不交，我们也走——带着他一起。你们谁都不会有事。'],
+ ['tie','没有这个人。'],
+ ['wuh','我的乌鸦不说谎。（银鸦的头缓缓转过来，正对着你藏身的车壳）出来吧。灵光，我在五十里外都看得见。'],
+ ['wuh',()=>'（打量你，像在看一件商品）'+stName()+'。五行……五行全的？太一观当年就喜欢收这种废料。'],
+ ['dong',()=>v1Pill()==='self'?'丹是他吃的。':v1Pill()==='tq'?'丹在我们这里。他——（看着罗盘，笑挂不住了）他自己炼了一颗。':F('dianhua')?'丹不是他吃的。他——（看着罗盘，脸色变了）他自己炼了一颗。':'就是他。'],
+ ['wuh',()=>F('dianhua')?'（去掉了笑容）点化。它第二重已经醒了。三百年了，太一观的余孽，终于又有一个出来了。':'三百年了。太一观的余孽，终于又有一个出来了。'],
+ ['mo','（极轻，发抖）……他知道太一观。小子，别硬拼。这个人身上有三百年前那些人的味道。'],
+ {fn:()=>{const L=[];
+   if(['zhou','sell'].includes(v1Pill())||avOf('zhou')>=40)L.push(['','周烈从楼梯口冲出来，斧子上的火比任何时候都亮，挡在你和乌衡之间：「我欠他的那一个，今天还。」']);
+   if(V1('token')==='give')L.push(['','乌衡身后多了一个人。谁也没注意到他。萧尘的剑斩断了银鸦的一只翅膀。']);
+   if(F('saveHe'))L.push(['','阿禾从楼梯口冲出来张开右手。手腕上那颗蓝痣亮了——不是灵毒的蓝，是水一样干净的蓝。乌衡愣了一下：「灵毒转灵根……三百年里我只见过一次。」']);
+   if(V1('ratJade')==='use'||rep&&S.rep.station>=3)L.push(['','秦婶带着一百多个人，把烧着的帆布从楼梯口扔出去。乌鸦群乱了。']);
+   if(!L.length)L.push(['','没有人来。站台上的人都退得远远的。']);SC.q.unshift(...L);}},
+ {c:[
+  {t:'「冲我来，别碰站里的人。」',k:1,fx:{flags:{exGuard:1},aff:{tie:10,he:5}}},
+  {t:'「你要的东西在我身上。来拿。」',k:0,fx:{flags:{exTaunt:1}}},
+  {t:'「谁把我卖了？」（看向站台上的人）',k:-1,fx:{flags:{exGreed:1},aff:{he:-10}}}
+ ]},
+ ['','【迎战：猎宝人·乌衡。他就在青石站站台东侧。击退他，灵光外泄清零。】']
+],after:()=>{S.special='hunter';}});
+
+/* ---------- 十四 · 去看海 ---------- */
+v1Set('hunted',{title:'青石·去看海',lines:[
+ ['','乌衡退走了。他走之前回头看了你一眼，面具下的嘴角在笑：「玉简在你手里，我们就还会再见。」'],
+ ['','「老驴」在你面前一个甩尾，车门开着。红鹞坐在驾驶座上，嘴里叼着一根没点着的烟。'],
+ ['hong','上不上？上就是我的乘客了，往东开，去坊市躲一阵风头。'],
+ ['tie','（大声）走！你在这儿一天，他们就盯一天！你走了，青石站就只是一个破地铁站！'],
+ {fn:()=>{if(['zhou','sell'].includes(v1Pill()))SC.q.unshift(['zhou','（不回头）我欠你的那一个，今天还了。快滚。']);}},
+ ['','公交车在废弃的高速上开。后窗外，高架桥断成三截的影子越来越小，楼顶那棵槐树的叶子泛着淡淡的青光。'],
+ ['','你掏出阿禾在你上车前塞进口袋的画：一辆公交车，车顶上坐着一个很瘦的小人。小人的胸口涂的不是蓝色，是五种颜色，一种接一种，绕成一个圆。角上写着：「{bro}，去看海。」'],
+ ['hong','那个黑袍子叫你什么来着？太一观？那是什么？'],
+ ['@','……我也想知道。'],
+ ['mo','（很轻，刚醒的声音）到了坊市，老夫给你讲太一观。从头讲。'],
+ ['','太阳从地平线上升起来。三年里第一次，天不是铁锈色的。'],
+ {fx:()=>{S.flags.v1done=1;}},
+ ['','【第一卷·青石 完。坊市已经在江湖页的地图上；青石站仍是你的落脚处，随时可以回来。】']
+]});
+
+/* ---------- 旧章节里与新剧本冲突的地方 ---------- */
+{const c=v1Ch('caravan');if(c){c.lines=c.lines.map(l=>{if(!Array.isArray(l))return l;
+  if(l[0]==='hong'&&String(l[1]).startsWith('好身手'))return ['hong',()=>F('v1hong')?'又见面了，拾荒的。哦，现在不能这么叫你了。那条百足的甲壳，卖不卖？':l[1]];
+  if(l[0]==='hong'&&String(l[1]).includes('手上冒火'))return ['hong',()=>F('v1')&&['zhou','sell'].includes(v1Pill())?'前几天我还看见天穹会的人在东郊门口招人，排了老长的队。':l[1]];
+  if(l[0]==='@'&&l[1]==='……周烈。')return ['@',()=>F('v1')&&['zhou','sell'].includes(v1Pill())?'……东郊。':'……周烈。'];
+  return l;});}}
+{const z=v1Ch('zhoufate');if(z){const c0=z.cond;z.cond=()=>c0()&&!(F('v1')&&['zhou','sell'].includes(v1Pill()));}}
+if(BOND.hong){const m0=BOND.hong.met;BOND.hong.met=()=>m0()||F('v1hong');}
+if(typeof NPCS!=='undefined'&&NPCS.hong){const u0=NPCS.hong.unlock;NPCS.hong.unlock=()=>u0()||F('v1hong');}
+
 /* ================= GAME ================= */
 const $=s=>document.querySelector(s);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -5825,7 +6272,7 @@ const UPS=[
 /* ---------- 存档 ---------- */
 const SLOTS=3,SLOT_KEY='lingchao_slot';const slotKey=n=>n===1?'lingchao_save_v1':'lingchao_save_v1_s'+n;
 let SLOT=(()=>{try{const n=+localStorage.getItem(SLOT_KEY);return n>=1&&n<=SLOTS?n:1;}catch(e){return 1;}})();
-function fresh(){return {v:3,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,leak:0,layer:0,bnPass:-1,
+function fresh(){return {v:3,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
   gear:{w:null,a:null,j:null,r:null,f:null},bag:[],bossDown:[],kills:[0,0,0,0,0,0,0,0,0,0,0],abyss:0,karma:0,seen:[],pending:[],flags:{},visited:[0],
   expo:0,special:null,dt:{lv:0,slots:[]},rebirth:0,usePill:false,last:Date.now(),started:false,uid:1,taps:0,slain:0,hunts:0,
   pop:213,rep:{station:0,caravan:0,tq:0},q:{},seenEv:[],evClock:0,lastDaily:'',runs:0,meds:3,mps:1,hpF:1,mpF:1,btAuto:false,loc:'town',gems:{},books:{},learned:[],clan:null,omen:null,omenClock:0,mgW:{},raid:0,aff:{},affDay:{},giftDay:{},partner:null,sworn:[],
@@ -5867,15 +6314,12 @@ const yaoRate=()=>Math.max(idleRate()*3,needQ()*.006)*(S.injury>Date.now()?.6:1)
 function refine(dt,tap){if(!(S.yao>0))return 0;const g=Math.min(S.yao,tap?tapGain()*4+needQ()*.004:yaoRate()*dt);S.yao-=g;if(S.yao<1e-6)S.yao=0;addQi(g,!tap);return g;}
 function toxAdd(n){S.tox=Math.min(100,(S.tox||0)+n);}
 function xlNotice(){if(S.flags.xl2)return;S.flags.xl2=1;addQi(0,true);if(!(S.stage>0||S.qi>0))return;
-  setTimeout(()=>modal(`<h3>修炼之道变了</h3><p>你的境界都还在，现在显示为 <b>${stName()}</b>。</p><p>从今往后，修为只从<b>历练</b>和<b>丹药</b>来：打妖兽、做委托、走剧情直接涨修为；服聚气丹得<b>药力</b>，在「修炼」页点画面炼化。光坐着不会再涨灵气。</p><p>每个大境界分九层，三、六、九层各有一道瓶颈，要去闯一场历练。丹药吃多了会积丹毒。玉台每用一次都会外泄灵光，太多了会引来猎宝人。</p>`,[{t:'知道了',cls:'gold'}]),1200);save();}
+  setTimeout(()=>modal(`<h3>修炼之道变了</h3><p>你的境界都还在，现在显示为 <b>${stName()}</b>。</p><p>从今往后，修为只从<b>历练</b>和<b>丹药</b>来：打妖兽、做委托、走剧情直接涨修为；服聚气丹得<b>药力</b>，在「修炼」页点画面炼化。光坐着不会再涨灵气。</p><p>每个大境界分九层，三、六、九层各有一道瓶颈，要去闯一场历练。丹药吃多了会积丹毒。玉台温养会外泄灵光，满了会引来天穹会的人。</p>`,[{t:'知道了',cls:'gold'}]),1200);save();}
 function bnFight(){const ni=nextInfo();if(!ni.bn||S.qi<needQ()||BT)return;if(S.injury>Date.now()){toast('伤还没好，闯不了关','bad');return;}
-  const b=bnAt(S.stage),z=Math.min(maxZone(),zOfStage(S.stage+1)),e=mkCustom(z,{name:'瓶颈·'+BN_NAME[b],st:S.stage+1+b,m:1.35+.15*b,boss:true});e.noLoot=1;
-  const s0=S.stage;startBattle([e],{noFlee:true,bg:z,onWin:()=>{S.bnPass=s0;wuAdd(3+2*b);addQi(0);toast('破了'+BN_NAME[b]+'。境界 '+stName(),'big');checkStory(false);render();save();},
+  const b=bnAt(S.stage),z=Math.min(maxZone(),zOfStage(S.stage+1)),V=F('v1')&&typeof V1_BN!=='undefined'?V1_BN[S.stage]:null;
+  const foes=V?V.foes():[mkCustom(z,{name:'瓶颈·'+BN_NAME[b],st:S.stage+1+b,m:1.35+.15*b,boss:true})];foes.forEach(e=>e.noLoot=1);
+  const s0=S.stage;startBattle(foes,{noFlee:true,bg:V?V.bg:z,onWin:()=>{S.bnPass=s0;if(V&&V.win)try{V.win();}catch(e){}wuAdd(3+2*b);addQi(0);toast('破了'+BN_NAME[b]+'。境界 '+stName(),'big');checkStory(false);render();save();},
    onLose:()=>{S.injury=Date.now()+3*60*1000;toast(BN_NAME[b]+'没闯过去。养好伤再来。','bad');save();}});}
-function leakTick(dt){const L=S.leak||0;if(L<=0)return;S.leak=Math.max(0,L-dt*.02);
-  if(L>=30&&!S.flags.leak30){S.flags.leak30=1;toast('墨老：「站口落满了灵鸦。玉台少用几天。」');}if(L<20)S.flags.leak30=0;
-  if(L>=100&&!BT&&OV_FREE()&&S.stage>=3){const z=Math.min(maxZone(),zOfStage(S.stage+2)),e=mkCustom(z,{look:SECT_LOOK.tianqiong[1],name:'猎宝人',st:S.stage+3,m:1.5,boss:true});e.human=1;e.noLoot=1;
-   toast('灵光外泄，猎宝人循着灵鸦找来了！','big');startBattle([e],{noFlee:true,onWin:()=>{S.leak=25;toast('猎宝人退走了。外泄值降到 25。'+gS(zsAt(maxZone(),10)),'big');save();},onLose:()=>{S.leak=55;const l=Math.floor(S.stones*.2);S.stones-=l;toast('猎宝人抢走了灵石 '+fmt(l)+'。','bad');save();}});}}
 const idleRate=()=>(.5+.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb()*(F('taiyi')?1.25:1)*(1+(S.learned.includes('julingp')?.15:0)+clanBonus().idle+(S.partner?.2:0)+((S.sworn||[]).includes('mo')?.1:0))*omenMul('qi')*(S.injury>Date.now()?.6:1);
 const tapGain=()=>(1+.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb()*omenMul('qi');
 const realmIdx=()=>STAGES[S.stage].r;
@@ -5963,7 +6407,7 @@ const pK=()=>Math.min(8,Math.pow(Math.max(1,pRel()),.85));
 function mkEnemy(z,boss,special){let n,m=1,tint=false;
   if(special==='zhou'){const s0=zScale(0);return {n:'周烈',look:'周烈',hp:40*s0*3.6,max:40*s0*3.6,atk:6*s0*1.4,def:2*s0*1.2,boss:true,z:0,stones:60,special};}
   if(special==='hunter'){const mz=maxZone(),A=refA(S.stage)*pK(),first=!F('hunter1');const hp=A*(first?14:18);
-    return {n:first?'天穹追兵·周烈':'天穹追兵',look:'天穹追兵',hp,max:hp,atk:A*.85,def:A*.12,boss:true,z:mz,stones:zsAt(mz,8),special,pk:1};}
+    return {n:first?(F('v1')?'猎宝人·乌衡':'天穹追兵·周烈'):(F('v1')?'猎宝人':'天穹追兵'),look:'天穹追兵',hp,max:hp,atk:A*.85,def:A*.12,boss:true,z:mz,stones:zsAt(mz,8),special,pk:1};}
   if(special&&special.startsWith('quest:')){const q=qOf(special.slice(6)),f=q.obj.foe;return mkCustom(maxZone(),Object.assign({boss:true},f),special);}
   if(z===7){n='深渊·第'+(S.abyss+1)+'层';boss=true;tint=true;}else if(boss)n=ZONES[z].boss;else{n=pick(ZONES[z].mobs);m=.8+Math.random()*.4;}
   const look=z===7?ABYSS_POOL[S.abyss%ABYSS_POOL.length]:n;
@@ -6037,7 +6481,7 @@ function jPut(kind,arg){if(S.dt.slots.length>=jSlots())return;let o={kind,start:
   else if(kind==='qi'){if(S.qiPills<1)return;S.qiPills--;o.n=1;o.label='聚气丹';}
   else if(kind==='stones'){const amt=Math.floor(S.stones*.5);if(amt<10)return;S.stones-=amt;o.n=amt;o.label='灵石 '+fmt(amt);}
   else{const i=S.bag.findIndex(x=>x.id===+arg);if(i<0)return;o.item=S.bag.splice(i,1)[0];o.label=itemName(o.item);}
-  o.dur=jDur(kind,o.item);o.left=o.dur;if(!F('warm1'))S.flags.warm1=1;S.dt.slots.push(o);JPICK=false;S.leak=Math.min(110,(S.leak||0)+(kind==='item'?4:3));toast('放上玉台：'+o.label+' · 外泄 '+Math.round(S.leak));render();save();}
+  o.dur=jDur(kind,o.item);o.left=o.dur;if(!F('warm1'))S.flags.warm1=1;S.dt.slots.push(o);JPICK=false;toast('放上玉台：'+o.label);render();save();}
 function jTick(dt){if(!S.dt.slots.length)return;const rate=jHalted()?0:1;for(const o of S.dt.slots)if(o.left>0)o.left=Math.max(0,o.left-dt*rate);}
 function jTake(i){const o=S.dt.slots[i];if(!o||o.left>0)return;S.dt.slots.splice(i,1);let msg='';const lv=S.dt.lv;
   if(o.kind==='pill'||o.kind==='qi'){const n=Math.random()<(lv>=3?.25:0)?3:2;if(o.kind==='pill')S.pills+=n;else S.qiPills+=n;msg=o.label+' ×'+n;}
@@ -6060,7 +6504,7 @@ let SC=null;
 function applyFx(fx){if(typeof fx==='function')fx=fx();if(!fx)return;if(fx.stones)S.stones+=fx.stones;if(fx.pills)S.pills+=fx.pills;if(fx.qiPills)S.qiPills+=fx.qiPills;
   if(fx.qiMul)S.qi=Math.floor(S.qi*fx.qiMul);if(fx.qiFill)S.qi=Math.max(S.qi,req(S.stage));if(fx.flags)Object.assign(S.flags,fx.flags);if(fx.aff)for(const k in fx.aff)aff(k,fx.aff[k]);if(fx.gem)gGem(fx.gem[0],fx.gem[1]);if(fx.book)gBook(fx.book);if(fx.fame&&S.clan)S.clan.fame+=fx.fame;if(fx.meds)S.meds+=fx.meds;if(fx.item){EVZ=maxZone();gItem(fx.item);}if(fx.karma)S.karma+=fx.karma;
   if(fx.gift){const it=mkItem(Math.max(1,maxZone()),true,{r:2,slot:'j',n:fx.gift});it.n=fx.gift;it.hp=Math.round(it.hp*1.3);if(S.bag.length<BAG_MAX)S.bag.push(it);}}
-function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;
+function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;if(SC)clearInterval(SC.typing);
   SC={id,ch,q:ch.lines.slice(),typing:null,full:'',choice:false,bg:ch.bg};
   const ov=$('#ov');ov.hidden=false;ov.className='vn';
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="port l hide" id="pL"></div><div class="port r hide" id="pR"></div>
@@ -6074,6 +6518,7 @@ function setBg(k){SC.bg=k;const cv=$('#vbg');if(!cv)return;cv.style.opacity=0;se
 function showPortrait(spk){const L=$('#pL'),R=$('#pR');if(!L)return;
   if(!spk){L.classList.add('hide');R.classList.add('hide');return;}
   const hero=spk==='@';const key=hero?(S.gender==='f'?'hero_f':'hero_m'):spk;const box=hero?L:R,other=hero?R:L;
+  if(!hero&&!PORTRAIT[key]){box.classList.add('hide');box.dataset.k='';if(other.dataset.k)other.classList.add('dim');return;}
   if(box.dataset.k!==key){box.classList.add('hide');setTimeout(()=>{box.innerHTML=(PORTRAIT[key]||PORTRAIT.mo)();box.dataset.k=key;box.classList.remove('hide','dim');},150);}else box.classList.remove('hide','dim');
   if(other.dataset.k)other.classList.add('dim');}
 function nextLine(){for(;;){if(!SC.q.length)return endStory();const L=SC.q[0];
@@ -6088,13 +6533,13 @@ function nextLine(){for(;;){if(!SC.q.length)return endStory();const L=SC.q[0];
   x.className='st-x'+(name?'':' narr');x.textContent='';$('#stM').hidden=true;showPortrait(spk||null);
   SC.full=tx;let i=0;clearInterval(SC.typing);
   if(reduce){x.textContent=tx;SC.typing=null;$('#stM').hidden=false;return;}
-  SC.typing=setInterval(()=>{i++;x.textContent=tx.slice(0,i);if(i>=tx.length)finishType();},28);}
+  const tid=setInterval(()=>{if(!SC||SC.typing!==tid){clearInterval(tid);return;}i++;x.textContent=tx.slice(0,i);if(i>=tx.length)finishType();},28);SC.typing=tid;}
 function finishType(){clearInterval(SC.typing);SC.typing=null;$('#stX').textContent=SC.full;$('#stM').hidden=false;}
 function showChoices(cs){SC.choice=true;$('#stM').hidden=true;showPortrait('@');
   const box=$('#stC');box.innerHTML=cs.map((c,i)=>`<button data-i="${i}" style="animation-delay:${i*80}ms">${esc(sub(c.t))}</button>`).join('');
   box.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();const c=cs[+b.dataset.i];S.karma+=c.k||0;applyFx(c.fx);box.innerHTML='';SC.choice=false;SC.q=(c.r||[]).concat(SC.q);nextLine();});}
 function skipStory(){if(!SC||SC.choice)return;clearInterval(SC.typing);SC.typing=null;
-  while(SC.q.length){const L=SC.q[0];if(!Array.isArray(L)&&L.c)break;SC.q.shift();if(!Array.isArray(L)){if(L.fx)applyFx(L.fx);if(L.bg)SC.bg=L.bg;}}
+  while(SC.q.length){const L=SC.q[0];if(!Array.isArray(L)&&L.c)break;SC.q.shift();if(!Array.isArray(L)){if(L.fx&&!L.c)applyFx(L.fx);if(L.bg)SC.bg=L.bg;if(L.fn){try{L.fn();}catch(e){}}}}
   if(SC.q.length){paintTo($('#vbg'),SC.bg);$('#stS').hidden=true;$('#stX').textContent='（做出你的选择）';showChoices(SC.q.shift().c);}else endStory();}
 function endStory(){const ch=SC.ch;clearInterval(SC.typing);if(!S.seen.includes(ch.id))S.seen.push(ch.id);S.pending=S.pending.filter(x=>x!==ch.id);
   const ov=$('#ov');ov.hidden=true;ov.innerHTML='';ov.className='';SC=null;
@@ -6175,7 +6620,7 @@ VIEWS.world=()=>`<div class="wv" id="wv"><canvas id="wc"></canvas><div class="wl
   <div class="travel" id="travel" hidden></div><div class="wfade" id="wfade"></div></div>`;
 
 VIEWS.jade=()=>{if(!F('dongtian'))return `<div class="stage jstage"><canvas class="bgc" data-scene="dongtian"></canvas></div><p class="empty">玉简里似乎还藏着什么。继续修炼，墨老会告诉你的。（修炼至炼气七层，或在地铁站斩妖六只）</p>`;
-  const n=jSlots(),now=S.dt.slots;let rows=`<p class="note">灵光外泄 <b>${Math.round(S.leak||0)}</b> / 100 · 每放一样东西 +3，慢慢回落。到 30 招灵鸦，到 100 猎宝人会找上门。</p>`;
+  const n=jSlots(),now=S.dt.slots;let rows='';
   for(let i=0;i<n;i++){const o=now[i];
     if(o){const ready=o.left<=0,p=1-o.left/o.dur;rows+=`<div class="jslot ${ready?'ready':''}"><div class="ic">${o.kind==='item'?SLOTN[o.item.slot][0]:o.kind==='stones'?'石':'丹'}</div><div class="in"><div class="nm">${esc(o.label)}</div><div class="sub" data-jt="${i}">${ready?'温养完成':(jHalted()?'已停滞 · ':'')+'还需 '+fmtT(o.left)}</div><div class="bar"><i data-jb="${i}" style="width:${p*100}%"></i></div></div>${ready?`<button class="btn sm gold" data-act="jtake" data-arg="${i}">收取</button>`:''}</div>`;}
     else rows+=`<div class="jslot"><div class="ic">·</div><div class="in"><div class="nm">空玉台</div><div class="sub">放入丹药翻倍，装备升品，灵石增值</div></div><button class="btn sm" data-act="jpick">放入</button></div>`+(JPICK&&i===now.length?jPicker():'');}
@@ -6341,11 +6786,11 @@ function daily(){const d=new Date().toDateString();if(!S.started||S.lastDaily===
 
 /* ---------- 主循环 ---------- */
 let lastT=performance.now(),uiAcc=0,fAcc=0;
-function loop(t){const dt=Math.min(.1,(t-lastT)/1000),big=Math.min(1,(t-lastT)/1000);lastT=t;try{bgmTick(big);}catch(e){}if(S.started){refine(big);S.tox=Math.max(0,(S.tox||0)-big*.12);leakTick(big);jTick(big);idleEventTick(big);clanTick(big);omenTick(big);timeTick(big);fAcc+=big;if(fAcc>2.5){fAcc=0;fateCheck();}}
+function loop(t){const dt=Math.min(.1,(t-lastT)/1000),big=Math.min(1,(t-lastT)/1000);lastT=t;try{bgmTick(big);}catch(e){}if(S.started){refine(big);S.tox=Math.max(0,(S.tox||0)-big*.12);jTick(big);idleEventTick(big);clanTick(big);omenTick(big);timeTick(big);fAcc+=big;if(fAcc>2.5){fAcc=0;fateCheck();}}
   try{if(BT)btFrame(dt);else if(TAB==='world'&&WD.cx&&WD.M){if(OV_FREE()&&S.started)wUpdate(dt);else WD.t+=dt;wRender();}}catch(e){if(!loop.err){loop.err=1;console.error(e);}}
   uiAcc+=dt;if(uiAcc>.2){uiAcc=0;live();}requestAnimationFrame(loop);}
 function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.started||sec<5)return;jTick(sec);clanTick(sec,1);daily();if(sec<90)return;const yrs=Math.min(10,Math.floor(sec/Y_SEC));let ylines='';if(yrs>0){const L=simYears(yrs);ageCheck();ylines=`<p>世上已过去 <b>${yrs}</b> 年（${yearName()}）。</p>${L.slice(0,3).map(t=>'<p class="note">'+esc(sub(t))+'</p>').join('')}`;}
-  const capH=8+S.ups.juling,eff=.6+.04*S.ups.juling,t=Math.min(sec,capH*3600),before=stName(),gain=Math.min(S.yao||0,yaoRate()*t*eff);S.yao=(S.yao||0)-gain;S.tox=Math.max(0,(S.tox||0)-t*.12);S.leak=Math.max(0,(S.leak||0)-t*.02);addQi(gain,true);
+  const capH=8+S.ups.juling,eff=.6+.04*S.ups.juling,t=Math.min(sec,capH*3600),before=stName(),gain=Math.min(S.yao||0,yaoRate()*t*eff);S.yao=(S.yao||0)-gain;S.tox=Math.max(0,(S.tox||0)-t*.12);addQi(gain,true);
   const h=Math.floor(t/3600),m=Math.floor(t%3600/60),ready=S.dt.slots.filter(o=>o.left<=0).length;
   modal(`<h3>闭关归来</h3><p>你闭关了 <b>${h?h+' 小时 ':''}${m} 分</b>${sec>capH*3600?'（上限 '+capH+' 小时）':''}</p><p>${gain>0?'炼化药力，修为 <b>+'+fmt(gain)+'</b>':'腹中没有药力，打坐只是养神。修为要靠历练和丹药。'}</p>${before!==stName()?`<p>境界 ${before} → <b>${stName()}</b></p>`:''}${ylines}${ready?`<p>玉台上有 <b>${ready}</b> 样东西温养好了。</p>`:''}${nextInfo().major&&S.qi>=needQ()?'<p>丹田已满，可以冲关了。</p>':''}`,
    [{t:'出关',cls:'gold',fn:()=>{render();const p=S.pending.find(id=>{const c=STORY.find(x=>x.id===id);return c&&!c.side;});if(p)toast('有新剧情可看','观看',()=>playStory(p));}}],cultScene());save();}
@@ -6353,10 +6798,10 @@ function intro(){const ov=$('#ov');ov.hidden=false;ov.className='vn';let g=S.gen
   let back=null;for(let n=1;n<=SLOTS;n++){if(n===SLOT)continue;const inf=slotInfo(n);if(inf&&(!back||inf.last>back.last))back=Object.assign({n},inf);}
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮${SLOT>1?' · 存档 '+SLOT:''}</div><h1>灵潮<span>修仙</span>录</h1>
    <p>天裂之后第三年。你是地铁避难所里的一个拾荒者。</p><div class="seg"><button data-g="m" aria-pressed="${g==='m'}">少年</button><button data-g="f" aria-pressed="${g==='f'}">少女</button></div>
-   <input id="nmIn" maxlength="6" placeholder="你的名字" autocomplete="off"><button class="btn gold" id="nmGo">踏入灵潮</button>${back?`<button class="btn sm ghost" id="nmBack">返回存档 ${back.n}（${esc(back.name)}）</button>`:''}</div></div>`;
+   <input id="nmIn" maxlength="6" placeholder="林舟" autocomplete="off"><button class="btn gold" id="nmGo">踏入灵潮</button>${back?`<button class="btn sm ghost" id="nmBack">返回存档 ${back.n}（${esc(back.name)}）</button>`:''}</div></div>`;
   requestAnimationFrame(()=>paintTo($('#vbg'),'sky'));
   ov.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{g=b.dataset.g;ov.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));});
-  const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');S.gender=g;S.name=v||pick(g==='f'?['苏迟','沈青','林晚','顾宁']:['林砚','陆川','沈野','顾行']);S.lastDaily=new Date().toDateString();save();playStory('prologue');};
+  const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');S.gender=g;S.name=v||(g==='f'?'林晚':'林舟');S.flags.v1=1;S.lastDaily=new Date().toDateString();save();playStory('prologue');};
   $('#nmGo').onclick=go;if(back)$('#nmBack').onclick=()=>switchSlot(back.n);$('#nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{lastT=performance.now();offline();}});
 addEventListener('pagehide',save);setInterval(()=>{if(S.started)save();},5000);
@@ -6365,7 +6810,7 @@ function start(data){artLoad();S=data&&data.S?hydrate(data.S):load();pplInit();T
   requestAnimationFrame(t=>{lastT=t;loop(t);});}
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={needQ,stName,addQi,nextInfo,refine,bnFight,leakTick,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
 function cultMore(){const R=realmIdx();return `${daoHTML()}${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
