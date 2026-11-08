@@ -692,6 +692,22 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .sweep-list .row2{gap:8px}
 .sweep-n{display:flex;gap:4px;flex-shrink:0}
 .sweep-n .btn{min-width:40px;padding-left:8px;padding-right:8px}
+/* 读剧情工具条、回顾 */
+.st-tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.st-skip.on{background:rgba(200,160,80,.35);border-color:rgba(232,200,120,.6)}
+.st-log{position:absolute;inset:0;z-index:20;background:rgba(10,9,8,.92);display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
+.st-log-h{display:flex;justify-content:space-between;align-items:center;color:var(--bone);font-size:15px;margin-bottom:10px}
+.st-log-b{flex:1;overflow-y:auto;color:var(--bone);font-size:14px;line-height:1.75}
+.st-log-b p{margin:0 0 10px}.st-log-b .ln{display:block;color:#e8c878;font-size:12px;letter-spacing:.08em}
+.seal-por{width:100%;height:100%}
+/* 前情提要、因果录 */
+.recap p{margin:6px 0}.recap .rc-path{color:var(--dim);font-size:13px;line-height:1.7}
+.cause-list{margin:0;padding:0;list-style:none}.cause-list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.6}
+.cause-list .cv{display:inline-block;min-width:3.2em;color:#c9a35a;font-size:12px}
+/* 提示不要压在弹窗上：弹窗打开时挪到底部，剧情里挪到标题下面 */
+body:has(#ov:not([hidden]):not(.vn)) #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
+body:has(#ov.vn:not([hidden])) #toasts{top:calc(env(safe-area-inset-top,0px) + 46px)}
+body:has(#ov:not([hidden])) .toast{opacity:.94;font-size:12px}
 
 </style>
 </head>
@@ -717,7 +733,6 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 <div id="bt" hidden></div>
 <div id="miniGameOverlay" hidden></div>
 <div id="ov" hidden></div>
-<script src="novels.js"></script>
 <script>
 (function(){
 /* ================= ART：场景、立绘、精灵 ================= */
@@ -1934,7 +1949,7 @@ function bookHTML(){const un=Object.keys(S.books).filter(k=>S.books[k]>0&&BOOKS[
   ${ln.length?`<p class="note">已学：${ln.map(k=>BOOKS[k].n).join(' ')}</p>`:''}`;}
 function learnBook(k){const B=BOOKS[k];if(!B||!(S.books[k]>0)||S.stage<B.lv)return;S.books[k]--;if(S.learned.includes(k)){S.stones+=zsAt(maxZone(),6);toast('这部你早已学会，转手卖了些灵石。');}else{S.learned.push(k);toast('参悟 '+B.n+(B.ty==='skill'?'，战斗中可在「法术」里施展':''),'big');}render();save();}
 function gemHTML(){const ks=Object.keys(S.gems).filter(k=>S.gems[k]>0).sort((a,b)=>b[1]-a[1]||a.localeCompare(b));if(!ks.length)return '';const can=S.clan&&S.clan.bld.qi>=1;
- return `<h2 class="sec">宝石 <small>${can?'三颗同品可在炼器坊合成更高一品':'建立家族并修建炼器坊后可合成'}</small></h2><div class="gemgrid">${ks.map(k=>`<div class="gemc"><i class="gm g-${k[0]}"></i><div><b>${gemName(k)} ×${S.gems[k]}</b><small>${gemText(k)}</small></div>${can&&S.gems[k]>=3&&+k[1]<5?`<button class="btn sm ghost" data-act="fuse" data-arg="${k}">合成</button>`:''}</div>`).join('')}</div>`;}
+ return `<h2 class="sec">宝石 <small>${can?'三颗同品可在炼器坊合成更高一品':'建立行社并修建炼器坊后可合成'}</small></h2><div class="gemgrid">${ks.map(k=>`<div class="gemc"><i class="gm g-${k[0]}"></i><div><b>${gemName(k)} ×${S.gems[k]}</b><small>${gemText(k)}</small></div>${can&&S.gems[k]>=3&&+k[1]<5?`<button class="btn sm ghost" data-act="fuse" data-arg="${k}">合成</button>`:''}</div>`).join('')}</div>`;}
 function gemFuse(k){if(!(S.clan&&S.clan.bld.qi>=1)||!(S.gems[k]>=3)||+k[1]>=5)return;S.gems[k]-=3;const up=k[0]+(+k[1]+1);let msg='';
  if(Math.random()<.04*S.clan.bld.qi){S.gems[up]=(S.gems[up]||0)+2;msg='（炉火正旺，多出了一颗！）';}else S.gems[up]=(S.gems[up]||0)+1;toast('合成 '+gemName(up)+msg,'big');render();save();}
 const findItem=id=>S.bag.find(x=>x.id===id)||SLOT5.map(k=>S.gear[k]).find(x=>x&&x.id===id);
@@ -1942,7 +1957,7 @@ function inlayOpen(id){const it=findItem(id);if(!it||!it.so)return;if(!it.gems)i
  const cur=it.gems.map((g,i)=>({t:'拆下 '+gemName(g)+'（'+gemText(g)+'）',cls:'ghost',fn:()=>{it.gems.splice(i,1);S.gems[g]=(S.gems[g]||0)+1;render();save();inlayOpen(id);}}));
  const free=it.gems.length<it.so,inv=Object.keys(S.gems).filter(k=>S.gems[k]>0).sort((a,b)=>b[1]-a[1]);
  const add=free?inv.slice(0,6).map(k=>({t:'嵌入 '+gemName(k)+'（'+gemText(k)+'）',cls:'gold',fn:()=>{S.gems[k]--;it.gems.push(k);toast('镶嵌 '+gemName(k));render();save();if(it.gems.length<it.so)inlayOpen(id);}})):[];
- modal(`<h3>镶嵌</h3><p>${itemName(it)} · 孔位 ${it.gems.length}/${it.so}</p>${!inv.length&&free?'<p>你身上没有宝石。宝箱、首领、秘境和家族派遣都可能带回宝石。</p>':''}`,cur.concat(add,[{t:'完成',cls:'ghost'}]));}
+ modal(`<h3>镶嵌</h3><p>${itemName(it)} · 孔位 ${it.gems.length}/${it.so}</p>${!inv.length&&free?'<p>你身上没有宝石。宝箱、首领、秘境和行社派遣都可能带回宝石。</p>':''}`,cur.concat(add,[{t:'完成',cls:'ghost'}]));}
 
 /* ================= 新剧情：插曲、家族、第二卷「天外天」 ================= */
 function stIns(after,ch){const i=STORY.findIndex(c=>c.id===after);STORY.splice(i<0?STORY.length:i+1,0,ch);}
@@ -2463,7 +2478,7 @@ QUESTS.push(
  {id:'man3',npc:'man',title:'星图',desc:'在星海残域找到小满家乡的星图',unlock:()=>F('manOrigin'),obj:{type:'node',z:8,g:'图',ev:'q_xingtu'},
   offer:'{bro}，我想知道我是从哪里来的。苏绾姐姐说，星海里有一张图。',done:'原来……我家在那么远的地方。我不哭。我现在的家，在这里。',reward:()=>gBook('xingchen')+kar(1)},
  {id:'cm1',npc:'tie',title:'地牢',desc:'去天坑救出陈默的妹妹',unlock:()=>F('chenmoStay')&&maxZone()>=5,obj:{type:'node',z:5,g:'牢',ev:'q_jail'},
-  offer:'陈默那孩子，这几天一句话没说。他妹妹关在天坑东边的地牢里。{name}，帮帮他。',done:'人救回来了。陈默说，这条命以后是家族的。',reward:()=>{if(S.clan)S.clan.fame+=10;return gS(zsAt(5,5))+' 家族声望 +10。';}},
+  offer:'陈默那孩子，这几天一句话没说。他妹妹关在天坑东边的地牢里。{name}，帮帮他。',done:'人救回来了。陈默说，这条命以后是行社的。',reward:()=>{if(S.clan)S.clan.fame+=10;return gS(zsAt(5,5))+' 行社声望 +10。';}},
  {id:'gui1',npc:'gui',title:'雾鲨鳍',desc:'斩杀雾鲨 5 只',unlock:()=>true,obj:{type:'kill',mob:'雾鲨',n:5},
   offer:'有个客人要五片雾鲨鳍。你去，我付宝石。',done:'成色不错。说好的，宝石。',reward:()=>gGem(null,3)+gGem(null,2)},
  {id:'su1',npc:'su',title:'她的故乡',desc:'在天庭遗迹找到苏绾故乡的遗物',unlock:()=>maxZone()>=9,obj:{type:'node',z:9,g:'乡',ev:'q_suhome'},
@@ -2518,7 +2533,7 @@ Object.assign(EVENTS,{
    {t:'绕路',act:()=>'你绕了很远的路。回头时，他还坐在那里，像一块石头。'}
   ]},
  lost_kid:{title:'迷路的少年',g:'童',zones:'any',need:()=>!!S.clan,lines:['一个十来岁的少年蹲在废墟里，手里攥着半块发霉的饼。','他看见你身上的剑，眼睛亮了：“你是修仙的吗？能……能带我走吗？”'],
-  choices:[{t:'带他回家族',act:()=>{const m=clRecruit(true);return m?'少年说他叫'+m.name+'。他一路上都在问修仙是不是能飞。':'祠堂住不下了。你把他送到了青石站，托铁叔照顾。'+kar(1);}},
+  choices:[{t:'带他回行社',act:()=>{const m=clRecruit(true);return m?'少年说他叫'+m.name+'。他一路上都在问修仙是不是能飞。':'祠堂住不下了。你把他送到了青石站，托铁叔照顾。'+kar(1);}},
    {t:'给他一些灵石',act:()=>{S.stones=Math.max(0,S.stones-zs(1));return '他攥着灵石，朝你磕了个头。'+kar(1);}},{t:'走开',act:()=>'他没有追上来。'}]},
  beggar:{title:'讨饭的老头',g:'丐',zones:'any',once:1,lines:['一个衣衫褴褛的老头靠在墙根，伸出一只破碗。','“小哥，赏口吃的吧。老头子三天没吃饭了。”'],
   choices:[{t:'把干粮全给他',act:()=>{kar(1);S.flags.beggarFed=1;return '老头狼吞虎咽地吃完，抹了抹嘴，忽然在你肩上拍了一下。“好心有好报。”你只觉得一股热流直冲丹田——再看时，墙根已经空了。'+gQi(.6)+gBook();}},
@@ -2530,7 +2545,7 @@ Object.assign(EVENTS,{
 });
 const IDLE2=['three_box','beggar'];
 /* ---------- 鬼手的货 ---------- */
-function guiStock(){const day=new Date().toDateString()+(new Date().getHours()<12?'a':'b');if(S.guiStock&&S.guiStock.day===day)return S.guiStock.items;const z=maxZone(),items=[];
+function guiStock(){const day=dayKey()+(new Date().getHours()<12?'a':'b');if(S.guiStock&&S.guiStock.day===day)return S.guiStock.items;const z=maxZone(),items=[];
  const t=Math.min(5,gemTierFor(z)+1);items.push({k:'gem',g:pick(['a','d','h','c'])+t,p:zsAt(z,6*t)});items.push({k:'gem',g:pick(['a','d','h','c'])+Math.max(1,t-1),p:zsAt(z,4*t)});
  const bl=Object.keys(BOOKS).filter(b=>!S.learned.includes(b)&&BOOKS[b].lv<=S.stage+6);if(bl.length)items.push({k:'book',b:pick(bl),p:zsAt(z,25)});
  items.push({k:'item',p:zsAt(z,30)});items.push({k:'box',p:zsAt(z,8)});S.guiStock={day,items};return items;}
@@ -2592,7 +2607,7 @@ const BOND_CHAT={
 };
 function bondHTML(){const ks=Object.keys(BOND).filter(k=>safe(BOND[k].met));if(!ks.length)return '';
  return `<h2 class="sec">缘分 <small>${partners().length?'道侣：'+partners().map(p=>BOND[p].n).join('、')+'（'+partners().length+'/'+PARTNER_MAX+'）· ':''}聊天、送礼、做委托、剧情选择都会改变好感</small></h2><div class="bonds">${ks.map(k=>{const B=BOND[k],v=avOf(k),rel=relName(k),dead=rel==='已故',pk=bondPerk(k);
-  return `<div class="bd ${dead?'dead':''} ${isPartner(k)?'love':''}"><div class="bp">${(PORTRAIT[k]||PORTRAIT.mo)()}</div><div class="in"><div class="iname">${B.n}<span class="rel">${rel}</span>${B.romance&&!dead&&!B.child?'<span class="rh">♡</span>':''}</div>
+  return `<div class="bd ${dead?'dead':''} ${isPartner(k)?'love':''}"><div class="bp">${porOf(k)}</div><div class="in"><div class="iname">${B.n}<span class="rel">${rel}</span>${B.romance&&!dead&&!B.child?'<span class="rh">♡</span>':''}</div>
    <div class="hb2"><i style="width:${Math.max(0,v)}%"></i>${v<0?`<b style="width:${-v}%"></b>`:''}</div><div class="istat">${dead?'——':'好感 '+v}${pk?' · '+pk:''}${!dead&&B.away&&safe(B.away)?' · 暂不在身边':''}</div></div></div>`;}).join('')}</div>`;}
 /* ---------- 缘分剧情 ---------- */
 const BPREV={};
@@ -3001,7 +3016,7 @@ function followers(){const L=[{k:'mo'}];if(WD.M&&WD.M.kind!=='town'){if(F('zeroS
 function wFade(fn){const f=$('#wfade');if(!f){fn();return;}f.classList.add('on');setTimeout(()=>{try{fn();}finally{setTimeout(()=>f.classList.remove('on'),60);}},260);}
 function goTown(defeat){WD.prev=null;const doit=()=>{S.hpF=1;S.mpF=1;S.loc='town';wLoad(buildTown(),defeat?[13,5]:[24,3]);const t=$('#travel');if(t)t.hidden=true;if(defeat)setTimeout(()=>toast('你被抬回了青石站，伤已经养好了。'),300);save();};
  if(TAB!=='world'){TAB='world';render();doit();}else wFade(doit);}
-function goZone(z){if(!zoneUnlocked(z))return;WD.prev=null;wFade(()=>{S.loc='z'+z;wLoad(z===7?buildAbyss():buildZone(z),z===7?[6,9]:[2,2]);const t=$('#travel');if(t)t.hidden=true;
+function goZone(z){if(!zoneUnlocked(z))return;WD.prev=null;advanceDays(1,'trip');wFade(()=>{S.loc='z'+z;wLoad(z===7?buildAbyss():buildZone(z),z===7?[6,9]:[2,2]);const t=$('#travel');if(t)t.hidden=true;
   if(!S.visited.includes(z))S.visited.push(z);checkStory();save();});}
 function wTravel(){if(TAB!=='world'){TAB='world';render();}const t=$('#travel');if(!t)return;t.innerHTML=travelHTML();t.hidden=false;requestAnimationFrame(()=>{drawTravel();const sc=t.querySelector('.travel-scroll'),cur=t.querySelector('.tsp.cur');if(sc&&cur)sc.scrollTop=Math.max(0,cur.offsetTop-sc.clientHeight/2);});}
 
@@ -3027,14 +3042,14 @@ function openChest(p){p.type='chestO';p.act=null;EVZ=Math.min(WD.M.z,10);const R
  if(R<.5)t=gS(zs(3+Math.random()*3));else if(R<.72){S.meds++;t=' 疗伤药 +1。';}else if(R<.84){S.mps++;t=' 清心丹 +1。';}else t=gItem(rollRar(false));
  toast(('打开宝箱：'+t).replace(/\s+/g,' ').replace('： ','：'));save();}
 function wEncounter(e){const M=WD.M,z=M.z,P=WD.P;P.path=[];P.act=null;let foes;
- if(e.raid){const mz=maxZone();startBattle([mkCustom(mz,{look:'天穹追兵',name:'天穹刺客',m:1.3}),mkCustom(mz,{look:'天穹追兵',name:'天穹刺客',m:1})],{bg:'town',onWin:()=>{e.dead=true;S.raid=Math.max(0,(S.raid||1)-1);if(!S.raid&&S.clan){S.clan.fame+=10;clLog('击退了天穹会的刺客。');toast('刺客全部击退！家族声望 +10','big');}},onFlee:()=>{e.stun=3;P.inv=2.5;}});return;}
+ if(e.raid){const mz=maxZone();startBattle([mkCustom(mz,{look:'天穹追兵',name:'天穹刺客',m:1.3}),mkCustom(mz,{look:'天穹追兵',name:'天穹刺客',m:1})],{bg:'town',onWin:()=>{e.dead=true;S.raid=Math.max(0,(S.raid||1)-1);if(!S.raid&&S.clan){S.clan.fame+=10;clLog('击退了天穹会的刺客。');toast('刺客全部击退！行社声望 +10','big');}},onFlee:()=>{e.stun=3;P.inv=2.5;}});return;}
  if(e.boss)foes=[e.abyss?mkEnemy(7,true):mkEnemy(z,true)];
  else{foes=[mobOf(z,e.look,e.elite)];const ex=z===0?(Math.random()<.45?1:0):1+(Math.random()<.35?1:0);for(let i=0;i<ex;i++)foes.push(mobOf(z,pick(ZONES[z].mobs)));if(foes.length>1)foes.forEach(f=>{f.hp*=.72;f.max=f.hp;f.atk*=.66;});}
  startBattle(foes,{z,noFlee:!!e.boss,onWin:()=>{e.dead=true;if(e.boss)finishZone(e);},onFlee:()=>{e.stun=3;P.inv=2.5;}});}
 function mobOf(z,look,elite){const e=mkEnemy(z,false);e.look=look;e.n=look;if(elite){e.hp*=1.8;e.max=e.hp;e.atk*=1.3;e.stones*=3;e.elite=true;e.n='狂暴'+look;}return e;}
 function finishZone(e){const M=WD.M,z=M.z;
  if(e.abyss){toast('深渊第 '+S.abyss+' 层已破，更深处的守关者醒了。','big');setTimeout(()=>{if(WD.M===M){abyssGuard(M);wHud();}},900);save();return;}
- const bonus=zsAt(z,8);S.stones+=bonus;qProgress('run',{z});EVZ=z;const item=chance(.6)?gItem(rollRar(true)):'';
+ advanceDays(2,'trip');const bonus=zsAt(z,8);S.stones+=bonus;qProgress('run',{z});EVZ=z;const item=chance(.6)?gItem(rollRar(true)):'';
  modal(`<h3>探索完成</h3><p>你击败了「${ZONES[z].boss}」，走到了「${ZONES[z].n}」的尽头。</p><p>通关奖励：灵石 <b>${fmt(bonus)}</b>${item?'<br>'+item:''}</p><p>从入口的光圈可以离开，或者继续在这里清剿妖兽。</p>`,
   [{t:'继续',cls:'gold',fn:()=>{const p=S.pending.find(id=>{const c=STORY.find(x=>x.id===id);return c&&!c.side;});if(p)playStory(p);}}],ZONE_SCN[z]);save();}
 
@@ -3197,8 +3212,8 @@ function mkParty(){const st=stats(),mm0=Math.round(20+S.stage*3),mm=Math.round(m
  const P=[{key:'hero',spr:S.gender==='f'?'hero_f':'hero_m',name:S.name,max:st.hp,hp:Math.max(1,st.hp*(S.hpF??1)),mmax:mm,mp:Math.round(mm*(S.mpF??1)),atk:st.atk,def:st.def,crit:st.crit,healK:st.heal,spd:12+st.spd,ls:st.ls,cd:st.cd,pen:st.pen,mreg:st.mreg,dr:st.dr,dodge:st.dodge}];
  const comp=(key,name,k)=>({key,spr:key,name,max:st.hp*.8,hp:st.hp*.8,mmax:mm0,mp:mm0,atk:st.atk*k,def:st.def*.8,crit:.08,spd:9+Math.random()*4});
  const C=[];const add=(k,name,m)=>{if(C.length<2&&!C.some(c=>c.key===k))C.push(comp(k,name,m));};
- partners().forEach(pk=>{if(['zhou','su','ning','cm','hong'].includes(pk)&&!(BOND[pk].away&&safe(BOND[pk].away)))add(pk,BOND[pk].n,1);});
- if(F('zeroSaved')&&qDone('zero1'))add('zero',S.flags.zeroName||'零号',(S.sworn||[]).includes('zero')?1.05:.85);if(qDone('zhou1')||(F('zhouSaved')&&avOf('zhou')>=50))add('zhou','周烈',.9);
+ partners().forEach(pk=>{if(['zhou','su','ning','cm','hong','xiao'].includes(pk)&&!(BOND[pk].away&&safe(BOND[pk].away)))add(pk,BOND[pk].n,1);});
+ if(BOND.zero.met()&&avOf('zero')>=40)add('zero','初一',(S.sworn||[]).includes('zero')?1.05:.85);if(qDone('zhou1')||(F('zhouSaved')&&avOf('zhou')>=50))add('zhou','周烈',.9);
  if(F('feisheng')&&avOf('su')>=40)add('su','苏绾',1);if(F('chenmoStay')&&!F('chenmoGone')&&avOf('cm')>=50)add('cm','陈默',.85);C.forEach(c=>P.push(c));
  return P.map(a=>Object.assign(a,{side:'p',alive:true,ox:0,oy:0,alpha:1,flash:0,buf:0,defd:false,walk:0}));}
 function startBattle(foes,opt){if(BT)return;opt=opt||{};const bgk=opt.bg!==undefined?opt.bg:(WD.M&&WD.M.kind!=='town'?WD.M.z:'town');
@@ -3341,7 +3356,7 @@ function btFoeDie(e){S.slain++;
 /* ---------- 结算 ---------- */
 async function btWin(){BT.phase='end';btSetCmd('','idle');await bwait(550);if(!BT)return;sfx('win');
  if(BT.opt.jie){const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btResult('渡劫成功',['九道雷光散尽，云开见日。','你身上的旧伤，被雷火一并烧去了。'],'gold','破境',()=>{const o=BT.opt;btClose();o.onWin&&o.onWin();});return;}let st=0;const L=[],lk=1+stats().luck,lootM=lk*omenMul('loot');let nIt=0;BT.foes.forEach(f=>st+=f.stones||0);st=Math.ceil(st*lk*omenMul('stone'));S.stones+=st;
- const qi=req(S.stage)*.08*omenMul('bqi')*BT.foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);addQi(qi,true);L.push('灵石 +'+fmt(st),'灵气 +'+fmt(qi));
+ const qi=req(S.stage)*QI_BATTLE*(BT.opt.farm&&FARM?zYield(FARM.z):1)*omenMul('bqi')*BT.foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);addQi(qi,true);L.push('灵石 +'+fmt(st),'灵气 +'+fmt(qi));
  if(BT.uniq){const u=BT.uniq;if(S.bag.length<BAG_MAX){S.bag.push(u);L.push(`<span class="r-chuan"><span class="iname">传说 · ${u.n}</span></span>`);}else{S.stones+=u.sell;L.push(u.n+'（行囊已满，已换成灵石）');}}
  const MD={};BT.foes.forEach(f=>{const o=matDrops(f);for(const k in o){MD[k]=(MD[k]||0)+o[k];S.mats[k]=(S.mats[k]||0)+o[k];}});if(Object.keys(MD).length)L.push(matLine(MD));
  BT.foes.forEach(f=>{if(f.special==='zhou'||f.noLoot)return;const fz=Math.max(0,f.z||0);let gp=Math.random()<(f.boss?.35:f.elite?.15:.04)*lootM;if(f.boss){S.pity.gem=(S.pity.gem||0)+1;if(S.pity.gem>=5)gp=true;}if(gp){if(f.boss)S.pity.gem=0;L.push(gGem(null,gemTierFor(fz)).trim());}if(f.boss&&Math.random()<.06*lootM){L.push(gBook().trim());}
@@ -3357,7 +3372,7 @@ function farmPick(){const L=ZORD.filter(z=>S.bossDown.includes(z));if(!L.length)
  modal(`<h3>连战首领</h3><p>选一个打过的首领连续挑战，一场接一场，中间不停。每场之后回复两成生命和灵力。点战斗右上角的「收手」，打完这一场就停；输了也会停。</p>`,
   (S.bossDown.includes(6)?[{t:'灵源深渊 · 自动闯关（从第 '+(S.abyss+1)+' 层起，直到失败）',cls:'red',fn:()=>farmStart(7)}]:[]).concat(L.slice().reverse().map(z=>({t:ZONES[z].boss+' · '+ZONES[z].n,fn:()=>farmStart(z)}))).concat([{t:'算了',cls:'ghost'}]));}
 function farmStart(z){FARM={z,n:0,st:0,items:0,qi:0,a0:S.abyss};S.btAuto=true;farmNext();}
-function farmNext(){if(!FARM)return;FARM.n++;startBattle([mkEnemy(FARM.z,true)],{bg:FARM.z,farm:1,onLose:()=>farmEnd(true),onFlee:()=>farmEnd()});}
+function farmNext(){if(!FARM)return;FARM.n++;if(FARM.z!==7&&FARM.n>1){advanceDays(1,'trip');zoneDeplete(FARM.z,.08);}startBattle([mkEnemy(FARM.z,true)],{bg:FARM.z,farm:1,onLose:()=>farmEnd(true),onFlee:()=>farmEnd()});}
 function farmEnd(lost){if(!FARM)return;const F0=FARM;FARM=null;if(WD.M&&WD.M.kind==='abyss'){WD.M.ents=WD.M.ents.filter(e=>!(e.kind==='foe'&&e.abyss));abyssGuard(WD.M);wHud();}save();setTimeout(()=>modal(`<h3>${F0.z===7?'深渊闯关结束':'连战结束'}</h3><p>${F0.z===7?'从第 '+(F0.a0+1)+' 层闯到第 '+(S.abyss+(lost?1:0))+' 层，连破 <b>'+(S.abyss-F0.a0)+'</b> 层':'共挑战 <b>'+F0.n+'</b> 场'}${lost?'，最后一场败下阵来':''}。</p><p>灵石 <b>${fmt(F0.st)}</b> · 灵气 <b>${fmt(F0.qi)}</b> · 装备 <b>${F0.items}</b> 件</p>`,[{t:'好',cls:'gold'}]),200);}
 async function btLose(){BT.phase='end';btSetCmd('','idle');await bwait(600);if(!BT)return;S.hpF=1;S.mpF=1;save();const inTown=!WD.M||WD.M.kind==='town';
  btResult('败下阵来',[inTown?'你被扶回帐篷里歇了一阵。':'你被击倒了。站里的人把你抬了回去。','这一趟拿到的东西都还在身上。'],'red',inTown?'起身':'回青石站',()=>{const o=BT.opt;btClose();if(o.onLose)o.onLose();else if(!inTown)goTown(true);});}
@@ -3426,7 +3441,12 @@ function btSmart(a,fs,ps,sk,boss){const has=k=>sk(k);const burning=fs.filter(f=>
 
 /* ================= 一键扫荡 =================
    击败过某地首领（通关过一次）后，可以一键清完那张图上的妖兽和首领，不限次数。
-   灵源深渊：扫荡已经闯过的最深一层的守关者，不会推进层数。 */
+   灵源深渊：扫荡已经闯过的最深一层的守关者，不会推进层数。
+   限制：每扫一遍要花三天；同一处连着扫，妖兽越来越少（灵脉余量），歇几天或换个地方就会回来。 */
+const zDep=z=>(S.zDep&&S.zDep[z])||0;
+const zYield=z=>Math.max(.25,1-.75*zDep(z));
+function zoneRegen(n){if(!S.zDep)return;for(const k in S.zDep){S.zDep[k]=Math.max(0,S.zDep[k]-.05*n);if(!S.zDep[k])delete S.zDep[k];}}
+function zoneDeplete(z,a){S.zDep=S.zDep||{};S.zDep[z]=Math.min(1,zDep(z)+a);}
 const SWEEP_N=[1,5,10];
 function sweepZones(){return ZORD.filter(z=>S.bossDown.includes(z)&&zoneUnlocked(z));}
 function sweepFoes(z){const F0=[];
@@ -3435,11 +3455,11 @@ function sweepFoes(z){const F0=[];
  const nE=6+Math.min(z,4);
  for(let i=0;i<nE;i++){F0.push(mobOf(z,pick(pool),Math.random()<.15));const ex=z===0?(Math.random()<.45?1:0):1+(Math.random()<.35?1:0);for(let j=0;j<ex;j++)F0.push(mobOf(z,pick(pool)));}
  F0.push(mkEnemy(z,true));return F0;}
-function sweepRun(z,T){const foes=sweepFoes(z),lk=1+stats().luck,lootM=lk*omenMul('loot');
- let st=0;foes.forEach(f=>st+=f.stones||0);st=Math.ceil(st*lk*omenMul('stone'));
- if(z!==7){const bonus=zsAt(z,8);st+=bonus;qProgress('run',{z});}
+function sweepRun(z,T){const foes=sweepFoes(z),Y=zYield(z),lk=1+stats().luck,lootM=lk*omenMul('loot')*Y;
+ let st=0;foes.forEach(f=>st+=f.stones||0);st=Math.ceil(st*lk*omenMul('stone')*Y);
+ if(z!==7){const bonus=Math.ceil(zsAt(z,8)*Y);st+=bonus;qProgress('run',{z});}
  S.stones+=st;T.st+=st;
- const qi=req(S.stage)*.08*omenMul('bqi')*foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);const q0=S.qi;addQi(qi,true);T.qi+=S.qi-q0;
+ const qi=req(S.stage)*QI_BATTLE*Y*omenMul('bqi')*foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);const q0=S.qi;addQi(qi,true);T.qi+=S.qi-q0;
  foes.forEach(f=>{S.slain++;T.kills++;
   if(z!==7&&!f.elite&&!f.boss&&S.kills[z]!==undefined)S.kills[z]++;
   qProgress('kill',{look:f.look,z:f.z});
@@ -3452,24 +3472,38 @@ function sweepRun(z,T){const foes=sweepFoes(z),lk=1+stats().luck,lootM=lk*omenMu
   if(Math.random()<Math.min(1,(f.boss?1:f.elite?.6:.2)*lootM)){const it=mkItem(fz,f.boss||f.elite);if(S.bag.length<BAG_MAX){S.bag.push(it);T.items++;if(it.r>=2&&T.lines.length<14)T.lines.push(`<span class="r-${RAR[it.r].c}"><span class="iname">${it.n}</span></span>`);}else{S.stones+=it.sell;T.st+=it.sell;T.sold++;}}
   if(Math.random()<(f.boss?.6:.07)){S.meds++;T.meds++;}});
  if(z===7&&S.abyss>=10){/* 深渊十层以上的扫荡不重复给仙府残图 */}
- T.runs++;}
+ T.y=Math.min(T.y??1,Y);zoneDeplete(z,.22);advanceDays(3,'trip');T.runs++;}
 function sweepGo(z,n){z=+z;n=+n||1;if(BT){toast('战斗中不能扫荡');return;}
  if(z!==7&&!S.bossDown.includes(z)){toast('这里还没有通关过，先亲自打一遍');return;}
  if(z===7&&S.abyss<1){toast('深渊还没有闯过任何一层');return;}
  const T={runs:0,st:0,qi:0,kills:0,items:0,gems:0,meds:0,sold:0,mats:{},lines:[]};
- for(let i=0;i<n;i++)sweepRun(z,T);
- S.hpF=1;S.mpF=1;save();checkStory();try{render();}catch(e){}
+ for(let i=0;i<n;i++)sweepRun(z,T);const sold=autoSellJunk();
+ S.hpF=1;S.mpF=1;save();checkStory();try{render();}catch(e){}const left=Math.round(zYield(z)*100);
  const nm=z===7?'灵源深渊 · 第 '+S.abyss+' 层':ZONES[z].n;
- modal(`<h3>扫荡完成 · ${nm}</h3><p>扫荡 <b>${T.runs}</b> 遍，斩妖 <b>${T.kills}</b>${z===7?'':'（含首领「'+ZONES[z].boss+'」×'+T.runs+'）'}。</p>
-  <p>灵石 <b>${fmt(T.st)}</b> · 灵气 <b>${fmt(T.qi)}</b><br>装备 ${T.items} 件${T.sold?'（另有 '+T.sold+' 件行囊放不下，已换成灵石）':''} · 宝石 ${T.gems} · 疗伤药 ${T.meds}</p>
+ modal(`<h3>扫荡完成 · ${nm}</h3><p>扫荡 <b>${T.runs}</b> 遍，斩妖 <b>${T.kills}</b>${z===7?'':'（含首领「'+ZONES[z].boss+'」×'+T.runs+'）'}。用去 <b>${T.runs*3}</b> 天，如今是${dateName()}。</p><p class="note">这里的灵脉余量还剩 ${left}%${left<60?'——妖兽已经稀了，收获跟着变少。歇几天、或者换个地方再来':''}。</p>
+  <p>灵石 <b>${fmt(T.st)}</b> · 灵气 <b>${fmt(T.qi)}</b><br>装备 ${T.items} 件${T.sold?'（另有 '+T.sold+' 件行囊放不下，已换成灵石）':''}${sold.n?'（凡品 '+sold.n+' 件已自动卖掉，灵石 +'+fmt(sold.g)+'）':''} · 宝石 ${T.gems} · 疗伤药 ${T.meds}</p>
   ${Object.keys(T.mats).length?'<p>'+matLine(T.mats)+'</p>':''}${T.lines.length?'<div class="newsbox">'+T.lines.map(l=>'<p>'+l+'</p>').join('')+'</div>':''}`,
   [{t:'再扫 '+n+' 遍',cls:'gold',fn:()=>sweepGo(z,n)},{t:'换个地方',fn:sweepPick},{t:'好',cls:'ghost'}]);}
 function sweepPick(){const L=sweepZones();if(!L.length&&S.abyss<1){toast('还没有通关过任何地点。先亲自打败一处的首领，那里就能一键扫荡了。');return;}
  const here=WD.M&&WD.M.kind==='zone'&&S.bossDown.includes(WD.M.z)?WD.M.z:null;
- const rows=L.slice().reverse().map(z=>`<div class="row2"><div class="in"><div class="iname">${ZONES[z].n}${z===here?' <span class="lv">当前</span>':''}</div><div class="istat">首领「${ZONES[z].boss}」 · 每遍约 ${fmt(zsAt(z,8))} 灵石起</div></div><div class="sweep-n">${SWEEP_N.map(n=>`<button class="btn sm ${n===1?'gold':''}" data-sw="${z}:${n}">×${n}</button>`).join('')}</div></div>`).join('')
+ const rows=L.slice().reverse().map(z=>`<div class="row2"><div class="in"><div class="iname">${ZONES[z].n}${z===here?' <span class="lv">当前</span>':''}</div><div class="istat">首领「${ZONES[z].boss}」 · 灵脉余量 ${Math.round(zYield(z)*100)}%</div></div><div class="sweep-n">${SWEEP_N.map(n=>`<button class="btn sm ${n===1?'gold':''}" data-sw="${z}:${n}">×${n}</button>`).join('')}</div></div>`).join('')
   +(S.abyss>=1?`<div class="row2"><div class="in"><div class="iname">灵源深渊 · 第 ${S.abyss} 层</div><div class="istat">只扫已经闯过的最深一层，不会往下推进</div></div><div class="sweep-n">${SWEEP_N.map(n=>`<button class="btn sm" data-sw="7:${n}">×${n}</button>`).join('')}</div></div>`:'');
- modal(`<h3>一键扫荡</h3><p class="note">通关过一次的地点，可以一键清完整张图的妖兽和首领，不限次数。</p><div class="sweep-list">${rows}</div>`,[{t:'返回',cls:'ghost'}]);
+ modal(`<h3>一键扫荡</h3><p class="note">通关过一次的地点，可以一键清完整张图的妖兽和首领。每扫一遍要花三天。同一处扫得太勤，妖兽就稀了；歇几天，或者换个地方。</p><div class="sweep-list">${rows}</div>`,[...(S.bossDown.length?[{t:'连战首领（亲自看着打）',fn:farmPick}]:[]),{t:'返回',cls:'ghost'}]);
  setTimeout(()=>{document.querySelectorAll('#ov [data-sw]').forEach(b=>b.onclick=e=>{e.stopPropagation();const [z,n]=b.dataset.sw.split(':');const ov=$('#ov');if(ov){ov.hidden=true;ov.innerHTML='';}sweepGo(z,n);});},0);}
+
+/* ================= 行囊整理 ================= */
+function junkOf(r){return S.bag.filter(it=>it.r<=r&&!better(it)&&!it.uniq&&!(it.gems&&it.gems.length)&&!it.lock);}
+function autoSellJunk(){if(!S.autoSell)return {n:0,g:0};const L=junkOf(0);let g=0;L.forEach(it=>g+=it.sell);const ids=new Set(L.map(it=>it.id));S.bag=S.bag.filter(it=>!ids.has(it.id));S.stones+=g;return {n:L.length,g};}
+function bagTidy(){const n0=junkOf(0).length,n1=junkOf(1).length,n2=junkOf(2).length;
+ modal(`<h3>整理行囊</h3><p class="note">只动「不如身上那件」的装备。传说、镶过宝石的不动。</p>`,[
+  {t:`卖掉凡品（${n0} 件）`,fn:()=>bagSell(0)},{t:`卖掉凡品、灵品（${n1} 件）`,fn:()=>bagSell(1)},
+  {t:`拆成材料：凡、灵、宝（${n2} 件）`,fn:()=>bagSalvage(2)},
+  {t:S.autoSell?'自动卖凡品：开（点一下关掉）':'自动卖凡品：关（点一下打开）',fn:()=>{S.autoSell=!S.autoSell;save();bagTidy();}},
+  {t:'返回',cls:'ghost'}]);}
+function bagSell(r){const L=junkOf(r);let g=0;L.forEach(it=>g+=it.sell);const ids=new Set(L.map(it=>it.id));S.bag=S.bag.filter(it=>!ids.has(it.id));S.stones+=g;save();render();toast('卖掉 '+L.length+' 件，灵石 +'+fmt(g));}
+function bagSalvage(r){const L=junkOf(r),o={};L.forEach(it=>{const zz=Math.max(0,Math.min(10,it.z===7?6:it.z||0)),ks=ZMAT[zz]||['gu','he'];const k=ks[it.id%ks.length];o[k]=(o[k]||0)+1+it.r;});
+ const ids=new Set(L.map(it=>it.id));S.bag=S.bag.filter(it=>!ids.has(it.id));for(const k in o)S.mats[k]=(S.mats[k]||0)+o[k];save();render();
+ modal(`<h3>拆解完成</h3><p>拆了 ${L.length} 件装备。</p>${Object.keys(o).length?'<p>'+matLine(o)+'</p>':''}`,[{t:'好',cls:'gold'}]);}
 
 /* ================= 小游戏：五子棋 / 押大小 / 比点数 / 三匣 / 翻牌 ================= */
 let MG=null;
@@ -3578,16 +3612,16 @@ function miniReward(k,lv){const z=maxZone();EVZ=z;let t='';const m=[0,1,3,8][lv|
 function playFor(k,lv,title){openMini(k,{lv,title,onDone:w=>{if(w){const t=miniReward(k,lv);toast(t||'赢了！','big');}else toast('这局输了。');live();}});}
 function qGame(id){const q=qOf(id);if(!q||qSt(id)!=='on')return;openMini(q.obj.g,{lv:q.obj.lv,title:q.title,onDone:w=>{if(w)qReady(id);else toast('没赢。随时可以再来。');}});}
 
-/* ================= 家族 ================= */
+/* ================= 行社 ================= */
 const CL_BLD={
- ci:{n:'祠堂',g:'祠',base:200,d:lv=>'族人上限 '+(3+lv*2)+'；其他建筑最高可升到 '+(lv+1)+' 级'},
- tian:{n:'灵田',g:'田',base:150,d:lv=>lv?'每小时产出灵石 '+fmt(tianRate(lv))+'，最多囤 12 小时':'开垦后每小时产出灵石'},
- dan:{n:'丹房',g:'丹',base:180,d:lv=>lv?'每 '+Math.round(danEvery(lv)/60)+' 分钟炼成一颗疗伤药，最多囤 '+(4+lv)+' 颗':'修建后自动炼制疗伤药'},
+ ci:{n:'议事堂',g:'祠',base:200,d:lv=>'社员上限 '+(3+lv*2)+'；其他建筑最高可升到 '+(lv+1)+' 级'},
+ tian:{n:'灵田',g:'田',base:150,d:lv=>lv?'每天产出灵石 '+fmt(tianRate(lv)*2)+'，最多囤 6 天':'开垦后每天产出灵石'},
+ dan:{n:'丹房',g:'丹',base:180,d:lv=>lv?'每 '+Math.max(1,Math.round(danEvery(lv)/7200))+' 天炼成一颗疗伤药，最多囤 '+(4+lv)+' 颗':'修建后自动炼制疗伤药'},
  qi:{n:'炼器坊',g:'器',base:300,d:lv=>lv?'可合成宝石（'+lv*4+'% 几率多出一颗）；派遣带回宝石 +'+lv*3+'%':'修建后可在行囊合成宝石'},
  jing:{n:'藏经阁',g:'经',base:250,d:lv=>'吐纳速度 +'+lv*6+'%；派遣带回秘籍 +'+lv*10+'%'},
- wu:{n:'演武场',g:'武',base:250,d:lv=>'你的攻防 +'+lv*4+'%；族人历练经验 +'+lv*10+'%'}
+ wu:{n:'演武场',g:'武',base:250,d:lv=>'你的攻防 +'+lv*4+'%；社员历练经验 +'+lv*10+'%'}
 };
-const CL_TIER=[{n:'探路',dur:15*60,m:1},{n:'清剿',dur:3600,m:3},{n:'远征',dur:4*3600,m:10}];
+const CL_TIER=[{n:'探路',days:3,m:1},{n:'清剿',days:8,m:3},{n:'远征',days:20,m:10}];
 const CL_STORY={
  chenmo:{name:'陈默',k:{id:'cm',h:'#1a1612',s:'#d8ad86',r:'#3a4a5a',a:'#8a7a5a',w:'#2a2a2a',p:'#2c2a26',b:'#1e1a16',hair:'short'},role:'护卫',apt:3,lv:6,cond:()=>S.seen.includes('lizu')&&!F('chenmoGone'),spy:1},
  man:{name:'林小满',k:'man',role:'弟子',apt:5,lv:1,cond:()=>S.seen.includes('xiaoman')},
@@ -3611,21 +3645,21 @@ const clRank=m=>m.lv+m.apt*3;
 const clZones=()=>ZORD.filter(z=>zoneUnlocked(z));
 const clDiff=(z,t)=>ZORD.indexOf(z)*4+t*3+2;
 const clP=(m,z,t)=>Math.max(.08,Math.min(.96,.55+(clRank(m)-clDiff(z,t))*.06));
-const clLevel=()=>{const f=S.clan.fame;return f>=800?'名门望族':f>=300?'一方豪族':f>=100?'新兴家族':f>=30?'小有名气':'寒门初立';};
+const clLevel=()=>{const f=S.clan.fame;return f>=800?'名门望族':f>=300?'一方豪族':f>=100?'新兴行社':f>=30?'小有名气':'寒门初立';};
 function clanSync(){const c=S.clan;if(!c)return;for(const id in CL_STORY){const D=CL_STORY[id];if(c.mem.some(m=>m.sid===id))continue;if(!safe(D.cond))continue;
-  c.mem.push({id:S.uid++,sid:id,name:D.name,k:D.k,role:D.role,apt:D.apt,lv:D.lv,exp:0,busy:null,spy:D.spy||0});clLog(D.name+'加入了家族。');toast(D.name+' 加入了'+c.name+'。');}}
-function openClanFound(){const def=(S.name||'林')[0]+'家';let nm=def;
- modal(`<h3>立族</h3><p>给你的家族起个名字。它会刻在祠堂的匾额上。</p><input id="clName" class="clin" maxlength="6" value="${esc(def)}" autocomplete="off">`,
-  [{t:'立匾',cls:'gold',fn:()=>{const v=(nm||def).trim().replace(/[<>&"]/g,'')||def;S.clan=clanHydrate({name:v,fame:5});clLog('立族。祠堂的匾额上写着「'+v+'」。');clanSync();
-   toast('「'+v+'」立族了！新的「家族」页已开启','big');live();save();}}]);
+  c.mem.push({id:S.uid++,sid:id,name:D.name,k:D.k,role:D.role,apt:D.apt,lv:D.lv,exp:0,busy:null,spy:D.spy||0});clLog(D.name+'加入了行社。');toast(D.name+' 加入了'+c.name+'。');}}
+function openClanFound(){const def='青石行社';let nm=def;
+ modal(`<h3>立社</h3><p>给你的行社起个名字。它会刻在议事堂的匾额上。</p><input id="clName" class="clin" maxlength="6" value="${esc(def)}" autocomplete="off">`,
+  [{t:'立匾',cls:'gold',fn:()=>{const v=(nm||def).trim().replace(/[<>&"]/g,'')||def;S.clan=clanHydrate({name:v,fame:5});clLog('立社。议事堂的匾额上写着「'+v+'」。');clanSync();
+   toast('「'+v+'」立社了！新的「行社」页已开启','big');live();save();}}]);
  const ci=$('#clName');if(ci){ci.oninput=e=>{nm=e.target.value;};setTimeout(()=>ci.focus(),60);}}
 function clRecruitCost(){return zsAt(maxZone(),5)*(1+Math.floor(S.clan.mem.length/3));}
-function clRecruit(free){const c=S.clan;if(!c)return;if(c.mem.filter(m=>!m.gone).length>=clCap()){toast('祠堂住不下了，先扩建祠堂','bad');return;}
+function clRecruit(free){const c=S.clan;if(!c)return;if(c.mem.filter(m=>!m.gone).length>=clCap()){toast('议事堂住不下了，先扩建议事堂','bad');return;}
  if(!free){const cost=clRecruitCost();if(S.stones<cost)return;S.stones-=cost;}
  const r=Math.random(),apt=r<.4?1:r<.72?2:r<.9?3:r<.98?4:5;const name=CL_SUR[Math.floor(Math.random()*CL_SUR.length)]+pick(CL_GIV)+(Math.random()<.4?pick(CL_GIV):'');
- const m={id:S.uid++,name,k:villager(S.uid*7),role:'族人',apt,lv:1,exp:0,busy:null,spy:Math.random()<.06?1:0,hide:Math.random()<.06?1:0};c.mem.push(m);
- clLog(name+'投奔了家族。');toast(name+' 投奔了家族（资质 '+'★'.repeat(apt)+'）');render();save();return m;}
-function clSend(id,z,t){const c=S.clan,m=c.mem.find(x=>x.id===id);if(!m||m.busy)return;const T=CL_TIER[t];m.busy={z,t,until:Date.now()+T.dur*1000};clLog(m.name+'出发去「'+ZONES[z].n+'」'+T.n+'。');toast(m.name+' 出发了');render();save();}
+ const m={id:S.uid++,name,k:villager(S.uid*7),role:'社员',apt,lv:1,exp:0,busy:null,spy:Math.random()<.06?1:0,hide:Math.random()<.06?1:0};c.mem.push(m);
+ clLog(name+'投奔了行社。');toast(name+' 投奔了行社（资质 '+'★'.repeat(apt)+'）');render();save();return m;}
+function clSend(id,z,t){const c=S.clan,m=c.mem.find(x=>x.id===id);if(!m||m.busy)return;const T=CL_TIER[t];m.busy={z,t,untilD:daysAll()+T.days};clLog(m.name+'出发去「'+ZONES[z].n+'」'+T.n+'。');toast(m.name+' 出发了');render();save();}
 function clResolve(m,quiet){const c=S.clan,B=m.busy;m.busy=null;if(B.rest){return '';}const z=B.z,t=B.t,T=CL_TIER[t];EVZ=z;
  if(m.spy&&c.fame>=15&&!m.sid&&Math.random()<.5){const lost=Math.floor(S.stones*.15);S.stones-=lost;m.gone=1;const s=m.name+'没有回来。和他一起不见的，还有库房里 '+fmt(lost)+' 灵石。墙上留着一个天穹会的眼睛记号。';clLog(s);return s;}
  const ok=Math.random()<clP(m,z,t);let s='';
@@ -3636,55 +3670,58 @@ function clResolve(m,quiet){const c=S.clan,B=m.busy;m.busy=null;if(B.rest){retur
   if(Math.random()<.12*T.m&&S.bag.length<BAG_MAX)s+='，'+gItem(rollRar(t===2)).trim().replace(/。$/,'');
   if(m.hide){m.hide=0;m.apt=5;s+='。这一趟回来，'+m.name+'身上的灵光变了——竟是被埋没的天灵根！';}
   else if(Math.random()<.14){const sp=pick([()=>{const x=zsAt(z,6*T.m);S.stones+=x;return '。路上撞见一条小灵脉，又挖回来 '+fmt(x)+' 灵石';},
-   ()=>{if(c.mem.filter(x=>!x.gone).length>=clCap())return '。路上捡到一个快饿死的孩子，可惜祠堂住不下，只好送去了青石站';const n=clRecruit(true);return n?'。还捡回来一个孩子，叫'+n.name:'';},
+   ()=>{if(c.mem.filter(x=>!x.gone).length>=clCap())return '。路上捡到一个快饿死的孩子，可惜议事堂住不下，只好送去了青石站';const n=clRecruit(true);return n?'。还捡回来一个孩子，叫'+n.name:'';},
    ()=>{S.flags.mapClue=1;return '。还带回一张画着裂隙的兽皮图——下次去野外，留意紫色的光';},
    ()=>'。路上遇见一位不肯留名的前辈，指点了几句'+gBook().trim().replace(/。$/,''),
    ()=>{S.meds+=2;return '。顺手采了草药，丹房多了两颗疗伤药';}]);s+=sp();}
   s+='。';}
- else{m.exp+=Math.round(8*T.m);m.busy={rest:1,until:Date.now()+20*60*1000};s=m.name+'在「'+ZONES[z].n+'」吃了亏，负伤回来，要养二十分钟。';}
+ else{m.exp+=Math.round(8*T.m);m.busy={rest:1,untilD:daysAll()+10};s=m.name+'在「'+ZONES[z].n+'」吃了亏，负伤回来，要养十天。';}
  while(m.exp>=m.lv*40&&m.lv<60){m.exp-=m.lv*40;m.lv++;}
  clLog(s);return s;}
 let clAcc=0;
 function clanTick(dt,off){const c=S.clan;if(!c||!S.started)return;
- if(c.bld.tian)c.store=Math.min(tianRate(c.bld.tian)*12,c.store+tianRate(c.bld.tian)*dt/3600);
- if(c.bld.dan){c.medT+=dt;const ev=danEvery(c.bld.dan);while(c.medT>=ev){c.medT-=ev;if(c.medS<4+c.bld.dan)c.medS++;}}
- clAcc+=dt;if(clAcc<1&&!off)return;clAcc=0;clanSync();const now=Date.now(),done=[];
- c.mem.forEach(m=>{if(m.busy&&!m.gone&&now>=m.busy.until){const r=clResolve(m);if(r)done.push(r);}});
- if(done.length){if(off)setTimeout(()=>toast('家族：'+done.length+' 位族人回来了，去「家族」页看看'),1500);else done.forEach(t=>toast(t,'big'));if(TAB==='clan')render();save();}
+ if(off&&c.bld.tian)c.store=Math.min(tianRate(c.bld.tian)*12,c.store+tianRate(c.bld.tian)*dt/3600);
+ if(off&&c.bld.dan){c.medT+=dt;const ev=danEvery(c.bld.dan);while(c.medT>=ev){c.medT-=ev;if(c.medS<4+c.bld.dan)c.medS++;}}
+ clAcc+=dt;if(clAcc<1&&!off)return;clAcc=0;clanSync();const done=[];
+ c.mem.forEach(m=>{if(m.busy&&!m.gone&&daysAll()>=(m.busy.untilD||0)){const r=clResolve(m);if(r)done.push(r);}});
+ if(done.length){if(off)setTimeout(()=>toast('行社：'+done.length+' 位社员回来了，去「行社」页看看'),1500);else done.forEach(t=>toast(t,'big'));if(TAB==='clan')render();save();}
  if(!off){c.evClock+=1;if(c.evClock>1500+Math.random()*900&&OV_FREE()&&!BT){c.evClock=0;clEvent();}}}
 function clEvent(){const c=S.clan;const r=Math.random();
  if(r<.3&&!S.raid&&maxZone()>=1){S.raid=3;clLog('天穹会的刺客摸到了青石站外。');toast('天穹会的刺客摸到了站台东头！回青石站击退他们','bad');if(WD.M&&WD.M.kind==='town'&&TAB==='world'){WD.M=null;render();}}
  else if(r<.55){const g=zsAt(maxZone(),3);S.stones+=g;clLog('有商人慕名来拜访，留下了 '+fmt(g)+' 灵石的见面礼。');toast(c.name+'名声在外，有商人送来见面礼：灵石 +'+fmt(g));c.fame+=2;}
- else if(r<.75){c.fame+=4;clLog('族人在祠堂前比武，热闹了一下午。');toast('族人在祠堂前比武。家族声望 +4');c.mem.forEach(m=>{if(!m.gone)m.exp+=10;});}
- else{const t=pick(['阿禾','林小满','王婶的孙子']);clLog(t+'说想学剑。祠堂里多了一把木剑。');toast(t+'在祠堂门口练剑，练得满头大汗。');}save();}
+ else if(r<.75){c.fame+=4;clLog('社员在议事堂前比武，热闹了一下午。');toast('社员在议事堂前比武。行社声望 +4');c.mem.forEach(m=>{if(!m.gone)m.exp+=10;});}
+ else{const t=pick(['阿禾','林小满','王婶的孙子']);clLog(t+'说想学剑。议事堂里多了一把木剑。');toast(t+'在议事堂门口练剑，练得满头大汗。');}save();}
 function clSprite(k){return cvMemo('clspr|'+(typeof k==='string'?k:k.id),()=>chSpr(k,0,0,6).toDataURL());}
-function clanView(){const c=S.clan;if(!c)return '<p class="empty">还没有家族。主线推进到「筑基」之后，铁叔会来找你。</p>';clanSync();
+function clanView(){const c=S.clan;if(!c)return '<p class="empty">还没有行社。主线推进到「筑基」之后，铁叔会来找你。</p>';clanSync();
  const act=c.mem.filter(m=>!m.gone);
- return `<div class="stage clstage"><canvas class="bgc" data-scene="clan"></canvas><div class="clhead"><div class="clseal">${esc(c.name[0])}</div><div><div class="cln">${esc(c.name)}</div><div class="cls">${clLevel()} · 声望 ${c.fame} · 族人 ${act.length}/${clCap()}</div></div></div></div>
+ return `<div class="stage clstage"><canvas class="bgc" data-scene="clan"></canvas><div class="clhead"><div class="clseal">${esc(c.name[0])}</div><div><div class="cln">${esc(c.name)}</div><div class="cls">${clLevel()} · 声望 ${c.fame} · 社员 ${act.length}/${clCap()}</div></div></div></div>
   <div class="clharv"><div><b>灵田</b><span id="clStore">${c.bld.tian?fmt(c.store):'未开垦'}</span><button class="btn sm gold" data-act="clHarv" ${c.store>=1?'':'disabled'}>收取</button></div>
    <div><b>丹房</b><span>${c.bld.dan?'疗伤药 '+c.medS:'未修建'}</span><button class="btn sm gold" data-act="clMed" ${c.medS?'':'disabled'}>取药</button></div></div>
-  <h2 class="sec">族人 <small>遣往各地历练，静候归来</small></h2>
+  <h2 class="sec">社员 <small>遣往各地历练，静候归来</small></h2>
   <div class="clmem">${act.map(m=>`<div class="clm"><img src="${clSprite(m.k)}" alt=""><div class="in"><div class="iname">${esc(m.name)}<span class="lv">${m.role} · Lv${m.lv}</span></div><div class="istat">资质 ${'★'.repeat(m.apt)}${'☆'.repeat(5-m.apt)}</div>
-   <div class="istat" ${m.busy?`data-ct="${m.id}"`:''}>${m.busy?(m.busy.rest?'养伤中':'在「'+ZONES[m.busy.z].n+'」'+CL_TIER[m.busy.t].n)+' · '+fmtT((m.busy.until-Date.now())/1000):'空闲'}</div></div>
+   <div class="istat" ${m.busy?`data-ct="${m.id}"`:''}>${m.busy?(m.busy.rest?'养伤中':'在「'+ZONES[m.busy.z].n+'」'+CL_TIER[m.busy.t].n)+' · '+'还要 '+Math.max(0,(m.busy.untilD||0)-daysAll())+' 天':'空闲'}</div></div>
    ${m.busy?'':`<button class="btn sm" data-act="clGo" data-arg="${m.id}">派遣</button>`}</div>`).join('')}</div>
   <div class="row" style="display:flex;gap:8px;margin-top:10px"><button class="btn sm" data-act="clRec" ${S.stones>=clRecruitCost()&&act.length<clCap()?'':'disabled'}>招募散修 · ${fmt(clRecruitCost())} 灵石</button></div>
   <p class="note">散修资质有高有低，偶尔会埋没着天才。也偶尔……混进来别有用心的人。</p>
   ${zongHTML()}${disHTML()}<h2 class="sec">建筑</h2>
   ${Object.keys(CL_BLD).map(k=>{const B=CL_BLD[k],lv=c.bld[k],mx=clBuildMax(k),cost=clCost(k,lv);return `<div class="row2"><div class="clg">${B.g}</div><div class="in"><div class="iname">${B.n}<span class="lv">${lv} 级</span></div><div class="istat">${B.d(lv)}</div></div>
-   <button class="btn sm" data-act="clUp" data-arg="${k}" ${lv<mx&&S.stones>=cost?'':'disabled'}>${lv>=10?'已满':lv>=mx?'需扩祠堂':fmt(cost)+' 灵石'}</button></div>`;}).join('')}
-  <h2 class="sec">家族纪事</h2>${c.log.length?c.log.map(l=>`<p class="note">· ${esc(l.t)}</p>`).join(''):'<p class="note">还没有什么可记的。</p>'}`;}
+   <button class="btn sm" data-act="clUp" data-arg="${k}" ${lv<mx&&S.stones>=cost?'':'disabled'}>${lv>=10?'已满':lv>=mx?'需扩议事堂':fmt(cost)+' 灵石'}</button></div>`;}).join('')}
+  <h2 class="sec">行社纪事</h2>${c.log.length?c.log.map(l=>`<p class="note">· ${esc(l.t)}</p>`).join(''):'<p class="note">还没有什么可记的。</p>'}`;}
 function clanLive(){const c=S.clan;if(!c)return;const st=$('#clStore');if(st&&c.bld.tian)st.textContent=fmt(c.store);
- document.querySelectorAll('[data-ct]').forEach(el=>{const m=c.mem.find(x=>x.id===+el.dataset.ct);if(!m||!m.busy)return;el.textContent=(m.busy.rest?'养伤中':'在「'+ZONES[m.busy.z].n+'」'+CL_TIER[m.busy.t].n)+' · '+fmtT((m.busy.until-Date.now())/1000);});}
+ document.querySelectorAll('[data-ct]').forEach(el=>{const m=c.mem.find(x=>x.id===+el.dataset.ct);if(!m||!m.busy)return;el.textContent=(m.busy.rest?'养伤中':'在「'+ZONES[m.busy.z].n+'」'+CL_TIER[m.busy.t].n)+' · '+'还要 '+Math.max(0,(m.busy.untilD||0)-daysAll())+' 天';});}
 function clGoPick(id){const m=S.clan.mem.find(x=>x.id===id);if(!m)return;
  modal(`<h3>派遣 ${esc(m.name)}</h3><p>选一个地方。越远越险，带回来的也越多。</p>`,clZones().slice(-5).reverse().map(z=>({t:ZONES[z].n,fn:()=>setTimeout(()=>clGoTier(id,z),30)})).concat([{t:'算了',cls:'ghost'}]));}
 function clGoTier(id,z){const m=S.clan.mem.find(x=>x.id===id);if(!m)return;
- modal(`<h3>${ZONES[z].n}</h3><p>${esc(m.name)} 战力 ${clRank(m)}</p>`,CL_TIER.map((T,t)=>({t:`${T.n} · ${fmtT(T.dur)} · 成功率 ${Math.round(clP(m,z,t)*100)}% · 约 ${fmt(zsAt(z,4*T.m))} 灵石`,cls:t===1?'gold':'',fn:()=>clSend(id,z,t)})).concat([{t:'返回',cls:'ghost',fn:()=>setTimeout(()=>clGoPick(id),30)}]));}
+ modal(`<h3>${ZONES[z].n}</h3><p>${esc(m.name)} 战力 ${clRank(m)}</p>`,CL_TIER.map((T,t)=>({t:`${T.n} · ${T.days+' 天'} · 成功率 ${Math.round(clP(m,z,t)*100)}% · 约 ${fmt(zsAt(z,4*T.m))} 灵石`,cls:t===1?'gold':'',fn:()=>clSend(id,z,t)})).concat([{t:'返回',cls:'ghost',fn:()=>setTimeout(()=>clGoPick(id),30)}]));}
 const CLAN_ACT={
  clHarv:()=>{const c=S.clan;const g=Math.floor(c.store);if(g<1)return;S.stones+=g;c.store-=g;toast('灵田收成：灵石 +'+fmt(g));render();save();},
  clMed:()=>{const c=S.clan;if(!c.medS)return;S.meds+=c.medS;toast('取出疗伤药 ×'+c.medS);c.medS=0;render();save();},
  clGo:a=>clGoPick(+a),clRec:()=>clRecruit(),
  clUp:a=>{const c=S.clan,lv=c.bld[a],cost=clCost(a,lv);if(lv>=clBuildMax(a)||S.stones<cost)return;S.stones-=cost;c.bld[a]++;c.fame+=3;clLog(CL_BLD[a].n+'扩建到 '+c.bld[a]+' 级。');toast(CL_BLD[a].n+' 升到 '+c.bld[a]+' 级');render();save();}
 };
+
+/* 日子过去：灵田、丹房按天产出（一天折两个时辰），派出去的社员按天回来 */
+function clanDays(n){if(!S.clan)return;clanTick(n*7200,1);}
 
 /* ================= 天象：限时的意外 ================= */
 const OMENS={
@@ -4254,7 +4291,7 @@ function buildFx(){const A={},add=(k,v)=>A[k]=(A[k]||0)+v;
  if(S.xisui){add('atkP',.03*S.xisui);add('hpP',.03*S.xisui);add('defP',.03*S.xisui);}
  if(S.path==='mo')add('ls',.1);if(S.path==='zheng')add('defP',.1);if(S.path==='yin')add('dodge',.08);if(S.path==='zong')add('atkP',.05);
  Object.keys(S.sects||{}).forEach(k=>{const r=S.sects[k];if(r.rel==='ally'&&SECTS[k]&&SECTS[k].ally)for(const q in SECTS[k].ally)add(q,SECTS[k].ally[q]);});
- if(S.injury>Date.now()){add('hpP',-.2);add('atkP',-.1);}
+ if(injOn()){add('hpP',-.2);add('atkP',-.1);}
  return A;}
 
 /* ---------- 保底 ---------- */
@@ -4264,7 +4301,7 @@ function pityHTML(){return '';}
 /* ================= 时间 · 人物 · 因果 · 弟子 · 道途 · 结局 ================= */
 const CN='零一二三四五六七八九';
 function cnNum(n){n=Math.floor(n);if(n<10)return CN[n];if(n<20)return '十'+(n%10?CN[n%10]:'');if(n<100)return CN[Math.floor(n/10)]+'十'+(n%10?CN[n%10]:'');if(n<1000){const h=Math.floor(n/100),r=n%100;return CN[h]+'百'+(r?(r<10?'零'+CN[r]:(r<20?'一':'')+cnNum(r)):'');}return String(n);}
-const yearName=y=>'历练第'+cnNum(y==null?S.year:y)+'年';
+const yearName=y=>'灵潮'+cnNum(y==null?S.year:y)+'年';
 // Human lifespan progression inspired by 聚宝仙盆; 渡劫/真仙 adapt its different realm chain to this game's single calendar.
 // Infinity is derived, never persisted in saves.
 const LIFE=[100,200,500,1000,2000,5000,10000,100000,100000,1000000,10000000,Infinity,Infinity,Infinity];
@@ -4315,7 +4352,7 @@ function mkPerson(o){const id='x'+(S.uid++);const p=Object.assign({id,alive:true
 
 /* ---------- 一年 ---------- */
 function oneYear(){S.year++;S.age++;const Y=S.year;
- for(const p of S.ppl){if(!p.alive)continue;p.age++;
+ for(const p of S.ppl){if(!p.alive)continue;p.age++;if(p.fr)continue;/* 主线人物的去留只由剧情决定 */
   if(p.fr==='he'&&p.age===18&&p.st<0){if(F('heRoot')){p.st=9;p.tal=.8;p.sect='baicao';p.goal='把百草谷撑起来';news('阿禾十八岁，拜入百草谷。花姑说她是这辈子见过最肯吃苦的孩子。',1);}else{p.goal='在青石站开一家药铺';news('阿禾十八岁了。她在青石站开了间小药铺，招牌是她自己写的。');}}
   if(p.fr==='man'&&p.age===18&&p.st<0){p.st=5;p.tal=.65;p.goal='找到哥哥';news('小满十八岁，背着一把旧刀离开青石站，说要去找哥哥。');}
   if(p.st>=0){const r=STAGES[Math.min(p.st,LAST)].r,nx=Math.min(p.st+1,LAST),major=STAGES[nx].r>r;
@@ -4335,31 +4372,50 @@ function oneYear(){S.year++;S.age++;const Y=S.year;
   if(S.path==='yin'&&sd.k!=='grace'&&Math.random()<.4){sd.due=Y+5;return;}
   sd.fired=1;S.fateQ.push(sd);});
  /* 江湖小事 */
- if(Math.random()<.18){const t=pick(['赤霄宗与玄水门在落雁湖斗法三日，死伤数十人。','北方又起了一场灵潮，几座凡人的城一夜之间空了。','坊市来了一位卖卦的瞎子，据说算得极准。','有人在废城里挖出一座古修的洞府，去寻宝的修士没几个回来。','铁骨帮招了一批新弟子，演武场整夜都是喊声。','幽冥殿的人在夜里收尸。没人敢问他们收去做什么。','天穹会封了东边的三座城，说是要「清理灵脉」。']);news(t);}}
+ if(Math.random()<.18){const t=pick(['赤霄宗与玄水门在落雁湖斗法三日，死伤数十人。','北方又起了一场灵潮，几座凡人的城一夜之间空了。','坊市来了一位卖卦的瞎子，据说算得极准。','有人在废城里挖出一座古修的洞府，去寻宝的修士没几个回来。','铁骨帮招了一批新弟子，演武场整夜都是喊声。','幽冥殿的人在夜里收尸。没人敢问他们收去做什么。','东郊的天穹券又跌了一成，坊市的米价跟着涨。','北线有一支车队在雪里困了九天，回来时少了两辆车。']);news(t);}}
 function simYears(n){OUTER_NEWS=[];const N=Math.min(n,400);for(let i=0;i<N;i++)oneYear();if(n>N){S.year+=n-N;S.age+=n-N;}const L=OUTER_NEWS;OUTER_NEWS=null;return L;}
 function personDied(p){if(!p.known)return;if(p.bg){if(p.st>=21||p.lead)news(p.n+'寿元耗尽，坐化。');return;}
  if(p.fr){S.flags['dead_'+p.fr]=1;QUESTS.forEach(q=>{if(q.npc===p.fr&&S.q[q.id]&&S.q[q.id].s!=='done')S.q[q.id].s='done';});S.fateQ.push({k:'death',pid:p.id});news(p.n+'走了，享年 '+p.age+' 岁。',1);}
  else news(p.n+'寿元耗尽，坐化于'+(p.sect?SECTS[p.sect].n:'荒野')+'。'+(p.att<=-40?'你们之间的恩怨，就此作罢。':''),p.att<=-40||p.att>=40);
  if(p.lead){p.lead=0;}}
 
-/* ---------- 时间推进 ---------- */
-/* Wall clock is display-only. Fictional cultivation years remain independent. */
-const Y_SEC=365*86400,Y_DAYS=365;
-const gameDay=()=>Math.floor(Date.now()/86400000);
-function dateName(now=new Date()){
- const hour=now.getHours(),branch='子丑寅卯辰巳午未申酉戌亥'[Math.floor((hour+1)/2)%12];
- const era=now.getFullYear()-2023,year=era>0?'灵潮'+cnNum(era)+'年':'灵潮前'+cnNum(1-era)+'年';
- return year+' '+cnNum(now.getMonth()+1)+'月'+cnNum(now.getDate())+'日 · '+branch+'时 '+String(hour).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-}
+/* ---------- 时间推进 ----------
+   游戏里的日子和现实无关，只随你的行动往前走：出城历练、扫荡、闭关、歇息、剧情里的「过些日子」「几年以后」。
+   你不玩的时候，世界停着。 */
+const Y_DAYS=365,MON_D=[31,28,31,30,31,30,31,31,30,31,30,31];
+const daysAll=()=>S.daysAll||0;
+const gameDay=()=>daysAll();
+const dayKey=()=>'d'+daysAll();
+function monthDay(d){let m=0,r=d;while(m<11&&r>=MON_D[m]){r-=MON_D[m];m++;}return [m,r+1];}
+function dateName(){const [m,d]=monthDay(S.doy||0);return '灵潮'+cnNum(S.year)+'年 '+cnNum(m+1)+'月'+(d<=10?'初'+cnNum(d):cnNum(d))+'日';}
+function seasonName(){const m=monthDay(S.doy||0)[0];return ['冬','冬','春','春','春','夏','夏','夏','秋','秋','秋','冬'][m];}
+/* 让日子往前走 n 天。所有跟着日子走的东西都在这里结算 */
+function advanceDays(n,why){n=Math.max(0,Math.floor(n||0));if(!n||!S.started)return [];
+ S.daysAll=daysAll()+n;S.doy=(S.doy||0)+n;
+ try{jTick(n*600);}catch(e){}
+ try{clanDays(n);}catch(e){}
+ try{supplyDays(n);}catch(e){}
+ try{zoneRegen(n);}catch(e){}
+ S.tox=Math.max(0,(S.tox||0)-n*40);
+ let L=[];const y=Math.floor(S.doy/Y_DAYS);
+ if(y>0){S.doy%=Y_DAYS;S.yearsClosed=why==='closed'?1:0;L=simYears(y);S.yearsClosed=0;ageCheck();if(why!=='closed'&&why!=='story')toast(dateName()+' · 又是一年');}
+ try{timeTick(true);}catch(e){}
+ return L;}
+/* 剧情里写的年份：不到就把日子推过去 */
+function ensureYear(y){if(S.year>=y)return [];return advanceDays((y-S.year)*Y_DAYS-(S.doy||0),'story');}
+/* 伤势按日子算 */
+function injSet(days){S.injD=Math.max(S.injD||0,daysAll()+Math.max(1,Math.ceil(days)));}
+const injOn=()=>(S.injD||0)>daysAll();
+const injLeft=()=>Math.max(0,(S.injD||0)-daysAll());
+/* 每七天，铁叔托人送一回补给 */
+function supplyDays(n){S.supAcc=(S.supAcc||0)+n;let k=0;while(S.supAcc>=7){S.supAcc-=7;k++;}if(!k)return;
+ const g=k*Math.ceil(zsAt(maxZone(),3)*(1+.15*Math.max(0,S.rep.station))*(avOf('tie')>=40?1.5:1));S.stones+=g;
+ setTimeout(()=>toast((F('dead_tie')?'站里照铁叔的规矩送来补给：灵石 +':'铁叔托人送来补给：灵石 +')+fmt(g)),900);}
+/* 歇息：不花灵石，只让日子过去，伤也慢慢好 */
+function restDays(n){n=+n||1;if(BT)return;const L=advanceDays(n,'rest');S.hpF=1;S.mpF=1;save();render();
+ modal(`<h3>歇了 ${n} 天</h3><p>${dateName()}。${injOn()?'伤还没好全，还要 '+injLeft()+' 天。':'身上的伤都好了。'}</p>${L.slice(0,5).map(t=>'<p>'+esc(sub(t))+'</p>').join('')}`,[{t:'好',cls:'gold'}]);}
 let clockSecond=-1;
-/* 现实一天 = 修行一天：每过一个现实日，修行日数 +1，满 365 天长一岁；同时按一天的吐纳收一点灵气 */
-function liveDays(){if(!S||!S.started)return;const d=Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/86400000);if(!Number.isFinite(S.liveDay)){S.liveDay=d;return;}const n=d-S.liveDay;if(n<=0){if(n<0)S.liveDay=d;return;}S.liveDay=d;
- S.retreatDays=(S.retreatDays||0)+n;S.retreatRemainder=(S.retreatRemainder||0)+n;
- try{if(S.qi<needQ())addQi(Math.min(needQ()-S.qi,idleRate()*n/365*120),true);}catch(e){}
- const y=Math.floor(S.retreatRemainder/365);S.retreatRemainder%=365;
- if(y>0){S.yearsClosed=1;const L=simYears(y);S.yearsClosed=0;ageCheck();toast(yearName()+' · 又是一年','');if(L&&L.length)toast(String(L[0]).slice(0,24));}
- try{save();}catch(e){}}
-function timeTick(){const second=Math.floor(Date.now()/1000);if(second===clockSecond)return;clockSecond=second;liveDays();const el=$('#realClock');if(el)el.textContent=dateName();if(TAB==='world')wHud();}
+function timeTick(force){const second=Math.floor(Date.now()/1000);if(!force&&second===clockSecond)return;clockSecond=second;const el=$('#realClock');if(el)el.textContent=S&&S.started?dateName()+' · '+seasonName():'';if(TAB==='world')try{wHud();}catch(e){}}
 function ageCheck(){lifeSync(S);if(S.age>=myLife()&&!S.dying){S.dying=1;S.fateQ.unshift({k:'old'});}else if(S.age<myLife()&&S.age>=myLife()-10&&!S.agewarn){S.agewarn=1;toast('寿元将尽：还剩 '+(myLife()-S.age)+' 年。突破境界或服寿元丹可以延寿','bad');}}
 function fateCheck(){if(!S.started||BT||!OV_FREE()||SC||!S.fateQ.length)return;const sd=S.fateQ.shift();save();fatePlay(sd);}
 
@@ -4378,7 +4434,7 @@ function fatePlay(sd){if(sd.k==='old'&&S.age<myLife()){lifeSync(S);return;}const
    {t:'迎战',act:()=>({text:'血衣人一拥而上。',fight:{many:[{look:p.n,name:p.n,m:1.9,boss:true},{look:'黑市打手',name:'血衣卫',m:.8},{look:'黑市打手',name:'血衣卫',m:.8}],after:()=>'',onWin:()=>fateAfterModis(p,true),onLose:()=>fateAfterModis(p,false)}})}]};}
  else if(sd.k==='grace'){ev={title:'故人来访',g:'恩',lines:[(Y)+'，有人在青石站外求见。','来的是'+p.n+'——'+(sd.why||'当年你救下的那个人')+'。如今'+(p.sect?'已是'+SECTS[p.sect].n+'的人，':'')+'境界'+realmOf(p.st)+'。','“我说过，会回来报答你。”'],choices:[
    {t:'收下谢礼',act:()=>{p.att=Math.min(100,p.att+20);S.dao.zheng+=1;return '他留下一只储物袋。'+gItem(3)+gMat('ru',1)+gS(zsAt(maxZone(),12));}},
-   {t:'请他留下（加入家族）',need:()=>!!S.clan,act:()=>{p.att=100;const c=S.clan;c.mem.push({id:S.uid++,name:p.n,k:p.ch&&CH[p.ch]?p.ch:villager(S.uid*7),role:'客卿',apt:Math.min(5,2+Math.round(p.tal*4)),lv:Math.max(1,Math.round(p.st/2)),exp:0,busy:null});clLog(p.n+'投奔了家族。');S.dao.zong+=1;return p.n+'留了下来，成了'+c.name+'的客卿。';}}]};}
+   {t:'请他留下（加入行社）',need:()=>!!S.clan,act:()=>{p.att=100;const c=S.clan;c.mem.push({id:S.uid++,name:p.n,k:p.ch&&CH[p.ch]?p.ch:villager(S.uid*7),role:'客卿',apt:Math.min(5,2+Math.round(p.tal*4)),lv:Math.max(1,Math.round(p.st/2)),exp:0,busy:null});clLog(p.n+'投奔了行社。');S.dao.zong+=1;return p.n+'留了下来，成了'+c.name+'的客卿。';}}]};}
  else if(sd.k==='sect'){const SK=SECTS[sd.sect];const lead=S.ppl.find(x=>x.sect===sd.sect&&x.lead&&x.alive);ev={title:SK.n+'来犯',g:'宗',lines:['当年你折辱'+SK.n+'的事，他们没有忘。',(lead?lead.n:'他们的新宗主')+'带着人堵在了'+(S.clan?S.clan.name+'门口':'你回青石站的路上')+'。'],choices:[
    {t:'迎战',act:()=>({text:'来者不善。',fight:{many:[sectFoe(sd.sect,2),sectFoe(sd.sect,1)],onWin:()=>{S.sects[sd.sect].rel='beaten';news(SK.n+'再次铩羽而归。',1);modal('<h3>击退'+SK.n+'</h3><p>他们走了。这一次，大概不会再来了。</p>',[{t:'好',cls:'gold'}]);},onLose:()=>clanLoss(SK.n)}})},
    {t:'交出灵石赔罪',need:()=>S.stones>=zsAt(maxZone(),25),act:()=>{S.stones-=zsAt(maxZone(),25);S.sects[sd.sect].rel=null;return '你认了。他们拿了东西走人。这口气你咽下去了。';}}]};}
@@ -4391,8 +4447,8 @@ function fateAfterModis(p,win){if(win){modal(`<h3>血债</h3><p>${esc(p.n)}跪�
    {t:'放他走',cls:'gold',fn:()=>{p.att=-10;S.flags.modisSpared=1;S.dao.zheng+=1;kar(1);news(p.n+'被你放走了。');toast('你放过了他','big');checkStory();save();}},
    ...(S.clan?[{t:'收他为徒',cls:'ghost',fn:()=>{p.alive=false;S.flags.modisDisciple=1;disAdd({n:p.n,apt:4,root:'huo',st:p.st,age:p.age,trait:'孤僻',note:'魔修之徒，你亲手杀了他的师父。',loy:20});news(p.n+'拜入了'+S.clan.name+'——拜的是杀师仇人。',1);checkStory();save();}}]:[])]);}
  else clanLoss('血衣人');}
-function clanLoss(who){const c=S.clan;if(!c){goTown(true);return;}const ks=Object.keys(c.bld).filter(k=>c.bld[k]>1);if(ks.length){const k=pick(ks);c.bld[k]--;}const m=c.mem.filter(x=>!x.gone);let lost='';if(m.length>2){const v=pick(m);v.gone=1;lost=v.name;}
- clLog(who+'血洗了家族。'+(lost?lost+'没能回来。':''));news(who+'血洗'+c.name+'。'+(lost?lost+'战死。':''),1);c.fame=Math.max(0,c.fame-40);goTown(true);setTimeout(()=>modal(`<h3>血洗</h3><p>你被打倒的时候，听见祠堂里有人在喊你的名字。</p><p>${lost?esc(lost)+'没能回来。':''}家族的一座建筑塌了，声望一落千丈。</p>`,[{t:'……',cls:'red'}]),600);}
+function clanLoss(who){const c=S.clan;if(!c){goTown(true);return;}const ks=Object.keys(c.bld).filter(k=>c.bld[k]>1);if(ks.length){const k=pick(ks);c.bld[k]--;}const m=c.mem.filter(x=>!x.gone);let lost='';if(false&&m.length>2){const v=pick(m);v.gone=1;lost=v.name;}
+ clLog(who+'闯进行社，砸了一座屋子。'+(lost?lost+'没能回来。':''));news(who+'闯进'+c.name+'，砸了一座屋子。'+(lost?lost+'战死。':''),1);c.fame=Math.max(0,c.fame-40);goTown(true);setTimeout(()=>modal(`<h3>行社遭了劫</h3><p>你被打倒的时候，听见议事堂里有人在喊你的名字。</p><p>${lost?esc(lost)+'没能回来。':''}行社的一座建筑塌了，声望一落千丈。</p>`,[{t:'……',cls:'red'}]),600);}
 const LEGACY={
  tie:{t:'铁叔走之前，把一把磨得发亮的锤子交给了阿禾，让她转交给你。“告诉那孩子，站台的灯，要一直亮着。”',fx:()=>gItemNamed('w',3,'铁叔的锤子',maxZone())},
  shen:{t:'沈老留下一副棋，和一本写满了批注的棋谱。最后一页写着：「此局未完，留给后来人。」',fx:()=>{S.flags.shenQipu=1;return ' 获得「沈老棋谱」：五子棋对局奖励翻倍。';}},
@@ -4403,24 +4459,25 @@ const LEGACY={
 };
 
 /* ---------- 闭关 ---------- */
-const RETREATS=[{id:'week',n:'1周',days:7},{id:'month',n:'1个月',days:30},{id:'quarter',n:'3个月',days:90},{id:'half',n:'半年',days:180},...([1,5,10,30,100].map(y=>({id:String(y),n:y+'年',days:y*365})))];
+const RETREATS=[{id:'week',n:'七天',days:7},{id:'month',n:'一个月',days:30},{id:'quarter',n:'三个月',days:90},{id:'half',n:'半年',days:180},{id:'1',n:'一年',days:365},{id:'5',n:'五年',days:1825}];
 function retreatCost(o){return Math.max(1,Math.ceil(zsAt(maxZone(),2)*o.days/7));}
-function closedHTML(){return `<h2 class="sec">闭关 <small>修行第 ${Math.round(S.retreatDays||0)} 天 · 日子过一天，修行算一天</small></h2><p class="note">备足灵石，静心修行。闭关日久，故人也会老去。</p><div class="closed">${RETREATS.filter(o=>o.days/365<myLife()-S.age).map(o=>`<button class="btn sm" data-act="closed" data-arg="${o.id}">${o.n} · ${fmt(retreatCost(o))}灵石</button>`).join('')}</div>${S.lifeP>0?'<button class="btn sm" data-act="eatLife">服寿元丹 · 延寿30年</button>':''}`;}
+function closedHTML(){return `<h2 class="sec">歇息与闭关 <small>${dateName()} · 已历 ${daysAll()} 天</small></h2>
+ <p class="note">日子只在你做事时往前走。歇息不花灵石，只让伤慢慢好；闭关要备灵石，能长修为。闭关日久，故人也会老去。</p>
+ <div class="closed">${[1,3,7].map(n=>`<button class="btn sm ghost" data-act="rest" data-arg="${n}">歇 ${n} 天</button>`).join('')}</div>
+ <div class="closed">${RETREATS.filter(o=>o.days/365<myLife()-S.age).map(o=>`<button class="btn sm" data-act="closed" data-arg="${o.id}">闭关${o.n} · ${fmt(retreatCost(o))}灵石</button>`).join('')}</div>${S.lifeP>0?'<button class="btn sm" data-act="eatLife">服寿元丹 · 延寿30年</button>':''}`;}
 function closedGo(id){const o=RETREATS.find(x=>x.id===String(id));if(!o||BT)return;
 if(o.days/365>=myLife()-S.age){toast('剩余寿元不足','bad');return;}
 if(S.qi>=needQ()){toast('修为已满，先行突破再闭关。');return;}
 const cost=retreatCost(o);if(S.stones<cost){toast('灵石不足','bad');return;}
-modal(`<h3>闭关 ${o.n}</h3><p>此次闭关需备 ${fmt(cost)} 灵石。你准备好了吗？</p>`,[{t:'开始闭关',cls:'gold',fn:()=>retreatApply(o.id)},{t:'暂不闭关',cls:'ghost'}]);}
+modal(`<h3>闭关${o.n}</h3><p>此次闭关需备 ${fmt(cost)} 灵石。出关时是${(()=>{const y=S.year+Math.floor(((S.doy||0)+o.days)/365);return '灵潮'+cnNum(y)+'年';})()}。</p>`,[{t:'开始闭关',cls:'gold',fn:()=>retreatApply(o.id)},{t:'暂不闭关',cls:'ghost'}]);}
 function retreatApply(id){const o=RETREATS.find(x=>x.id===String(id));if(!o||BT||o.days/365>=myLife()-S.age||S.qi>=needQ())return;
 const cost=retreatCost(o);if(S.stones<cost)return;S.stones-=cost;
-const q0=S.qi;addQi(Math.min(needQ()-S.qi,idleRate()*o.days/365*120*(S.path==='yin'?1.5:1)),true);
-S.retreatDays=(S.retreatDays||0)+o.days;S.retreatRemainder=(S.retreatRemainder||0)+o.days;
-const years=Math.floor(S.retreatRemainder/365);S.retreatRemainder%=365;
-S.yearsClosed=1;const age0=S.age,L=years?simYears(years):[];if(S.path==='yin'&&years)S.age=age0+Math.ceil(years/2);S.yearsClosed=0;
-S.closedY=(S.closedY||0)+o.days/365;S.dao.yin+=o.days>=30*365?2:o.days>=10*365?1:0;ageCheck();save();render();
-modal(`<h3>出关 · ${o.n}</h3><p>灵气 +${fmt(S.qi-q0)} · 消耗 ${fmt(cost)} 灵石。</p><p>静室门开，你收敛气息，重返江湖。</p>${L.slice(0,6).map(t=>'<p>'+esc(sub(t))+'</p>').join('')}`,[{t:'出关',cls:'gold'}]);}
+const q0=S.qi;addQi(Math.min(needQ()-S.qi,qiRetreat(o.days)),true);
+const age0=S.age,L=advanceDays(o.days,'closed');if(S.path==='yin'&&S.age>age0)S.age=age0+Math.ceil((S.age-age0)/2);
+S.closedY=(S.closedY||0)+o.days/365;S.dao.yin+=o.days>=1825?1:0;ageCheck();save();render();
+modal(`<h3>出关 · ${dateName()}</h3><p>闭关${o.n}。修为 +${fmt(S.qi-q0)} · 消耗 ${fmt(cost)} 灵石。</p><p>静室门开，你收敛气息，重返江湖。</p>${L.slice(0,6).map(t=>'<p>'+esc(sub(t))+'</p>').join('')}`,[{t:'出关',cls:'gold'}]);}
 function xinmoFight(){const st=stats();modal('<h3>心魔</h3><p>闭关太久了。黑暗里，有一个人长着你的脸，坐在你对面。</p><p>“这些年，你真的是在修行吗？”</p>',[{t:'斩心魔',cls:'red',fn:()=>{const e=mkCustom(Math.max(0,maxZone()),{look:S.gender==='f'?'宁玄':'无名剑客',name:'心魔',m:1.4,boss:true});e.atk=st.atk*.9;e.hp=st.hp*1.6;e.max=e.hp;e.def=st.def;e.tint=1;e.noLoot=1;
-  startBattle([e],{noFlee:true,bg:'town',onWin:()=>{S.flags.xinmoWin=(S.flags.xinmoWin||0)+1;addQi(req(S.stage)*.5,true);toast('心魔已斩，道心更坚','big');save();},onLose:()=>{S.qi=Math.floor(S.qi*.5);S.injury=Date.now()+15*60*1000;toast('心魔反噬：修为散去一半，重伤十五分钟','bad');save();}});}}]);}
+  startBattle([e],{noFlee:true,bg:'town',onWin:()=>{S.flags.xinmoWin=(S.flags.xinmoWin||0)+1;addQi(req(S.stage)*.5,true);toast('心魔已斩，道心更坚','big');save();},onLose:()=>{S.qi=Math.floor(S.qi*.5);injSet(8);toast('心魔反噬：修为散去一半，重伤，要养八天','bad');save();}});}}]);}
 
 /* ---------- 弟子 ---------- */
 const DIS_TRAIT=['勤勉','聪慧','孤僻','野心','温厚','顽劣'];
@@ -4428,9 +4485,9 @@ const disMax=()=>Math.min(6,1+realmIdx()+(S.path==='zong'?2:0)+(S.clan&&S.clan.z
 const legacyBonus=()=>Math.min(.25,(S.legacy||[]).length*.05);
 function disAdd(o){const d=Object.assign({id:S.uid++,n:'无名',apt:3,root:pick(Object.keys(ROOTS)),st:0,age:12,alive:true,loy:60,trait:pick(DIS_TRAIT),art:[],note:'',ch:'p_gen'+(1+Math.floor(Math.random()*6))},o);
  (S.legacy||[]).forEach(l=>{if(l.art&&!d.art.includes(l.art))d.art.push(l.art);});S.dis.push(d);return d;}
-function disCands(){if(S.disC&&S.disC.day===new Date().toDateString())return S.disC.L;const L=[];for(let i=0;i<3;i++){const nm=pick(CL_SUR.split(''))+pick(CL_GIV)+(Math.random()<.5?pick(CL_GIV):'');const apt=1+Math.floor(Math.random()*Math.random()*5.2);
+function disCands(){if(S.disC&&S.disC.day===dayKey())return S.disC.L;const L=[];for(let i=0;i<3;i++){const nm=pick(CL_SUR.split(''))+pick(CL_GIV)+(Math.random()<.5?pick(CL_GIV):'');const apt=1+Math.floor(Math.random()*Math.random()*5.2);
   L.push({n:nm,apt:Math.min(5,apt),root:pick(Object.keys(ROOTS)),age:8+Math.floor(Math.random()*9),trait:pick(DIS_TRAIT)});}
- (S.kids||[]).forEach(k=>L.unshift(k));S.disC={day:new Date().toDateString(),L};return L;}
+ (S.kids||[]).forEach(k=>L.unshift(k));S.disC={day:dayKey(),L};return L;}
 function disRecruit(i){if(S.dis.filter(d=>d.alive&&!d.gone).length>=disMax()){toast('收不下了：境界越高，能教的弟子越多','bad');return;}const c=disCands()[i];if(!c)return;
  const d=disAdd(c);S.disC.L.splice(i,1);S.kids=(S.kids||[]).filter(k=>k.n!==c.n);S.dao.zong+=1;news(d.n+'拜入你的门下。');sfx('bell');toast('收 '+d.n+' 为徒','big');save();render();}
 function disYear(){const zb=S.path==='zong'?1.3:1,db=S.clan?1+S.clan.bld.dan*.05:1;
@@ -4504,9 +4561,9 @@ function reincarnate(bonus){const keep={name:S.name,gender:S.gender,seen:S.seen,
 
 /* ---------- 开宗立派 ---------- */
 function zongHTML(){const c=S.clan;if(!c)return '';if(c.zong)return `<div class="banner zong"><div class="t">${esc(c.name)} · 宗门<small>开宗于${yearName(c.zongY)}。弟子上限 +1，江湖榜上留名。${S.heir?'继承人：'+esc((S.dis.find(d=>d.id===S.heir)||{n:'—'}).n):'尚未立继承人'}</small></div></div>`;
- const ok=realmIdx()>=2&&c.fame>=150;return `<div class="row2"><div class="in"><div class="iname">开宗立派</div><div class="istat">把家族立为宗门：需金丹境界、家族声望 150（现 ${c.fame}）。宗门能多收一名弟子，也会被其他宗门当成对手。</div></div><button class="btn sm ${ok?'gold':''}" data-act="zong" ${ok?'':'disabled'}>立宗</button></div>`;}
+ if(typeof CANON_CAP!=='undefined')return '';const ok=realmIdx()>=2&&c.fame>=150;return `<div class="row2"><div class="in"><div class="iname">开宗立派</div><div class="istat">把行社立为宗门：需金丹境界、行社声望 150（现 ${c.fame}）。宗门能多收一名弟子，也会被其他宗门当成对手。</div></div><button class="btn sm ${ok?'gold':''}" data-act="zong" ${ok?'':'disabled'}>立宗</button></div>`;}
 function zongFound(){const c=S.clan;if(!c||c.zong||realmIdx()<2||c.fame<150)return;const base=c.name.replace(/家$/,'');
- modal(`<h3>开宗立派</h3><p>族人们在祠堂前站成两排。新的牌匾已经刻好了，只差你给它起个名字。</p>`,[base+'宗',base+'门',base+'派'].map(n=>({t:n,cls:'gold',fn:()=>{c.name=n;c.zong=1;c.zongY=S.year;c.fame+=50;S.dao.zong+=3;news(S.name+'开宗立派，立「'+n+'」。',1);sfx('bell');toast('「'+n+'」立宗！','big');save();render();}})).concat([{t:'再等等',cls:'ghost'}]));}
+ modal(`<h3>开宗立派</h3><p>社员们在祠堂前站成两排。新的牌匾已经刻好了，只差你给它起个名字。</p>`,[base+'宗',base+'门',base+'派'].map(n=>({t:n,cls:'gold',fn:()=>{c.name=n;c.zong=1;c.zongY=S.year;c.fame+=50;S.dao.zong+=3;news(S.name+'开宗立派，立「'+n+'」。',1);sfx('bell');toast('「'+n+'」立宗！','big');save();render();}})).concat([{t:'再等等',cls:'ghost'}]));}
 
 /* ================= 江湖：宗门 · 坊市 · 悬赏 · 江湖榜 · 人物 · 隐藏剧情 · 奇遇 · 目标 ================= */
 const SECTS={
@@ -4531,7 +4588,7 @@ function sectFoe(k,rank){const D=SECTS[k],lead=sectLead(k);const st=rank===2&&le
  e.atkSt={huo:['burn',1],bing:['chill',1],shui:['wet',2],lei:['shock',1]}[D.el]||null;return e;}
 function sectFight(k){const R=S.sects[k]||(S.sects[k]={beat:0,rel:null});if(R.rel==='vassal'||R.rel==='gone'){toast('这个宗门已经不在了','bad');return;}const rank=Math.min(2,R.beat);
  const foes=[sectFoe(k,rank)];if(rank===2)foes.push(sectFoe(k,1));if(rank===0)foes.push(sectFoe(k,0));jhClose();
- startBattle(foes,{bg:sectBg(k),noFlee:rank===2,onWin:()=>sectWin(k,rank),onLose:()=>{S.injury=Date.now()+5*60*1000;toast(SECTS[k].n+'：「回去再练几年吧。」（轻伤五分钟）','bad');save();}});}
+ startBattle(foes,{bg:sectBg(k),noFlee:rank===2,onWin:()=>sectWin(k,rank),onLose:()=>{injSet(2);toast(SECTS[k].n+'：「回去再练几年吧。」（轻伤，要养两天）','bad');save();}});}
 function sectWin(k,rank){const D=SECTS[k],R=S.sects[k];const first=R.beat<=rank;if(first){R.beat=rank+1;wuAdd(6);}S.fame+=[3,8,25][rank];let L=[];
  if(first&&rank===0)L.push(gS(zsAt(zOfStage(D.st),8)),gMat('he',3));
  if(first&&rank===1){L.push(learnForm(D.form)||gS(zsAt(zOfStage(D.st),12)));}
@@ -4541,10 +4598,7 @@ function sectWin(k,rank){const D=SECTS[k],R=S.sects[k];const first=R.beat<=rank;
 function sectChoice(k,msg){const D=SECTS[k],R=S.sects[k],lead=sectLead(k);
  modal(`<h3>${D.n} · 宗主落败</h3><p>${lead?esc(lead.n):D.lt}半跪在地，满座寂然。所有人都在等你开口。</p><p class="note">${esc(msg)}</p>`,[
   {t:'点到为止，结为盟友',cls:'gold',fn:()=>{R.rel='ally';if(lead)lead.att=Math.min(100,lead.att+30);S.dao.zheng+=2;kar(1);news(S.name+'与'+D.n+'结盟。',1);toast('与'+D.n+'结盟：获得盟友加成','big');save();render();}},
-  {t:'索要镇派之宝',cls:'',fn:()=>{R.rel='hostile';if(lead)lead.att=-70;S.dao.mo+=1;const t=gItem(4)+gS(zsAt(zOfStage(D.st),40));seedAdd('sect',null,S.year+10+Math.floor(Math.random()*10),{sect:k});news(D.n+'被'+S.name+'强取镇派之宝，'+D.n+'上下引为奇耻。',1);modal('<h3>强取</h3><p>他们把东西捧了出来。没有人说话。'+esc(t)+'</p><p class="note">'+D.n+'记住了这件事。</p>',[{t:'走',cls:'red'}]);save();render();}},
-  ...(S.clan?[{t:'吞并，纳入'+esc(S.clan.name),cls:'',fn:()=>{R.rel='vassal';S.dao.zong+=2;S.dao.mo+=1;const c=S.clan;c.fame+=60;for(let i=0;i<2;i++){const m=clRecruit(true);if(m)m.role='降众';}if(lead){lead.sect=null;lead.lead=0;lead.att=-80;seedAdd('revenge',lead.id,S.year+15+Math.floor(Math.random()*10),{why:''+D.n+'的牌匾，是你亲手摘下来的。'});}news(D.n+'并入'+c.name+'，从此除名。',1);toast(D.n+'并入家族','big');save();render();}}]:[]),
-  ...(S.path==='mo'?[{t:'吞其修为',cls:'red',fn:()=>{R.rel='hostile';S.dao.mo+=3;kar(-2);addQi(req(S.stage)*1.5,true);if(lead){lead.alive=false;lead.dy=S.year;lead.lead=0;}const heir=S.ppl.filter(p=>p.alive&&p.sect===k).sort((a,b)=>b.st-a.st)[0];if(heir){heir.att=-90;heir.tal=Math.min(1,heir.tal+.2);seedAdd('revenge',heir.id,S.year+20+Math.floor(Math.random()*15),{why:'师父的修为，你用得还顺手吗？'});}
-    news(S.name+'吞尽'+D.n+D.lt+'的修为。'+(heir?heir.n+'当夜出走，不知所踪。':''),1);toast('魔道：吞噬修为','big');save();render();}}]:[])]);}
+  {t:'索要镇派之宝',cls:'',fn:()=>{R.rel='hostile';if(lead)lead.att=-70;S.dao.mo+=1;const t=gItem(4)+gS(zsAt(zOfStage(D.st),40));seedAdd('sect',null,S.year+10+Math.floor(Math.random()*10),{sect:k});news(D.n+'被'+S.name+'强取镇派之宝，'+D.n+'上下引为奇耻。',1);modal('<h3>强取</h3><p>他们把东西捧了出来。没有人说话。'+esc(t)+'</p><p class="note">'+D.n+'记住了这件事。</p>',[{t:'走',cls:'red'}]);save();render();}}]);}
 
 /* ---------- 江湖榜 ---------- */
 function jhList(){const L=S.ppl.filter(p=>p.alive&&p.known&&p.st>=0).map(p=>({n:p.n,st:p.st,p,sect:p.sect}));L.push({n:S.name,st:S.stage,me:1,sect:null});
@@ -4554,7 +4608,7 @@ const jhRank=()=>jhList().findIndex(x=>x.me)+1+jhVirt();
 
 /* ---------- 悬赏 ---------- */
 const BNT_K=[{k:'mo',n:'魔修',why:['血祭了两个村子','专挑孩子下手','在城外布下噬魂阵'],look:'虚无行者',demon:1},{k:'rob',n:'劫修',why:['劫了红鹞商队的货','在官道上杀人越货','抢了百草谷的药'],look:'黑市打手'},{k:'trait',n:'叛徒',why:['盗走了宗门秘典','出卖了同门','投了天穹会'],look:'天穹追兵'}];
-function bntList(){const d=new Date().toDateString();if(S.bnt&&S.bnt.day===d)return S.bnt.L;const L=[];for(let i=0;i<3;i++){const K=pick(BNT_K),st=Math.max(1,Math.min(LAST,S.stage+[-2,0,3][i]));
+function bntList(){const d=dayKey();if(S.bnt&&S.bnt.day===d)return S.bnt.L;const L=[];for(let i=0;i<3;i++){const K=pick(BNT_K),st=Math.max(1,Math.min(LAST,S.stage+[-2,0,3][i]));
   L.push({id:i,k:K.k,n:pick(CL_SUR.split(''))+pick(['屠','枭','煞','狼','七','九','蛇','鬼'])+pick(['','子','郎','娘']),why:pick(K.why),look:K.look,demon:K.demon,st,done:0,tier:i});}S.bnt={day:d,L};return L;}
 function bntFight(i){const b=bntList()[i];if(!b||b.done)return;jhClose();const e=mkCustom(zOfStage(b.st),{look:b.look,name:b.n,st:b.st,m:[1.2,1.6,2.1][b.tier],boss:b.tier===2});e.human=1;if(b.demon)e.demon=1;
  startBattle([e],{bg:WD.M&&WD.M.kind!=='town'?WD.M.z:'market',onWin:()=>{b.done=1;wuAdd(4);const k=S.path==='zheng'?1.5:1;S.stones+=Math.ceil(zsAt(zOfStage(b.st),[6,10,18][b.tier])*k);S.fame+=[2,4,8][b.tier];
@@ -4566,8 +4620,8 @@ function bntFight(i){const b=bntList()[i];if(!b||b.done)return;jhClose();const e
 const SHOP_MATS=['cao','he','gu','tie'];
 const matPrice=k=>Math.ceil(zsAt(maxZone(),{cao:.5,he:.7,gu:.5,tie:.9,huo:1.2,lei:1.4,xing:1.8,xue:3,ru:4}[k]||1));
 const fuPrice=k=>Math.ceil(zsAt(maxZone(),{lei:2,huo:1.6,ding:2.4,hu:1.8,po:2}[k]));
-function qiStock(){const d=new Date().toDateString();if(S.qiS&&S.qiS.day===d)return S.qiS.L;const z=maxZone();S.qiS={day:d,L:[0,1,2].map(i=>{const it=mkItem(z,true,{r:i===2?3:2,slot:pick(SLOT5)});return {it,p:Math.ceil(it.sell*(i===2?6:4))};})};return S.qiS.L;}
-function aucStock(){const d=new Date().toDateString();if(S.auc&&S.auc.day===d)return S.auc.L;const L=[],z=maxZone(),rv=()=>{const P=S.ppl.filter(p=>p.alive&&p.known&&p.st>=0&&!p.fr);return P.length?pick(P).id:null;};
+function qiStock(){const d=dayKey();if(S.qiS&&S.qiS.day===d)return S.qiS.L;const z=maxZone();S.qiS={day:d,L:[0,1,2].map(i=>{const it=mkItem(z,true,{r:i===2?3:2,slot:pick(SLOT5)});return {it,p:Math.ceil(it.sell*(i===2?6:4))};})};return S.qiS.L;}
+function aucStock(){const d=dayKey();if(S.auc&&S.auc.day===d)return S.auc.L;const L=[],z=maxZone(),rv=()=>{const P=S.ppl.filter(p=>p.alive&&p.known&&p.st>=0&&!p.fr);return P.length?pick(P).id:null;};
  if((S.xf||0)<5&&!F('xf_auc'))L.push({k:'xf',n:'一卷残破的古图',d:'上面画着一座看不懂的山。卖家说是从废城里挖出来的',p:zsAt(z,30)});
  const fl=Object.keys(FORMS).filter(f=>!S.forms.includes(f)&&f!=='jiugong');if(fl.length)L.push({k:'form',f:pick(fl),n:'阵图',d:'',p:zsAt(z,40)});
  L.push({k:'item',n:'传世之兵',d:'仙品之上，有传说的气息',p:zsAt(z,70)});if(L.length<3)L.push({k:'gem',n:'绝品宝石',d:'',p:zsAt(z,35)});
@@ -4604,7 +4658,7 @@ function jhBody(){const t=JH.tab;
  if(t==='shop'){if(!inMarket())return `<div class="jh-scene"><canvas data-scene="market"></canvas></div><p class="empty">坊市在城南的旧街上。打开「地图」，去「坊市」逛逛：丹铺、器铺、符箓铺、拍卖行都在那里。</p><button class="btn gold" data-ja="goMarket">前往坊市</button>`;
   const S2={dan:'丹铺',qi:'器铺',fu:'符箓铺',auc:'拍卖行',sell:'收购'};let h=`<div class="jh-sub">${Object.keys(S2).map(k=>`<button class="${JH.sub===k?'on':''}" data-js="${k}">${S2[k]}</button>`).join('')}</div>`;
   if(JH.sub==='dan')h+=`<p class="note">灵草、妖核、兽骨、寒铁，炼丹用的。其余的材料要自己去打。</p>${SHOP_MATS.map(k=>`<div class="row2"><div class="in"><div class="iname">${MATS[k].n}<span class="lv">持有 ${S.mats[k]||0}</span></div></div><div class="ibtn"><button class="btn sm" data-ja="buyMat" data-arg="${k}|1">${fmt(matPrice(k))}</button><button class="btn sm ghost" data-ja="buyMat" data-arg="${k}|5">×5</button></div></div>`).join('')}
-   <div class="row2"><div class="in"><div class="iname">寿元丹<span class="lv">持有 ${S.lifeP||0}</span></div><div class="istat">延寿三十年。丹铺每天只肯卖一颗。</div></div><button class="btn sm gold" data-ja="buyLife" ${S.lifeDay===new Date().toDateString()?'disabled':''}>${fmt(zsAt(maxZone(),60))}</button></div>`;
+   <div class="row2"><div class="in"><div class="iname">寿元丹<span class="lv">持有 ${S.lifeP||0}</span></div><div class="istat">延寿三十年。丹铺每天只肯卖一颗。</div></div><button class="btn sm gold" data-ja="buyLife" ${S.lifeDay===dayKey()?'disabled':''}>${fmt(zsAt(maxZone(),60))}</button></div>`;
   if(JH.sub==='qi')h+=`<p class="note">每天三件。货架上的东西，过了今天就没了。</p>${qiStock().map((o,i)=>o.sold?`<div class="row2 dim"><div class="in"><div class="iname">（已售出）</div></div></div>`:`<div class="row2 r-${RAR[o.it.r].c}"><div class="in"><div class="iname">${o.it.n}${better(o.it)?'<span class="up">▲ 更强</span>':''}</div><div class="istat">${SLOTN[o.it.slot]}　${statText(o.it)}</div>${affHTML(o.it)}</div><button class="btn sm" data-ja="buyQi" data-arg="${i}" ${S.stones>=o.p?'':'disabled'}>${fmt(o.p)}</button></div>`).join('')}`;
   if(JH.sub==='fu')h+=`<p class="note">符箓在战斗的「道具」里使用。一张符，有时候能顶一门功法——雷符能引爆灼烧，破甲符专破金身。</p>${Object.keys(FU).map(k=>`<div class="row2"><div class="in"><div class="iname">${FU[k].n}<span class="lv">持有 ${S.fu[k]||0}</span></div><div class="istat">${FU[k].d}</div></div><button class="btn sm" data-ja="buyFu" data-arg="${k}" ${S.stones>=fuPrice(k)?'':'disabled'}>${fmt(fuPrice(k))}</button></div>`).join('')}`;
   if(JH.sub==='auc')h+=`<p class="note">每天三件拍品。对面坐着的，是江湖上有名有姓的人——压过他们，他们会记住你。</p>${aucStock().map((l,i)=>{const rv=P_(l.rv);return `<div class="row2 r-xian ${l.st?'dim':''}"><div class="in"><div class="iname">${l.n}</div><div class="istat">${l.d}${rv?'<br>竞拍者：'+esc(rv.n)+'（'+realmOf(rv.st)+'）':''}</div><div class="istat">当前 <b>${fmt(l.cur)}</b> 灵石${l.st===1?' · 已归你':l.st===2?' · 已流拍给他人':''}</div></div>
@@ -4612,7 +4666,7 @@ function jhBody(){const t=JH.tab;
   if(JH.sub==='sell')h+=`<p class="note">多余的材料可以卖掉，换些灵石。</p>${Object.keys(MATS).filter(k=>S.mats[k]>0).map(k=>`<div class="row2"><div class="in"><div class="iname">${MATS[k].n}<span class="lv">${S.mats[k]}</span></div></div><button class="btn sm ghost" data-ja="sellMat" data-arg="${k}">卖一半 · ${fmt(Math.floor(matPrice(k)*.4)*Math.ceil(S.mats[k]/2))}</button></div>`).join('')||'<p class="empty">没有材料。</p>'}`;
   return h;}
  if(t==='bounty')return `<p class="note">悬赏每天更新三条。${S.path==='zheng'?'正道：赏金 ×1.5。':''}斩魔修能救一方百姓——但魔修也有徒弟。</p>${bntList().map((b,i)=>`<div class="row2 ${b.done?'dim':''}"><div class="in"><div class="iname">${esc(b.n)}<span class="lv">${BNT_K.find(x=>x.k===b.k).n} · ${realmOf(b.st)}</span></div><div class="istat">${b.why}${b.done?' · 已伏诛':''}</div></div>${b.done?'':`<button class="btn sm ${b.tier===2?'red':''}" data-ja="bnt" data-arg="${i}">缉拿</button>`}</div>`).join('')}`;
- if(t==='sect')return `<p class="note">挑战一个宗门要连赢三阵：弟子、长老、宗主。每家宗主都有自己的门道，只靠境界硬打，往往要吃亏——看清他们的五行和手段，带对灵根、功法、符箓和阵法。</p>${SECT_ORD.map(k=>{const D=SECTS[k],R=S.sects[k]||{beat:0},lead=sectLead(k);return `<div class="row2 sect"><div class="seal" style="--ec:${EL[D.el].c}">${D.n[0]}</div><div class="in"><div class="iname">${D.n}<span class="lv">${EL[D.el].n} · ${D.align}道 · 建议 ${realmOf(D.st)}</span></div><div class="istat">${D.d}<br>${D.lt}：${S.sm&&S.sm.k===k&&S.sm.rank>=5?'你':lead?esc(lead.n)+'（'+realmOf(lead.st)+'）':'空悬'} · 进度 ${'●'.repeat(Math.min(3,R.beat))}${'○'.repeat(3-Math.min(3,R.beat))}${R.rel?' · '+{ally:'盟友',hostile:'交恶',vassal:'已并入家族',beaten:'已服'}[R.rel]:''}</div></div>
+ if(t==='sect')return `<p class="note">挑战一个宗门要连赢三阵：弟子、长老、宗主。每家宗主都有自己的门道，只靠境界硬打，往往要吃亏——看清他们的五行和手段，带对灵根、功法、符箓和阵法。</p>${SECT_ORD.map(k=>{const D=SECTS[k],R=S.sects[k]||{beat:0},lead=sectLead(k);return `<div class="row2 sect"><div class="seal" style="--ec:${EL[D.el].c}">${D.n[0]}</div><div class="in"><div class="iname">${D.n}<span class="lv">${EL[D.el].n} · ${D.align}道 · 建议 ${realmOf(D.st)}</span></div><div class="istat">${D.d}<br>${D.lt}：${S.sm&&S.sm.k===k&&S.sm.rank>=5?'你':lead?esc(lead.n)+'（'+realmOf(lead.st)+'）':'空悬'} · 进度 ${'●'.repeat(Math.min(3,R.beat))}${'○'.repeat(3-Math.min(3,R.beat))}${R.rel?' · '+{ally:'盟友',hostile:'交恶',vassal:'已并入行社',beaten:'已服'}[R.rel]:''}</div></div>
   ${R.rel==='vassal'?'':`<button class="btn sm ${R.beat>=2?'red':''}" data-ja="sect" data-arg="${k}">${R.beat>=3?'再战宗主':'挑战'+RANKN[Math.min(2,R.beat)]}</button>`}</div>`;}).join('')}`;
  if(t==='rank'){const L=jhList(),idx=L.findIndex(x=>x.me),me=jhRank(),onB=me<=100,tot=JH_POP+L.length;
   const fmtN=n=>n>=10000?(n/10000).toFixed(1).replace(/\.0$/,'')+' 万':String(n);
@@ -4625,7 +4679,7 @@ function jhBody(){const t=JH.tab;
 const JH_ACT={
  goMarket:()=>{jhClose();goMarket();},
  buyMat:a=>{const [k,n]=a.split('|');const c=matPrice(k)*(+n);if(S.stones<c){toast('灵石不够','bad');return;}S.stones-=c;S.mats[k]=(S.mats[k]||0)+(+n);sfx('coin');save();jhRender();},
- buyLife:()=>{const c=zsAt(maxZone(),60);if(S.stones<c){toast('灵石不够','bad');return;}S.stones-=c;S.lifeP=(S.lifeP||0)+1;S.lifeDay=new Date().toDateString();sfx('coin');toast('买下一颗寿元丹');save();jhRender();},
+ buyLife:()=>{const c=zsAt(maxZone(),60);if(S.stones<c){toast('灵石不够','bad');return;}S.stones-=c;S.lifeP=(S.lifeP||0)+1;S.lifeDay=dayKey();sfx('coin');toast('买下一颗寿元丹');save();jhRender();},
  buyQi:a=>{const o=qiStock()[+a];if(!o||o.sold||S.stones<o.p)return;S.stones-=o.p;o.sold=1;toast(pushItem(o.it).trim());sfx('coin');save();jhRender();},
  buyFu:k=>{const c=fuPrice(k);if(S.stones<c)return;S.stones-=c;S.fu[k]=(S.fu[k]||0)+1;sfx('coin');save();jhRender();},
  sellMat:k=>{const n=Math.ceil(S.mats[k]/2);S.mats[k]-=n;S.stones+=Math.floor(matPrice(k)*.4)*n;sfx('coin');save();jhRender();},
@@ -4731,7 +4785,7 @@ function xfLegacy(){modal('<h3>太一传承</h3><p>灰烬里留下三样东西�
 /* ---------- 奇遇：每一次都要选择 ---------- */
 Object.assign(EVENTS,{
  dongfu:{title:'古修洞府',g:'洞',zones:'any',need:()=>maxZone()>=1,lines:['山壁上有一道裂缝，往里看，是一间石室。','石壁上刻着密密麻麻的字；角落里横着一口石棺，棺盖上贴着褪色的符；石台上放着一只木匣。','这种地方，拿得太多，往往走不出去。'],choices:[
-  {t:'参悟石壁上的功法',act:()=>{if(Math.random()<.55){S.dao.yin+=1;return '你在石壁前坐了三天三夜。字一个一个活了过来，钻进你的脑子里。'+gBook();}S.qi=Math.floor(S.qi*.8);S.injury=Date.now()+5*60*1000;return '读到一半，字变成了刀。你走火入魔，修为散去两成，受了轻伤。';}},
+  {t:'参悟石壁上的功法',act:()=>{if(Math.random()<.55){S.dao.yin+=1;return '你在石壁前坐了三天三夜。字一个一个活了过来，钻进你的脑子里。'+gBook();}S.qi=Math.floor(S.qi*.8);injSet(2);return '读到一半，字变成了刀。你走火入魔，修为散去两成，受了轻伤。';}},
   {t:'揭开石棺',act:()=>({text:'符纸碎了。棺材里坐起来一只东西——它被封在这里，比灵潮还要早。',fight:{look:pick(['噬灵巨鼠','守门石兽','金乌残魂']),name:'上古妖兽',m:2.8,boss:true,after:()=>xfGet('cave')+gItem(3)+gMat('ru',1)}})},
   {t:'只拿木匣',act:()=>Math.random()<.2?{text:'木匣张开了嘴。',fight:{look:'宝箱怪',name:'匣中妖',m:1.6,after:()=>gS(zs(8))}}:'木匣里是几块灵石和一瓶丹药。你没有贪。'+gS(zs(5))+gPill(1)},
   {t:'不进去',act:()=>'你在洞口站了一会儿，转身走了。有些东西，不知道比知道好。'}]},
@@ -4768,9 +4822,9 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  const pend=S.pending.map(id=>STORY.find(c=>c.id===id)).find(c=>c&&!c.side);const ready=QUESTS.find(q=>qSt(q.id)==='ready');
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
- else if(S.injury>Date.now())g.s={t:'重伤未愈：'+fmtT((S.injury-Date.now())/1000),a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
- else{const b=S.bnt&&S.bnt.day===new Date().toDateString()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
+ else if(injOn())g.s={t:'重伤未愈：'+injLeft()+' 天',a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?'修为已满：金丹要等第十一卷':ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else{const b=S.bnt&&S.bnt.day===dayKey()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
  if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};
  else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:sk?{t:'挑战'+SECTS[sk].n+'（'+RANKN[Math.min(2,(S.sects[sk]||{beat:0}).beat)]+'）',a:'sect'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
@@ -4813,9 +4867,9 @@ function rwFlush(n){if(!RW_F)return;setTimeout(()=>{if(!RW_F)return;if((!OV_FREE
 function rwBattle(o){const p=o.pid?P_(o.pid):null;let foes;
  if(o.foes)foes=o.foes();
  else foes=(o.many||[o]).map(f=>{const q=f.pid?P_(f.pid):p;const st=f.st!=null?f.st:q?q.st:S.stage;const look=f.look||(q&&LOOK[q.n]?q.n:'无名剑客');
-  const e=mkCustom(f.z!=null?f.z:zOfStage(st),{look,name:f.name||(q?q.n:look),st:f.z!=null?undefined:(q?Math.min(st,S.stage+2):st),m:f.m||1.5,boss:!!f.boss,p2:f.p2,n2:f.n2});if(!f.beast)e.human=1;e.noLoot=1;if(f.el)e.el=f.el;if(f.demon)e.demon=1;return e;});
+  const e=mkCustom(f.z!=null?f.z:zOfStage(st),{look,name:f.name||(q?q.n:look),st:f.z!=null?undefined:(q?Math.min(st,S.stage+2):st),m:f.m||1.5,boss:!!f.boss,p2:f.p2,n2:f.n2});if(!f.beast)e.human=1;e.noLoot=1;if(f.el)e.el=f.el;if(f.demon)e.demon=1;if(f.mech)e.mech=f.mech;if(f.decoy){e.decoy=1;e.n=e.name=f.name||e.n;}return e;});
  if(typeof jhClose==='function')jhClose();
- startBattle(foes,{bg:o.bg||'market',noFlee:!!o.noFlee,
+ startBattle(foes,{bg:o.bg||'market',noFlee:!!o.noFlee,rule:o.rule,surviveN:o.surviveN,surviveMsg:o.surviveMsg,turnLimit:o.turnLimit,limitMsg:o.limitMsg,
   onWin:()=>{let t='';try{t=o.win?o.win():'';}catch(e){console.error(e);}rwMsg(o.title||'胜',t);},
   onLose:()=>{let t='';try{t=o.lose?o.lose():'';}catch(e){console.error(e);}rwMsg(o.title||'败',t,1);}});}
 function rwMsg(h,t,bad){save();setTimeout(()=>{modal(`<h3>${esc(h)}</h3><p>${esc(t||'').replace(/\n/g,'<br>')}</p>`,[{t:'好',cls:bad?'':'gold'}]);checkStory();},350);}
@@ -5810,8 +5864,8 @@ function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <sma
 
 /* ---------- 突破 ---------- */
 function breakthrough(){const need=req(S.stage);if(S.qi<need||BT)return;const ni=nextInfo();if(ni.final)return ascend();
- if(ni.gate){toast(ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、做宗门任务、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
- if(S.injury>Date.now()){toast('重伤未愈，经不起冲关（还要 '+fmtT((S.injury-Date.now())/1000)+'）','bad');return;}
+ if(ni.gate){toast(ni.capped?'金丹这一关，要等第十一卷的故事。':ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、做宗门任务、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
+ if(injOn()){toast('重伤未愈，经不起冲关（还要 '+injLeft()+' 天'+'）','bad');return;}
  const r1=STAGES[S.stage+1].r;if(ni.major&&r1>=2){jieAsk(ni);return;}
  const used=ni.major&&S.usePill&&S.pills>0;if(used){S.pills--;toxAdd(20);}
  if(Math.random()<ni.ch)breakOk(ni);else breakFail(ni,used);}
@@ -5820,17 +5874,17 @@ function breakOk(ni){const old=stats(),need=req(S.stage);S.qi=Math.max(0,S.qi-ne
  const r=realmIdx(),yrs=BT_YEARS[r]||0,L=yrs?simYears(yrs):[];S.dao.yin+=yrs>=10?1:0;
  if(r>=2&&S.root){const sk=SKILLS.find(s=>s.root===S.root&&s.rl===2);if(sk)S.flags.sk2=1;}
  save();ceremony(old,r,yrs,L,()=>{if(ni.fs&&!F('feisheng')){S.flags.feisheng=1;save();setTimeout(()=>playStory('feisheng'),300);}checkStory();if(r===3)setTimeout(pathAsk,600);render();});}
-function breakFail(ni,used){S.qi=Math.floor(S.qi*.6);if(ni.major)S.injury=Date.now()+8*60*1000;toast('冲关失败，灵气溃散了四成。'+(ni.major?'经脉受损，八分钟内无法再冲。':'')+(used?'破境丹已耗去。':''),'bad');flashStage('red');sfx('bad');if(S.pills<=0)S.usePill=false;render();save();}
+function breakFail(ni,used){S.qi=Math.floor(S.qi*.6);if(ni.major)injSet(4);toast('冲关失败，灵气溃散了四成。'+(ni.major?'经脉受损，要养四天才能再冲。':'')+(used?'破境丹已耗去。':''),'bad');flashStage('red');sfx('bad');if(S.pills<=0)S.usePill=false;render();save();}
 
 /* ---------- 天劫 ---------- */
 function jieN(r1){return 3+Math.floor(r1/2);}
 function jieAsk(ni){const r1=STAGES[S.stage+1].r,N=jieN(r1),jz=S.jzDan>0;
  modal(`<h3>天劫 · ${REALMS[r1]}</h3><p>天上的云开始聚了。冲击${REALMS[r1]}，要扛过 <b>${jz?Math.ceil(N/2):N}</b> 道雷劫。每三道里有一道「紫霄神雷」，专劈你一人。</p>
- <p class="note">雷劫不看防御，看你能不能撑住：防御、护盾、回春、疗伤药、护身符都用得上。也可以出手打散劫云，提前渡劫。<br>失败：灵气散去一半，重伤二十分钟。${S.jieDan>0?'<br>你有渡劫丹 '+S.jieDan+' 颗：本次雷击 -30%。':''}${jz?'<br>你有九转金丹：雷劫减半，雷力减半。':''}</p>`,
+ <p class="note">雷劫不看防御，看你能不能撑住：防御、护盾、回春、疗伤药、护身符都用得上。也可以出手打散劫云，提前渡劫。<br>失败：灵气散去一半，重伤，要养十天。${S.jieDan>0?'<br>你有渡劫丹 '+S.jieDan+' 颗：本次雷击 -30%。':''}${jz?'<br>你有九转金丹：雷劫减半，雷力减半。':''}</p>`,
   [{t:'渡劫',cls:'red',fn:()=>startJie(ni)},{t:'再准备一下',cls:'ghost'}]);}
 function startJie(ni){const r1=STAGES[S.stage+1].r,st=stats();let N=jieN(r1),k=1;if(S.jzDan>0){S.jzDan--;N=Math.ceil(N/2);k*=.5;}if(S.jieDan>0){S.jieDan--;k*=.7;}
  const e={n:'九霄雷劫',look:'劫云',jie:1,hp:st.atk*N*3.2,max:st.atk*N*3.2,atk:st.hp*(.16+.012*r1)*k,def:st.def*.3,spd:99,stones:0,noLoot:1,z:maxZone(),boss:false,el:null};
- sfx('thunder');startBattle([e],{jie:N,noFlee:true,bg:'jie',onWin:()=>{breakOk(ni);},onLose:()=>{S.qi=Math.floor(S.qi*.5);S.injury=Date.now()+20*60*1000;news(S.name+'渡'+REALMS[r1]+'劫失败。');toast('渡劫失败：灵气散去一半，重伤二十分钟','bad');save();render();}});}
+ sfx('thunder');startBattle([e],{jie:N,noFlee:true,bg:'jie',onWin:()=>{breakOk(ni);},onLose:()=>{S.qi=Math.floor(S.qi*.5);injSet(10);news(S.name+'渡'+REALMS[r1]+'劫失败。');toast('渡劫失败：灵气散去一半，重伤，要养十天','bad');save();render();}});}
 async function jieStrike(a){const ps=BT.party.filter(p=>p.alive),big=(BT.jr||1)%3===0;BT.fx.push({k:'flash',t0:BT.t,dur:.35});sfx('thunder');BT.shake=.6;
  if(big){const h=BT.party[0];btMsg('紫霄神雷！');BT.fx.push({k:'bolt',x:h.bx,y:h.by-6,t0:BT.t,dur:.5});await bwait(260);btHit(h,h.max*.4*(a.atk/(stats().hp*.17)),'',a);}
  else{btMsg('雷劫落下！');ps.forEach((p,i)=>BT.fx.push({k:'bolt',x:p.bx,y:p.by-6,t0:BT.t+i*.06,dur:.45}));await bwait(300);ps.forEach(p=>btHit(p,a.atk*(p.key==='hero'?1:.7),'',a));}}
@@ -5866,7 +5920,7 @@ function bolt(x0,y0,x1,y1){const P=[[x0,y0]];const n=12;for(let i=1;i<=n;i++){co
 function abilBtns(){const R=realmIdx(),M=WD.M;if(!M)return '';let h='';
  if(R>=1)h+=`<button class="btn sm ${WD.fly?'gold':'ghost'}" data-act="fly">${WD.fly?'御剑中':'御剑'}</button>`;
  if(R>=3)h+=`<button class="btn sm ${WD.soul>0?'gold':'ghost'}" data-act="soul">出窍</button>`;
- if(R>=5&&M.kind==='zone'&&S.voidDay!==new Date().toDateString())h+=`<button class="btn sm ghost" data-act="void">虚空遁</button>`;return h;}
+ if(R>=5&&M.kind==='zone'&&S.voidDay!==dayKey())h+=`<button class="btn sm ghost" data-act="void">虚空遁</button>`;return h;}
 function flyToggle(){if(realmIdx()<1)return;WD.fly=!WD.fly;if(WD.P)WD.P.spd=WD.fly?9:4.4;sfx(WD.fly?'cast':'tap');toast(WD.fly?'御剑而起：妖兽追不上你，碰到也不会开战':'落地');const b=$('[data-act="fly"]');if(b){b.textContent=WD.fly?'御剑中':'御剑';b.className='btn sm '+(WD.fly?'gold':'ghost');}}
 function soulOut(){if(realmIdx()<3||!WD.M)return;WD.soul=10;sfx('cast');toast('元神出窍：十息之内，你能看见藏起来的东西');
  const M=WD.M;if(M.kind==='town'&&!M.mk&&!F('soulTown')){S.flags.soulTown=1;setTimeout(()=>{checkStory();},1800);}
@@ -5874,14 +5928,16 @@ function soulOut(){if(realmIdx()<3||!WD.M)return;WD.soul=10;sfx('cast');toast('�
   const n=1+(Math.random()<.5?1:0);for(let i=0;i<n&&cells.length;i++){const [c,r]=cells.splice(Math.floor(Math.random()*cells.length),1)[0];const kind=!(S.flags.xfs&&S.flags.xfs.soul)&&realmIdx()>=3&&Math.random()<.5?'xf':pick(['treasure','ghost','treasure']);
    const p=addProp(M,c,r,'spark',{blocks:false,hid:1,gold:kind!=='ghost'});p.lab=kind==='ghost'?'游魂':'隐秘之物';p.act=pp=>{removeProp(M,pp);EVZ=M.z;
     if(kind==='xf')toast(xfGet('soul').trim()||'一团旧光散了','big');else if(kind==='ghost')playEvent('soul_ghost',{});else toast(('地下埋着东西。'+gItem(3)+gMat(pick(ZMAT[M.z]||['he']),2)).trim(),'big');save();};}}}
-function voidStep(){if(realmIdx()<5||!WD.M||WD.M.kind!=='zone')return;S.voidDay=new Date().toDateString();sfx('thunder');save();enterRift();}
+function voidStep(){if(realmIdx()<5||!WD.M||WD.M.kind!=='zone')return;S.voidDay=dayKey();sfx('thunder');save();enterRift();}
 Object.assign(EVENTS,{soul_ghost:{title:'游魂',g:'魂',zones:'cult',lines:['一缕游魂蹲在石头后面，只有出窍的元神才看得见它。','“你……你能看见我？灵潮那天我死在这里，一直没人看见我。”'],choices:[
  {t:'超度它',act:()=>{kar(1);S.dao.zheng+=1;return '你替它念了一段往生的经。它冲你笑了笑，像烟一样散了。'+gQi(.25);}},
  {t:'问它这里藏着什么',act:()=>'游魂指了指脚下。“我埋的。给你吧，我用不上了。”'+gS(zs(8))+gMat('xue',1)},
  {t:'炼化它',act:()=>{kar(-2);S.dao.mo+=1;return '它尖叫着化成了一缕阴气，被你吸了进去。'+gQi(.6);}}]}});
 
-/* 剧情节奏：「过些日子」才有下一章。历练年够了算数，实际过去一会儿也算数（每档约六分钟），不用真等一年 */
-function paceOk(k,gap){if(!gap)return true;const f=S.flags;if(S.year>=(f[k+'y']||0)+gap)return true;const t=f[k+'t'];return !t||Date.now()-t>=gap*360000;}
+/* 剧情节奏：标着「过些日子」的章节，要游戏里过去 gap×15 天才开（历练、扫荡、歇息、闭关都会让日子往前走） */
+const PACE_D=15;
+function paceOk(k,gap){if(!gap)return true;const d0=S.flags[k+'d'];return d0==null||daysAll()-d0>=gap*PACE_D;}
+function paceLeft(k,gap){const d0=S.flags[k+'d'];return d0==null?0:Math.max(0,gap*PACE_D-(daysAll()-d0));}
 /* ================= 第一卷·青石：按剧本改编的主线 =================
    新存档走这一套（F('v1')）。章节沿用旧 id（prologue/mock/ahe/dongtian/ratking/zhouleave/zhuji/exposed/hunted），
    这样后面的剧情、羁绊、委托都还能接得上；新增章节用 v1_ 开头。 */
@@ -6123,7 +6179,7 @@ v1Add({id:'v1_caravan',title:'青石·红鹞的商队',g:'商',bg:'shelter',cond
  ['hong','你身上有个东西。我不问是什么。我只告诉你：我看得出来，别人也看得出来。'],
  ['hong','我爸是跑长途的，教我的第一件事：路上见到的人，只卖货，不卖人。灵潮那天他的车在高速上，我还没找到。所以我一直开车，开到哪算哪。'],
  ['hong','东郊再往东三百公里是坊市，坊市再往东，有人说是海。我没见过海。等你筑了基，等我的车还能开——以后一起去看看。'],
- {fx:()=>{S.flags.v1hong=1;S.flags.v1cY=S.year;S.flags.v1ct=Date.now();aff('hong',10,true);}},
+ {fx:()=>{S.flags.v1hong=1;S.flags.v1cY=S.year;S.flags.v1cd=daysAll();aff('hong',10,true);}},
  ['','【红姐登场：之后可以在站里找她说话、接委托。商队一年后回来，那时候要定下筑基丹的去处。】']
 ]},'ratking');
 
@@ -6337,10 +6393,10 @@ Object.assign(PORTRAIT,{hcg:PORTRAIT.tq,hui:PORTRAIT.tq});
 const V2_IDS=[];
 function V2(o){const prev=V2_IDS.length?V2_IDS[V2_IDS.length-1]:'hunted',id='v2_'+(V2_IDS.length+1);V2_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'坊市·'+o.t,g:o.g,bg:o.bg||'market',lines:o.lines,
+ STORY.push({id,pk:'v2',pg:gap,title:'坊市·'+o.t,g:o.g,bg:o.bg||'market',lines:o.lines,
   hint:o.hint||(kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v2',gap)&&(S.slain||0)>=(S.flags.v2k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v2y=S.year;S.flags.v2t=Date.now();S.flags.v2k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v2y=S.year;S.flags.v2d=daysAll();S.flags.v2k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v2P=()=>S.flags.pill||'';
 const v2Fight=(o)=>rwFight(Object.assign({bg:'city',noFlee:1},o,{bg:({'西堤':'xidi','码头':'matou','炉心':'matou'})[o.title]||o.bg||'city'}));
 
@@ -6734,7 +6790,7 @@ V2({t:'冷水过堤',g:'水',bg:'port',lines:[
  ['','不止她一个。上夜班的说炉水何时变热，看桩的说是谁先收紧禁行符，推料的说旧契藏在哪块砖后。'],
  ['','陈默把你从检修口拖出来时，你最后听见的，是一个男人反复说：「我叫蒋照生。我没死。别再写错。」'],
  ['','你把那个名字记了一遍，才彻底失去意识。'],
- {fx:()=>{S.injury=Date.now()+5*60*1000;wuAdd(6);aff('cm',15,true);try{rwAtt(XIAO,10);}catch(e){}}}
+ {fx:()=>{injSet(2);wuAdd(6);aff('cm',15,true);try{rwAtt(XIAO,10);}catch(e){}}}
 ]});
 
 /* 十六 · 活人的账 */
@@ -6830,10 +6886,10 @@ Object.assign(SPK,{shenm:'沈湄',lu:'老陆',chuyi:'初一',wence:'闻策',baiy
 const V3_IDS=[];
 function V3(o){const prev=V3_IDS.length?V3_IDS[V3_IDS.length-1]:'v2_18',id='v3_'+(V3_IDS.length+1);V3_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'雾港·'+o.t,g:o.g,bg:o.bg||'port',lines:o.lines,
+ STORY.push({id,pk:'v3',pg:gap,title:'雾港·'+o.t,g:o.g,bg:o.bg||'port',lines:o.lines,
   hint:o.hint||(st&&kills?'到城外再斩妖 '+kills+' 只，修为也要跟上':kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v3',gap)&&(S.slain||0)>=(S.flags.v3k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v3y=S.year;S.flags.v3t=Date.now();S.flags.v3k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v3y=S.year;S.flags.v3d=daysAll();S.flags.v3k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v3Fight=(o)=>rwFight(Object.assign({bg:'port',noFlee:1},o,{bg:({'回声鳗':'wugang','下潜':'shuixia','白脊':'baiji'})[o.title]||o.bg||'port'}));
 
 /* 旧主线的「雾港」「零号」两章和这一卷对不上：第一卷存档改用新写法 */
@@ -7196,10 +7252,10 @@ Object.assign(SPK,{zhouyi:'周姨',oldm:'修船的老人',nuren:'披雨布的人
 const V4_IDS=[];
 function V4(o){const prev=V4_IDS.length?V4_IDS[V4_IDS.length-1]:'v3_12',id='v4_'+(V4_IDS.length+1);V4_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'坠星·'+o.t,g:o.g,bg:o.bg||'port',lines:o.lines,
+ STORY.push({id,pk:'v4',pg:gap,title:'坠星·'+o.t,g:o.g,bg:o.bg||'port',lines:o.lines,
   hint:o.hint||(st&&kills?'到城外再斩妖 '+kills+' 只，修为也要跟上':kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v4',gap)&&(S.slain||0)>=(S.flags.v4k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v4y=S.year;S.flags.v4t=Date.now();S.flags.v4k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v4y=S.year;S.flags.v4d=daysAll();S.flags.v4k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v4Fight=(o)=>rwFight(Object.assign({bg:'metro',noFlee:1},o));
 
 /* 旧主线里的「云上的人」苏绾和这一卷的苏绾不是一个人：第一卷存档不再触发那一章 */
@@ -7488,12 +7544,12 @@ Object.assign(SPK,{chengw:'程望',jiangq:'江芹',luc:'陆岑',luod:'罗定',fa
 const V5_IDS=[];
 function V5(o){const prev=V5_IDS.length?V5_IDS[V5_IDS.length-1]:'v4_12',id='v5_'+(V5_IDS.length+1);V5_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'河灯·'+o.t,g:o.g,bg:o.bg||'shelter',lines:o.lines,
+ STORY.push({id,pk:'v5',pg:gap,title:'河灯·'+o.t,g:o.g,bg:o.bg||'shelter',lines:o.lines,
   hint:o.hint||(kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v5',gap)&&(S.slain||0)>=(S.flags.v5k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v5y=S.year;S.flags.v5t=Date.now();S.flags.v5k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v5y=S.year;S.flags.v5d=daysAll();S.flags.v5k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v5Awake=()=>!F('heScar');                       /* 阿禾是否觉醒 */
-const v5Love=()=>F('hongSea')||F('v4Lamp')||F('v2HongEnd')==='trust'||avOf('hong')>=50;  /* 是否走红鹞道侣线 */
+const v5Love=()=>(typeof isPartner==='function'&&isPartner('hong'))||F('hongSea')||F('v4Lamp')||F('v2HongEnd')==='trust'||avOf('hong')>=50;  /* 是否走红鹞道侣线 */
 const v5H=(a,b)=>()=>v5Awake()?a:b;                    /* 按阿禾是否觉醒换一句台词 */
 const v5Fight=(o)=>rwFight(Object.assign({bg:'metro',noFlee:1},o));
 
@@ -7641,7 +7697,7 @@ V5({t:'北去的车',g:'北',lines:[
  ['','你看见出发牌，才知道自己误会了她这次回来。你以为她会留在青石，等水的事结束，两个人再一起往南走。那是你在车上想过的安排，没有说出口。'],
  ['hong','（正在换轮轴）我哪一回说过留下？……到哪儿不缺人？水车进来，煤从哪儿来，北坡的零件从哪儿来？我把北线开通，往后这里不用每回都等你赶回来。'],
  ['hong','你要是想我留，照实说。别替我找一件必须留的公事。'],
- {fn:()=>{if(v5Love())SC.q.unshift({c:[
+ {fn:()=>{if(v5Love()&&(isPartner('hong')||freeHeart('hong')))SC.q.unshift({c:[
    {t:'「想。」',k:1,fx:{aff:{hong:10},flags:{v5Say:1}},r:[['hong','（嘴角动了一下）那早点讲。我也会想。']]},
    {t:'「……路上小心。」',k:0,fx:{aff:{hong:2}},r:[['hong','（看了你一眼）嗯。']]}]});
   else SC.q.unshift(['@','……是这边缺人。'],['hong','那就把这边的事做完。我跑我的线。']);}},
@@ -7818,7 +7874,7 @@ V5({t:'不许点火',g:'火',lines:[
  ['he','不许点火！'],
  {c:[
   {t:'收火',k:1,fx:{flags:{v5Fire:'off'}},r:[['','你收火的瞬间，五行轮断了半拍，整个人重重撞上桥墩，喉间涌出血味。可满水的小螯没有涌过来。']]},
-  {t:'先把它逼退再说',k:-1,fx:()=>{S.flags.v5Fire='on';S.injury=Date.now()+4*60*1000;},r:[['','火光一亮，整片水里的盐壳螯朝你涌来，大鼋也被热气激得更狂。萧尘扑过来把你拽进门边窄处，你的半边胳膊全是血点。（重伤）']]}
+  {t:'先把它逼退再说',k:-1,fx:()=>{S.flags.v5Fire='on';injSet(2);},r:[['','火光一亮，整片水里的盐壳螯朝你涌来，大鼋也被热气激得更狂。萧尘扑过来把你拽进门边窄处，你的半边胳膊全是血点。（重伤）']]}
  ]},
  ['he','（透过门缝看了一会儿）把那只装螯的盆拿来，再要两块温石，不要火。'],
  ['','她把一小块存着余温的炉石包在木槽下，槽上放几只盐壳螯，沿水缓缓推向北角。第二只幼鼋跟了上去——它追的不是灯，是爬向温处的小螯。阿禾抓着拉槽的绳，能选的路只有十来步，稍偏冷水，幼鼋就会掉头。'],
@@ -7844,7 +7900,7 @@ V5({t:'最后一枚钉',g:'钉',gap:1,lines:[
   {t:'松力，所有人按住，等下一遍信号',k:1,fx:{flags:{v5Wait:1}},r:[
    ['','上游第一批水冲起的淤泥堵住了浮筒，阿禾让人走到实际出口，亲眼看水有没有漫过警戒桩。一去一回小半个时辰，你们站在冷水里，腿一点点发麻。过去你总觉得多等一息便多一分危险，现在却得靠等，留住所有人的退路。'],
    ['','三下敲响：出口通，低于红桩，可以继续。']]},
-  {t:'只差一点了，一口气撬完',k:-1,fx:()=>{S.flags.v5Wait=0;S.injury=Date.now()+4*60*1000;aff('he',-10,true);},r:[
+  {t:'只差一点了，一口气撬完',k:-1,fx:()=>{S.flags.v5Wait=0;injSet(2);aff('he',-10,true);},r:[
    ['','最后一枚销抬起时，淤泥正堵在浮筒口，第一股黑泥冲出来，漫过了警戒桩，冲垮了一段缓冲槽。两个人被水推倒，你左臂撞在闸轮上。阿禾在上游，好一阵没说话。']]}
  ]},
  ['','旧闸缓缓转动。最先出来的是黑泥、破铁片、碎瓷和烂木头。水流穿过缓冲槽，在侧道和南端之间分开，没有猛地抽干暗厅，也没有向站台倒灌。那只卡了许多年的门，开到预定的刻度，停住了。'],
@@ -7876,7 +7932,7 @@ V5({t:'两个人的晚饭',g:'饭',lines:[
    ['','吃完以后你去洗锅，她提灯，灯光落在水盆里一晃一晃。她手背多了两道风裂，你握过来时，她先嫌你手湿，随后也没有抽走。'],
    ['','你低头吻了她一下，很短，差点碰歪她手里的灯。她把灯放到窗台，才伸手揪住你的领口，又亲了一次。'],
    ['','你们没谈十年、一百年，或者将来某颗可能找到的丹。她问你明早吃什么，你说还没想好，她便说去秦婶那儿，至少不夹生。'],
-   {fx:{flags:{partnerHong:1},aff:{hong:15}}});
+   {fx:{flags:{partnerHong:1},aff:{hong:15}}},partnerFx('hong'),['','【你与红鹞结为道侣：她会随你出战。】']);
   else SC.q.unshift(['','吃完以后，你们一个洗锅一个提灯，听着阿禾的队伍从坡口回来，程望远远抱怨自己明明报了数，有人却还在问。'],['hong','下回我带菜。你只管别烧糊。']);}},
  ['','立冬后，北线停了长途。红鹞在坡上住了一阵，白天修车，晚上偶尔来蹭饭。后来她学会在你下盐前伸手拦一下，不必每次等吃到嘴里才骂。']
 ]});
@@ -7913,11 +7969,11 @@ Object.assign(SPK,{xie:'谢照临',luozi:'赶骡的年轻人',dianz:'客店掌�
 const V6_IDS=[];
 function V6(o){const prev=V6_IDS.length?V6_IDS[V6_IDS.length-1]:'v5_22',id='v6_'+(V6_IDS.length+1);V6_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'太一·'+o.t,g:o.g,bg:o.bg||'xianfu',lines:o.lines,
+ STORY.push({id,pk:'v6',pg:gap,title:'太一·'+o.t,g:o.g,bg:o.bg||'xianfu',lines:o.lines,
   hint:o.hint||(kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v6',gap)&&(S.slain||0)>=(S.flags.v6k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v6y=S.year;S.flags.v6t=Date.now();S.flags.v6k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
-const v6Love=()=>F('partnerHong')||v5Love();
+  after:()=>{S.flags.v6y=S.year;S.flags.v6d=daysAll();S.flags.v6k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+const v6Love=()=>isPartner('hong');
 const v6H=(a,b)=>()=>F('heScar')?b:a;
 const v6Fight=(o)=>rwFight(Object.assign({bg:'xianfu',noFlee:1},o));
 
@@ -8274,7 +8330,7 @@ V6({t:'炉腹',g:'炉',bg:'core',kills:5,lines:[
  ['','【迎战：护炉架。别砍轴，锁住它。】']
 ],after:()=>{v6Fight({title:'护炉架',bg:'core',many:[{look:'废铁傀儡',name:'护炉架',st:S.stage+2,m:1.5,boss:true},{look:'污水蛭',name:'寄焰藤',beast:1,st:S.stage,m:1}],
   win:()=>{S.flags.v6Rack='win';return '不能一根一根地砍。你朝红鹞伸手：「短链！」\n你抓住链子中段绕过铁架裸露的肘窝，另一头卡进案台的旧吊环。护炉架第二次抬臂，吊环嘎嘎作响，角度却被锁住了。每次落下，只砸中同一块砖。\n深沟另一端，藤蔓朝红鹞绳机的支脚攀去。她早把粗布浸透盐浆裹在支脚上，拿长钳挑远藤尖。\n「顾你那边。它还没够到我。」\n阿禾通开了第二处槽口，冷盐浆在砖台外侧合拢。萧尘把半块玉简放进了左槽。';},
-  lose:()=>{S.flags.v6Rack='lose';S.injury=Date.now()+3*60*1000;return '铁臂砸中你的肩，你左腿往后一沉，鞋跟离深沟只剩半寸。红鹞把短链甩过来，你踉跄着绕过铁架肘窝，卡进吊环。角度锁住了，你的肩也伤了。\n阿禾通开第二处槽口，冷盐浆合拢。萧尘把半块玉简放进了左槽。';}});}});
+  lose:()=>{S.flags.v6Rack='lose';injSet(2);return '铁臂砸中你的肩，你左腿往后一沉，鞋跟离深沟只剩半寸。红鹞把短链甩过来，你踉跄着绕过铁架肘窝，卡进吊环。角度锁住了，你的肩也伤了。\n阿禾通开第二处槽口，冷盐浆合拢。萧尘把半块玉简放进了左槽。';}});}});
 
 /* 十四 · 这一次由我 */
 V6({t:'这一次由我',g:'我',bg:'core',lines:[
@@ -8332,7 +8388,7 @@ V6({t:'第二遍铃',g:'铃',bg:'core',lines:[
  ['hong','（拉了第二遍铃）上梯！东西放下，人先上！'],
  {c:[
   {t:'松手，把盐晶丢回袋里。「我在后面。」',k:1,fx:{aff:{hong:5,xiao:3}},r:[['','萧尘没有拉你，正扶着你的肩一点点挪脚。阿禾已经把他的腰绳换进上方滑轮。']]},
-  {t:'往北壁那边转过去，只要一息',k:-2,fx:()=>{S.flags.v6Defy=1;S.injury=Date.now()+4*60*1000;aff('hong',-15,true);aff('xiao',-10,true);aff('he',-5,true);},r:[
+  {t:'往北壁那边转过去，只要一息',k:-2,fx:()=>{S.flags.v6Defy=1;injSet(2);aff('hong',-15,true);aff('xiao',-10,true);aff('he',-5,true);},r:[
    ['','你把萧尘的胳膊交给阿禾，转身扑向北壁，盐晶按上去——热流先到了，釉面一白，什么都没照出来。'],
    ['','护炉架扯脱了吊环。半块砖砸进深沟，你被火星燎了半边胳膊，滚回梯下时，红鹞的绳已经替你多收了两圈。'],
    ['hong','（脸色铁青，一个字也没说）']]}
@@ -8433,10 +8489,10 @@ Object.assign(SPK,{shaop:'邵平',yeh:'叶蘅',chy:'程砚',jiy:'季遥',jic:'�
 const V7_IDS=[];
 function V7(o){const prev=V7_IDS.length?V7_IDS[V7_IDS.length-1]:'v6_19',id='v7_'+(V7_IDS.length+1);V7_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'分山·'+o.t,g:o.g,bg:o.bg||'town',lines:o.lines,
+ STORY.push({id,pk:'v7',pg:gap,title:'分山·'+o.t,g:o.g,bg:o.bg||'town',lines:o.lines,
   hint:o.hint||(kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v7',gap)&&(S.slain||0)>=(S.flags.v7k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v7y=S.year;S.flags.v7t=Date.now();S.flags.v7k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v7y=S.year;S.flags.v7d=daysAll();S.flags.v7k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v7H=(a,b)=>()=>F('heScar')?b:a;
 const v7Fight=(o)=>rwFight(Object.assign({bg:'metro',noFlee:1},o));
 
@@ -8594,7 +8650,7 @@ V7({t:'短火',g:'火',lines:[
  ['','陶座里传出一声细响。冷时能抽动的内衬受热膨起，咬死了泄口；还没散去的热，沿同一块旧陶座折进了水管。'],
  ['','地下一声闷响。一股滚水从铜管接口喷出，冲翻挡砖，直扑叶蘅坐的矮凳。你用右手扳开倾倒的铜护板，把水锋撇向空地，热铜边缘划开你的掌根。萧尘带着叶蘅的凳子往后滑。'],
  ['',()=>F('v7Stop')?'水泼进一篮待试的陶胆，冷热一激，九只接连裂开。':'水泼进一篮待试的陶胆，冷热一激，一整篮都裂了，连旁边那篮成品也炸了几只。'],
- {fx:()=>{S.injury=Date.now()+(F('v7Stop')?2:4)*60*1000;}},
+ {fx:()=>{injSet(F('v7Stop')?1:2);}},
  ['','上坪的水槽眼看着降下去。阿禾跑到总闸，用两手转了半圈，水停了。'],
  ['zhou','（撕布裹你的手，布被血浸透，又换一层）你不是收了？'],
  ['@','收了。坏在底下。'],
@@ -8810,7 +8866,7 @@ V7({t:'落钳',g:'钳',bg:'metro',lines:[
  ['','「西侧测杆折了！下一股比前面的大，做完立刻上来！」'],
  {c:[
   {t:'等最后一股余压滑过，在它变薄时落钳',k:1,fx:{flags:{v7Cut:'wait'}},r:[['','萧尘压进第三颗灵核。最后一道余压滑过钳口，你立即收窄灵流。']]},
-  {t:'不等了，现在就落',k:-1,fx:()=>{S.flags.v7Cut='now';S.injury=Date.now()+3*60*1000;},r:[['','钳口落在余压最厚的时候，铜板整个弹起来，震得你虎口裂开。萧尘扑上去用全身压住，才勉强合拢。']]}
+  {t:'不等了，现在就落',k:-1,fx:()=>{S.flags.v7Cut='now';injSet(2);},r:[['','钳口落在余压最厚的时候，铜板整个弹起来，震得你虎口裂开。萧尘扑上去用全身压住，才勉强合拢。']]}
  ]},
  ['@','落钳！'],
  ['','萧尘把全部重量压在长柄上。咔。旧线断开。他连拉两短。'],
@@ -8929,10 +8985,10 @@ Object.assign(SPK,{laob:'老柏',yutan:'余檀',qiw:'祁望',xman:'小满',liang
 const V8_IDS=[];
 function V8(o){const prev=V8_IDS.length?V8_IDS[V8_IDS.length-1]:'v7_22',id='v8_'+(V8_IDS.length+1);V8_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'天隙·'+o.t,g:o.g,bg:o.bg||'lab',lines:o.lines,
+ STORY.push({id,pk:'v8',pg:gap,title:'天隙·'+o.t,g:o.g,bg:o.bg||'lab',lines:o.lines,
   hint:o.hint||(kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v8',gap)&&(S.slain||0)>=(S.flags.v8k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v8y=S.year;S.flags.v8t=Date.now();S.flags.v8k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v8y=S.year;S.flags.v8d=daysAll();S.flags.v8k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 
 /* 一 · 没有风的信 */
 V8({t:'没有风的信',g:'信',gap:1,hint:'过些日子：北山的回信到了',lines:[
@@ -9248,7 +9304,7 @@ V8({t:'断颈',g:'颈',bg:'sky',lines:[
  ['','祁望在黑板上写下新数，最后一笔拖得很长。够了。'],
  ['','余檀沿划好的口子落锯，金属屑全被贴着切口的细网接住。漏出来的火性比预计多，你的袖子焦出一个圆洞，手背一阵灼痛。'],
  {c:[
-  {t:'把土息加厚，堵住乱窜的火',k:-1,fx:()=>{S.flags.v8Plug=1;S.injury=Date.now()+4*60*1000;},r:[['yutan','（用肩猛撞你）别堵！'],['','晚了半息。旁边的旧裂先崩开一线，萧尘的抱带猛地绷直，整个人被甩到梁外，三条索才把他拉住。你赶紧把土息撤开，改分成细水。'],{fx:()=>{aff('xiao',-5,true);}}]},
+  {t:'把土息加厚，堵住乱窜的火',k:-1,fx:()=>{S.flags.v8Plug=1;injSet(2);},r:[['yutan','（用肩猛撞你）别堵！'],['','晚了半息。旁边的旧裂先崩开一线，萧尘的抱带猛地绷直，整个人被甩到梁外，三条索才把他拉住。你赶紧把土息撤开，改分成细水。'],{fx:()=>{aff('xiao',-5,true);}}]},
   {t:'把水息分成更细的两股，沿外侧缓缓降温',k:1,fx:{flags:{v8Plug:0}},r:[['','你曾在炉边做过无数次这样的微调，此刻却觉得每一根手指都不够用。灵力不是洪流。你只盯住三处颜色，一处过亮，便送它一点退路；另一处暗得太快，就先停下。']]}
  ]},
  ['','切口贯通。萧尘先松侧带再收主带，让两个断面留出放入套筒的间隔。余檀抱起套筒，陶瓷薄边擦过旧铜口，一声极细的响。三个人都停了。'],
@@ -9358,10 +9414,10 @@ Object.assign(SPK,{lhd:'陆怀灯',heq:'何鹊',hengd:'衡渡',tianp:'田婆',ya
 const V9_IDS=[];
 function V9(o){const prev=V9_IDS.length?V9_IDS[V9_IDS.length-1]:'v8_16',id='v9_'+(V9_IDS.length+1);V9_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'归潮·'+o.t,g:o.g,bg:o.bg||'town',lines:o.lines,
+ STORY.push({id,pk:'v9',pg:gap,title:'归潮·'+o.t,g:o.g,bg:o.bg||'town',lines:o.lines,
   hint:o.hint||(kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v9',gap)&&(S.slain||0)>=(S.flags.v9k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v9y=S.year;S.flags.v9t=Date.now();S.flags.v9k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v9y=S.year;S.flags.v9d=daysAll();S.flags.v9k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v9E=()=>S.flags.v9Risk==='early';
 const v9R=(early,novel)=>()=>v9E()?early:novel;
 const v9Fight=(o)=>rwFight(Object.assign({bg:'pit',noFlee:1},o));
@@ -9540,7 +9596,7 @@ V9({t:'回头水',g:'回',bg:'pit',lines:[
    ['','陆怀灯靠着墙，右手仍是握钩的样子，想掰开手指，掰到第二根，额上全是汗。'],
    ['','红鹞站在堤上，看着车厢里那块带手印的木板漂起，又在水里翻了个面。'],
    ['hong','（指了指东坡）还能走，就先抬人。'],
-   {fx:()=>{S.flags.v9TruckLost=1;S.injury=Date.now()+4*60*1000;aff('lhd',-5,true);}});}},
+   {fx:()=>{S.flags.v9TruckLost=1;injSet(2);aff('lhd',-5,true);}});}},
  ['','湖心的白光收敛。剩下两道没亮的刻痕，被暮色一点点遮住。']
 ]});
 
@@ -9653,7 +9709,7 @@ V9({t:'空手入湖',g:'湖',bg:'pit',kills:6,lines:[
  ['','【迎战：衡渡。认脚下的盐印，别认镜里的影子。】']
 ],after:()=>{v9Fight({title:'镜中的衡渡',bg:'core',many:[{look:'天穹长老',name:'衡渡',st:S.stage+2,m:1.5,boss:true},{look:'天穹追兵',name:'镜中错影',st:S.stage,m:.7}],
   win:()=>{S.flags.v9Mirror='win';return '他的短刀掠过你耳侧。镜里有三个人影，沿上只有一行新盐印。下一次刀光闪起，你没去挡最亮的那一道，剑身贴着石沿向上撩——衡渡急退，鞋尖被切掉一块，两点血落在白盐上。\n他抛出第二枚珠，护住舟腹；又捏碎最后一枚，灰膜包身，逆着杂气去压入镜的窄沟。苏绾用钳子扣住他靴边的搭扣一拧，你趁机把压沟的石板翻开。\n最后一层灰膜裂了。空珠套的搭扣挣断，落在盐地上。';},
-  lose:()=>{S.flags.v9Mirror='lose';S.injury=Date.now()+3*60*1000;return '你一剑刺中影子，背后真正的短刀已到，肩膀裂开一道口子。\n苏绾用钳子扣住他靴边的搭扣，你跪在盐地里撬开压沟的石板。他的三枚珠还是一枚枚耗尽了，最后一层灰膜裂开。';}});}});
+  lose:()=>{S.flags.v9Mirror='lose';injSet(2);return '你一剑刺中影子，背后真正的短刀已到，肩膀裂开一道口子。\n苏绾用钳子扣住他靴边的搭扣，你跪在盐地里撬开压沟的石板。他的三枚珠还是一枚枚耗尽了，最后一层灰膜裂开。';}});}});
 
 /* 十三 · 三枚珠子 */
 V9({t:'三枚珠子',g:'珠',bg:'core',lines:[
@@ -9671,7 +9727,7 @@ V9({t:'三枚珠子',g:'珠',bg:'core',lines:[
  ['','【最后一战：断钉。只有这半息。】']
 ],after:()=>{v9Fight({title:'归相钉前',bg:'core',many:[{look:'天穹长老',name:'衡渡',st:S.stage+3,m:1.7,boss:true}],
   win:()=>{S.flags.v9Final='win';return '他手腕一振，两条火丝贴着检修沿掠来。苏绾把外衣甩向火，你从衣后扑出，剑尖直取他咽喉。他横刀架住，你右足撑不住，后腰贴住镜内那条深缝——\n你右手忽然松劲，把剑滑进左掌。他以为你脱力了，空手来抓你喉咙；你的右手绕到他腕后，抓住那截裂开的袖子，整个人往旁边一拽。\n两人一同跌向石沿。你顺着疼痛跪下，左手短剑从他肘下穿过，刺向身后那枚钉。剑尖只留下一道白痕。\n你把仅有的一点金息送到剑尖。没有铺开五行，没有和镜腹争力。钉上的光摆向另一侧，你就在这半息里递了剑。\n白痕裂开了。';},
-  lose:()=>{S.flags.v9Final='lose';S.injury=Date.now()+4*60*1000;return '他的刀压上你后颈。苏绾的钳子掷来，撞在刀背上，刀锋偏过，切开你肩头已破的衣料。\n你没缩手，把仅有的一点金息送到剑尖。归相钉从中断成两截。';}});}});
+  lose:()=>{S.flags.v9Final='lose';injSet(2);return '他的刀压上你后颈。苏绾的钳子掷来，撞在刀背上，刀锋偏过，切开你肩头已破的衣料。\n你没缩手，把仅有的一点金息送到剑尖。归相钉从中断成两截。';}});}});
 
 /* 十四 · 归潮 */
 V9({t:'归潮',g:'归',bg:'pit',lines:[
@@ -9749,10 +9805,10 @@ Object.assign(SPK,{mengq:'孟确',sangf:'桑逢',wenq:'闻秋',aying:'阿缨',yi
 const V10_IDS=[];
 function V10(o){const prev=V10_IDS.length?V10_IDS[V10_IDS.length-1]:'v9_16',id='v10_'+(V10_IDS.length+1);V10_IDS.push(id);
  const gap=o.gap||0,kills=o.kills||0,st=o.st||0;
- STORY.push({id,title:'远岸·'+o.t,g:o.g,bg:o.bg||'starsea',lines:o.lines,
+ STORY.push({id,pk:'v10',pg:gap,title:'远岸·'+o.t,g:o.g,bg:o.bg||'starsea',lines:o.lines,
   hint:o.hint||(st&&kills?'修为到了，再斩妖 '+kills+' 只':kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v10',gap)&&(S.slain||0)>=(S.flags.v10k||0)+kills&&S.stage>=st,
-  after:()=>{S.flags.v10y=S.year;S.flags.v10t=Date.now();S.flags.v10k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+  after:()=>{S.flags.v10y=S.year;S.flags.v10d=daysAll();S.flags.v10k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const v10Z=(hurt,safe)=>()=>F('v10Zhao')?hurt:safe;
 const v10Fight=(o)=>rwFight(Object.assign({bg:'starsea',noFlee:1},o));
 
@@ -10070,7 +10126,7 @@ V10({t:'下层的路',g:'路',lines:[
  ['hong','（蹲下，看见车轮下一枚新铜块边缘的细纹）别跳。'],
  {c:[
   {t:'用钢楔先压住震片边缘，再切线',k:1,fx:{flags:{v10Trap:1}},r:[['','细线一直牵到栏杆外，尽头是一枚贴在货道底面的震片。不是要炸死谁——只要把这一小段震塌，后面的人就只能折回上桥。你记着萧尘的话，先压边，再切线，铜块暗了下去。你在旁边刻了一道醒目的叉。']]},
-  {t:'提气跳过去',k:-1,fx:()=>{S.flags.v10Trap=0;S.injury=Date.now()+2*60*1000;},r:[['','你一落脚，震片嗡地一响，货道塌下去一截。红鹞拽住你的后领，你右足旧伤狠狠磕在断沿上。你们绕了一大圈，才从另一侧爬上去。']]}
+  {t:'提气跳过去',k:-1,fx:()=>{S.flags.v10Trap=0;injSet(1);},r:[['','你一落脚，震片嗡地一响，货道塌下去一截。红鹞拽住你的后领，你右足旧伤狠狠磕在断沿上。你们绕了一大圈，才从另一侧爬上去。']]}
  ]},
  ['','衡渡被绑在船侧，原先守封条的两名泊手也被缚在栏杆后。第一只接收匣已经向引航座推去。孟确要衡渡领那两处地面收井的近路——先收完这两支，他就还有舟、有货，可以换一个港，等折星的争端冷下去。'],
  ['hong','（看了一眼头顶的转货吊臂，绳端挂着白天试运用过的宽带）把吊钩拉下来。我从这里上，不跟你挤一条梯。能站。跳不了，所以才用它。'],
@@ -10080,7 +10136,7 @@ V10({t:'下层的路',g:'路',lines:[
  ['','【迎战：孟确。看他握刀那只手的指根。】']
 ],after:()=>{v10Fight({title:'折鳞舟',bg:'starsea',many:[{look:'天穹长老',name:'孟确',st:S.stage+3,m:1.8,boss:true}],
   win:()=>{S.flags.v10Meng='win';return '第一刀横着来，你剑脊相迎，腕骨被震得发麻。你没有站在原地硬续五行，足下土息一收，顺势退开半步。\n他第三刀前，把一缕土息压进脚下旧钉，整片甲板翻起来。你右足踩空，旧伤骤痛。你索性屈膝，任自己落低，剑尖贴着甲板向前一送。\n他每次逼近，左肩都略略护向引航架。你往栏杆外让了半步，他的刀转向最后一道泊索——你一缕细木气绕住那根绷直的索，借残存的拉力向内一收，贴近了他的长刀。\n一尺之内。土稳住腰胯，金护住掌骨。再撤去金，从指侧送出一点极细的火——烧的不是人，是他刀柄上那圈可以借力回拉的筋线。\n筋线断了。他第三次回拉时，手中第一次落空半寸。';},
-  lose:()=>{S.flags.v10Meng='lose';S.injury=Date.now()+4*60*1000;return '他的刀法不花哨，只不断挤掉你能站的位置。甲板翻起，你右足踩空，左肩被划开一道口子。\n你咬牙把剑贴住他的刀，一点火烧断了他刀柄上的筋线。他回刀时，落空了半寸。';}});}});
+  lose:()=>{S.flags.v10Meng='lose';injSet(2);return '他的刀法不花哨，只不断挤掉你能站的位置。甲板翻起，你右足踩空，左肩被划开一道口子。\n你咬牙把剑贴住他的刀，一点火烧断了他刀柄上的筋线。他回刀时，落空了半寸。';}});}});
 
 /* 十六 · 一尺之内 */
 V10({t:'一尺之内',g:'尺',lines:[
@@ -10092,7 +10148,7 @@ V10({t:'一尺之内',g:'尺',lines:[
  ['','孟确趁你听见声音时，再次抬刀。'],
  {c:[
   {t:'不回头。有人在接那一段。',k:2,fx:{flags:{v10Trust:1},aff:{su:3,hong:3}},r:[['','你听见了，也知道有人正在接那一段。你把右足挪到横梁上，避开旧伤最痛的一点，剑尖沉低，直迎着他踏过来的脚步。']]},
-  {t:'回头去看小艇',k:-1,fx:()=>{S.flags.v10Trust=0;S.injury=Date.now()+2*60*1000;},r:[['','你回头的那一瞬，他的刀已经到了，从你左臂外侧拉开一道口子。你踉跄着把剑横回胸前。小艇那边，你什么也够不着。']]}
+  {t:'回头去看小艇',k:-1,fx:()=>{S.flags.v10Trust=0;injSet(1);},r:[['','你回头的那一瞬，他的刀已经到了，从你左臂外侧拉开一道口子。你踉跄着把剑横回胸前。小艇那边，你什么也够不着。']]}
  ]},
  ['','何鹊赶到南栈，把装副本的木盒交给苏绾，沿上桥短梯往下跑。她不会御气，知道自己一旦掉出薄障，没人能像在普通河里那样把她捞起，便把腰带扣在梯边的安全绳上，一步步挪到艇口。'],
  ['','衡渡弯着腰坐在艇里，看见何鹊，先望向她身后的路，像在计算自己能不能越过她逃走。'],
@@ -10200,6 +10256,346 @@ V10({t:'远岸来信',g:'信',bg:'lab',gap:1,lines:[
  ['','【第十卷·远岸 完。】']
 ]});
 
+/* ================= 正史：第一至第十卷 =================
+   旧版主线（雾港、槐下、堕仙、灵源终章、飞升、星海、天庭、归墟……）和新卷宗互相打架。
+   现在以第一到第十卷为准：冲突的旧章节整段撤下，人物的名字、来历、去留都以卷宗为准。
+   境界停在筑基大圆满，金丹留给第十一卷。 */
+const CANON_CAP=12;
+const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','locust','jindan','ningxuan','canju','zero','zhoufate','fallen','suwan','finale','tianmen','feisheng',
+ 'neigui','xinghai','tianting','guixu','cmsis','tw1','tw2','tw3','motest_a','motest_b','motest_c','zhounight_a','zhounight_b','zhounight_c','he_root','he_scar','hong_road','hong_sold',
+ 'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root',
+ 'rj1','rj2','rj3','rj4','rj5','rj6','rj7','rj8','rj9','rj10','rj11','rj_end','rv2','rv3','rv4','rv5','rv6','rv7',
+ 'b_hong1','b_hong2','b_hong3','b_zhou1','b_su1','b_su2','b_su3','b_ning1','b_ning2','b_ning3','b_zero1','b_mo1','b_cm1','b_cm2','b_cm3','b_man1','b_man2']);
+for(let i=STORY.length-1;i>=0;i--){const c=STORY[i];if(CANON_OFF.has(c.id)||/^rw_/.test(c.id))STORY.splice(i,1);}
+/* 兼容：旧系统里还有不少「看过某章才开」的判断，走到卷宗里对应的那一章时，替它记上 */
+const CANON_ALIAS={v1_caravan:['caravan'],v2_10:[],v3_4:['zero']};
+STORY.forEach(c=>{const al=CANON_ALIAS[c.id];if(!al||!al.length)return;const a0=c.after;c.after=function(){al.forEach(x=>{if(!S.seen.includes(x))S.seen.push(x);});return a0&&a0.apply(this,arguments);};});
+
+/* ---------- 人物：以卷宗为准 ---------- */
+Object.assign(SPK,{hong:'红鹞',zero:'初一',xiao:SPK.xiao||'萧尘'});
+Object.assign(BOND.hong,{n:'红鹞',romance:1,met:()=>F('v1hong')||S.seen.includes('v1_caravan')});
+Object.assign(BOND.zhou,{romance:1,met:()=>true,dead:null,away:null});
+Object.defineProperty(BOND.zero,'n',{value:'初一',writable:true,configurable:true});Object.assign(BOND.zero,{met:()=>S.seen.includes('zero')||S.seen.includes('v3_4'),dead:null});
+Object.assign(BOND.cm,{romance:0,met:()=>S.seen.includes('v2_3'),dead:null});
+Object.assign(BOND.su,{romance:1,met:()=>S.seen.includes('v4_6'),away:null});
+Object.assign(BOND.ning,{romance:0,met:()=>S.seen.includes('v3_6'),dead:null,away:null});
+Object.assign(BOND.shen,{met:()=>S.seen.includes('v2_10')});
+Object.assign(BOND.qian,{met:()=>S.seen.includes('v2_6')});
+Object.assign(BOND.man,{met:()=>false});
+BOND.gui.met=()=>false;
+BOND.xiao={n:'萧尘',romance:1,likes:['tea','record'],met:()=>S.seen.includes('v1_east')};
+/* 旧缘分里的「鬼手」「林小满」不属于这条时间线，不再显示 */
+Object.assign(BOND_CHAT,{
+ hong:[['买东西？','别挡道，卸货呢。','老驴今天又吃了半桶油。'],['路上又看见一辆蓝车头，不是。……不是就不是。','你那块东西，最近还漏光吗？漏的话离车远点，我这车经不起鸦啄。'],['你来啦。……副驾给你留着。','跟你说话，比跟发动机说话省心。']],
+ zero:[['……你好。','我在学写日子。今天是我数的第几天来着？'],['陈默教我拧阀门了。我一次都没拧反。','今天的风，是从河那边来的。'],['和你说话的时候，胸口这里是暖的。','我想，这就是“开心”。']],
+ cm:[['……嗯。','垫圈磨好了。'],['炉子今天很乖。','夜里我守着，你睡吧。'],['我不太会说话。……但我在。','以前修不好的东西，现在能修了。']],
+ su:[['图上没画的地方，别乱走。','今天水位低，旧通道露出来一截。'],['我又把那张旧图画了一遍。还是有一块空白。','你们的车，比我想的稳。'],['这一段路，我想多走几遍。……不为了画图。','跟你一起走，我就不总看罗盘了。']],
+ ning:[['……','有事写下来，我会看。'],['南街的申诉，又多了三份。','我以前以为，签了字的事就算办完了。'],['你说话，总留一句给对方。……我学不会。','以后要是不当这个差了，我想去守一座渡口。']],
+ xiao:[['……你还记得我？','七〇二。别敲错门。'],['今天有人问我是谁。我说我住七〇二。他说七〇二没人。','你记的那本册子，给我看看？'],['你每天都记得。……我也每天都记得你记得。','留灯的人，我想起来是谁了。是你。']]
+});
+
+/* ---------- 缘分：按卷宗重写 ---------- */
+const bsReset=k=>{delete BPREV[k];};
+bsReset('hong');
+bs('b_hong1','hong',25,'后视镜','镜','overpass',null,[
+ ['','夜里，「老驴」停在高架底下。红鹞蹲在车头底下换皮带，满手机油。'],
+ ['hong','别傻站着，递个扳手。……不是那个，十三号的。'],
+ ['','修好以后她靠在车门上。后视镜上夹着一张塑封的照片：一辆蓝车头的半挂，车头前站着个男人，胳膊上搭着一件工装。'],
+ ['hong','我爸。他跑长途，车牌我背得比我自己的生日还熟。灵潮那天，他的车在高速上。'],
+ ['hong','我每到一个地方，就问一遍：见没见过蓝车头的半挂。三年了，问出来一堆蓝车头，都不是。'],
+ {c:[{t:'「车牌告诉我。我出城的时候也替你看。」',fx:{aff:{hong:8},flags:{hongPlate:1}},r:[['hong','（念了一串字母和数字，又念了一遍）记住了？'],['@','记住了。'],['hong','……行。多一双眼睛。'],['','她把照片往镜框里塞了塞，好像怕被风吹走。']]},
+  {t:'「他看见你开着这辆车，会说什么？」',fx:{aff:{hong:5}},r:[['hong','会说我油门踩得太狠。'],['','她笑了一下，又把烟夹回指间，没点。']]}]}
+]);
+bs('b_hong2','hong',55,'账本','账','overpass',null,[
+ ['','红鹞有一本很厚的账本。前半本是货，后半本是人：哪天在哪个路口带上了谁，送到了哪里。'],
+ ['','有的名字后面划了一道短横。不是叉，就是一道短横。'],
+ ['hong','没送到的。路上没的，或者送到了，下回再去，人不在了。'],
+ ['hong','我爸教我：路上见到的人，只卖货，不卖人。我后来自己加了一句——带上车的人，要记得。'],
+ {c:[{t:'陪她把这一年的名字抄进新本子',fx:{aff:{hong:10}},r:[['','你们坐在车顶上，一个念一个抄。抄到天亮，新本子用掉了四页。'],['hong','……谢谢你没说“节哀”。我最烦这两个字。'],['','天亮的时候，她把旧账本塞进副驾的储物格，钥匙交给了你一把。']]},
+  {t:'「你也写上我。」',fx:{aff:{hong:8}},r:[['hong','你又没坐过我的车……'],['','她看了你一眼，还是在最后一页写下了你的名字，后面空着，什么也没画。'],['hong','这一格，你自己别给我划上。']]}]}
+]);
+bs('b_hong3','hong',80,'车灯','灯','overpass',()=>S.seen.includes('v5_21'),[
+ ['','北线停车的那几个月，红鹞把「老驴」的车灯换了新的。试灯那晚，她把你叫到车前。'],
+ {fn:()=>{
+  if(isPartner('hong'))SC.q.unshift(
+   ['hong','行驶证我改了。副驾那一栏，填的你。'],['@','副驾还要填？'],['hong','我说要填就要填。'],
+   ['','车灯亮了，照着坡下那条还没修完的路。她没再说话，伸手把你衣领翻好，像在检查一件要装车的货。']);
+  else if(freeHeart('hong'))SC.q.unshift(
+   ['hong','那天锅糊了，我回去想了一路。'],['hong','我这人说话直，不绕弯子。我不想到老了，在哪个路口才想起来，有句话没说。'],
+   {c:[{t:'「那就说完。……我也是。」',r:[partnerFx('hong'),['hong','……你想清楚了？跟着我，没有安稳日子。'],['@','我要的不是安稳日子。'],['','她笑了，伸手把车灯拧到最亮。'],['','【你与红鹞结为道侣：她会随你出战。】']]},
+    {t:'「你是我最重要的朋友。一直都是。」',fx:{aff:{hong:-3}},r:[['hong','……行。朋友。'],['hong','那朋友帮个忙，开春北线开车，来坡下送我。'],['','她转过身去拍了拍轮胎。你看不见她的表情。']]}]});
+  else SC.q.unshift(['hong','灯好了。以后夜里走，你在后头也看得见我。'],['','她把手套扔给你，让你帮着擦车灯罩。擦完，两个人都是一手黑。']);}}
+]);
+BPREV.zhou=undefined;
+STORY.push({id:'b_zhou1',title:'缘·周烈·灰烬',g:'烬',bg:'shelter',bond:'zhou',cond:()=>avOf('zhou')>=25,lines:[
+ ['','隧道口的墙上，周烈用斧刃刻了六道横。刻到第六道，他停了很久。'],
+ ['zhou','护卫队死的六个。小张是挡在我前面死的。'],['zhou',()=>typeof v1Pill==='function'&&v1Pill()==='zhou'?'后来那颗丹给了我。我筑了基，还是天天来这儿刻。':'我天天来这儿，怕哪天连他们叫什么都记不起来。'],
+ {c:[{t:'拿过斧子，替他把第七道刻得浅一点',fx:{aff:{zhou:8}},r:[['zhou','第七道是谁？'],['@','留着。谁都不要是。'],['zhou','……'],['','他把斧子收回去，没说话，在墙根坐到了天亮。']]},
+  {t:'「刻完了，跟我出城。他们的那份，你接着守。」',fx:{aff:{zhou:5}},r:[['zhou','哈。你倒会使唤人。'],['','他拍掉手上的石粉，提斧跟上来。']]}]}
+]});
+bsReset('su');
+bs('b_su1','su',25,'铜罗盘','盘','yipeng',null,[
+ ['','苏绾坐在棚子边，把一只铜罗盘拆开，指针、轴尖、玻璃面排成一排。'],
+ ['su','磁偏不对。坠星那边的东西把它带歪了，每回进去出来，都要重新校。'],
+ ['@','你第一次进坠星，是去找人？'],['su','嗯。没找到。'],['','她把轴尖对着灯看，没有往下说。'],
+ {c:[{t:'什么都不问，帮她扶着灯',fx:{aff:{su:8}},r:[['','你扶着灯，她装好了指针。指针晃了很久，最后停在一个不太准的地方。'],['su','……差两度。够用了。'],['su','谢谢你没问。']]},
+  {t:'「下回进去，我陪你一起找。」',fx:{aff:{su:5}},r:[['su','找人和找路不一样。路找不到，可以退。'],['','她把罗盘合上，还是点了点头。']]}]}
+]);
+bs('b_su2','su',55,'空白处','白','wugang',null,[
+ ['','苏绾把她那张旧图摊在膝上。图很密，只有右下角空着一块。'],
+ ['su','我以前以为，图上空白，就是没人去过。后来知道，是去过的人没回来画。'],
+ ['su','这一块，你们那次替我走过了。……你来画。'],
+ ['','她把笔递给你。图上每一笔都是她的，只有这一块，要换一只手。'],
+ {c:[{t:'照着记忆，一笔一笔画上',fx:{aff:{su:10}},r:[['','你画歪了一处门。她没改，只在旁边标了一个很小的问号。'],['su','留着。以后谁走错了，至少知道这里有人犹豫过。']]},
+  {t:'「我们一起画。你说，我画。」',fx:{aff:{su:8}},r:[['','她说一句你画一笔。画到最后，两个人的笔迹叠在一起，分不清了。'],['su','……这样也好。']]}]}
+]);
+bs('b_su3','su',80,'图上的名字','名','yipeng',()=>F('v4done')&&freeHeart('su'),[
+ ['','苏绾新画的一张图上，有一处地方没写地名，写的是你的名字。'],
+ ['su','不是标错了。我画图有个习惯：认得的地方写地名，回得去的地方，写人名。'],
+ ['su','……我问问而已。你不用现在答。'],
+ {c:[{t:'「那以后，我的图上也写你。」',r:[partnerFx('su'),['su','……你又不画图。'],['@','从今天开始画。'],['','她低下头笑，把笔帽咬在嘴里，把那一处名字又描了一遍。'],['','【你与苏绾结为道侣：她会随你出战。】']]},
+  {t:'「你回得去的地方，我都陪你走一遍。」',fx:{aff:{su:3}},r:[['su','以同路人的身份？'],['@','以同路人的身份。'],['su','……也好。那就说定了。']]}]}
+]);
+bsReset('ning');
+bs('b_ning1','ning',25,'批示','批','keyun',null,[
+ ['','夜里，宁玄的屋子还亮着。他在重看自己从前签过的批示，一份一份，看完一份放到左边。'],
+ ['ning','左边是我现在还认的。右边……是我现在不认，但当时签了的。'],['','右边那一摞，比左边高。'],
+ {c:[{t:'「那就一份一份重新签。」',fx:{aff:{ning:10}},r:[['ning','……你说得容易。'],['','可是三天后，南街贴出了一张更正告示，落款是他的名字。']]},
+  {t:'陪他坐着，把右边那摞按日期排好',fx:{aff:{ning:8}},r:[['','排完天亮了。他说了一声谢谢，声音很轻，像怕被谁听见。']]}]}
+]);
+bs('b_ning2','ning',55,'旧剑','剑','keyun',null,[
+ ['','宁玄在擦那柄旧剑。刃上有几个细小缺口，他一个一个摸过去。'],
+ ['ning','这把剑我拔过三次。两次是该拔的。'],['ning','第三次，是我替别人拔的。后来我才知道，那个人要的不是剑，是我的字。'],
+ {c:[{t:'「以后你拔剑之前，先告诉我一声。」',r:[swornFx('ning'),['ning','……好。'],['','他把剑横过来，让你也摸了摸那几个缺口。'],['','【你与宁玄结义。】']]},
+  {t:'「缺口别磨。留着。」',fx:{aff:{ning:6}},r:[['ning','……嗯。留着。']]}]}
+]);
+bsReset('cm');
+bs('b_cm1','cm',25,'垫圈','垫','shelter',null,[
+ ['','陈默坐在炉边磨一枚垫圈，磨一下，对着火看一下。'],['cm','裂了一道。撑过明晚就行。'],['@','你磨了一晚上？'],['cm','嗯。睡不着。炉子不响，我睡不着。'],
+ {c:[{t:'坐下来，帮他拉风箱',fx:{aff:{cm:8}},r:[['','你们谁都没说话。天快亮的时候，垫圈磨好了，炉子的声音也匀了。'],['cm','……你手挺稳。']]},
+  {t:'「明天让坊市给你配个新的。」',fx:{aff:{cm:3}},r:[['cm','新的不一定合。旧的我知道它哪儿薄。']]}]}
+]);
+bs('b_cm2','cm',55,'工牌','牌','shelter',null,[
+ ['','陈默把那枚旧工牌放在桌上。牌面磨花了，还认得出一行字和一个编号。'],
+ ['cm','内炉。我在那儿看过三年火。有些东西从炉边推过去，我没问是什么。'],['cm','后来知道了。'],
+ {c:[{t:'「你现在问了。这就不一样。」',fx:{aff:{cm:10}},r:[['cm','……'],['cm','从来没人这么跟我说过。']]},
+  {t:'把工牌推回他手里',fx:{aff:{cm:8}},r:[['','他攥着工牌，攥了很久。'],['cm','……以后再有东西推过去，我会拦。']]}]}
+]);
+bs('b_cm3','cm',80,'守夜','夜','shelter',null,[
+ ['','炉房的灯又亮到半夜。陈默守在门口，看见你出来，往旁边挪了挪，给你让了个位置。'],['cm','我不太会说话。'],['cm','以后你出门，炉子我看着。人，我也看着。'],
+ {c:[{t:'「兄弟，以后行社的门，交给你了。」',r:[swornFx('cm'),['cm','……好。门在，人在。'],['','【你与陈默结义。】']]},
+  {t:'和他一起守到天亮',fx:{aff:{cm:5}},r:[['','天亮的时候，炉子正好出了一窑好灰。']]}]}
+]);
+BPREV.zero=undefined;
+STORY.push({id:'b_zero1',title:'缘·初一·日子',g:'日',bg:'shelter',bond:'zero',cond:()=>avOf('zero')>=25&&BOND.zero.met(),lines:[
+ ['','初一在墙上画格子。一天一格，画满七格，就在下面写一个很工整的数字。'],
+ ['zero','“初一”是一个月的第一天。我想，那后面应该还有很多天。'],['zero','我在数。数到哪一天，都是我的。'],
+ {c:[{t:'在她的格子旁边，也画上你的一格',fx:{aff:{zero:8}},r:[['zero','……这一格是谁的？'],['@','今天的。我们一起过的。'],['','她认认真真在那一格里写了两个名字。']]},
+  {t:'「以后哪天想不起来，就看墙。」',fx:{aff:{zero:6}},r:[['zero','嗯。墙不会忘。……你也不会。']]}]}
+]});
+const _zero2=STORY.find(c=>c.id==='b_zero2');if(_zero2){const c0=_zero2.cond;_zero2.cond=()=>S.seen.includes('b_zero1')&&avOf('zero')>=70&&BOND.zero.met();
+ _zero2.title='缘·初一·第一次笑';_zero2.lines=_zero2.lines.map(l=>Array.isArray(l)&&typeof l[1]==='string'?[l[0],l[1].replace(/零号/g,'初一').replace(/红姐说/g,'秦婶说')]:l);}
+BPREV.mo=undefined;
+STORY.push({id:'b_mo1',title:'缘·墨老·师妹',g:'妹',bg:'dongtian',bond:'mo',cond:()=>avOf('mo')>=30,lines:[
+ ['mo','老夫当年，有个小师妹。'],['mo','她修为不高，最爱笑，养了一窝麻雀，天天喂。'],
+ ['mo','灵鸦来的那天，麻雀先叫的。她把这块玉简塞进老夫手里，说：师兄，你记性好，你先走。'],
+ ['mo','……老夫走了。走成了一块玉，睡了三百年。醒过来，第一件事是想她那窝麻雀叫什么名字。想不起来了。'],
+ {c:[{t:'「以后你想起来一个，就说给我听。我替你记。」',fx:{aff:{mo:10}},r:[['mo','……娃娃。'],['mo','（很久以后）有一只，叫“豆子”。'],['','你把“豆子”两个字写在了洞天的石壁上。']]},
+  {t:'安静地陪他坐一会儿',fx:{aff:{mo:6}},r:[['','玉简里的光很淡，像有人在另一头轻轻翻了个身。']]}]}
+]});
+bsReset('xiao');
+bs('b_xiao1','xiao',25,'登记簿','簿','overpass',null,[
+ ['','萧尘把一本登记簿推到你面前，翻到很靠后的一页。上面是你的字：七〇二，萧尘。'],
+ ['xiao','你上周写的。你自己不记得了吧。'],['@','……记得。'],['xiao','（看着你，没拆穿）'],
+ {c:[{t:'当着他的面，再写一遍',fx:{aff:{xiao:8},flags:{xiaoBook:1}},r:[['','你在下一行又写了一遍。七〇二，萧尘。'],['xiao','写两遍也没用。……写吧。'],['','他看着那两行字，看了很久。']]},
+  {t:'「我每天写一遍。写到我记住为止。」',fx:{aff:{xiao:6},flags:{xiaoBook:1}},r:[['xiao','你会烦的。'],['@','烦了也写。']]}]}
+]);
+bs('b_xiao2','xiao',55,'留灯','灯','overpass',null,[
+ ['','你晚上回来，七〇二的门缝里没有光。你把自己那盏灯放在了他门口。'],
+ ['','第二天，灯还在，灯油添满了。旁边压着一张纸条：别浪费油。'],
+ ['xiao','（隔着门）以前有个人，每晚给我留灯。我想不起来是谁。'],['xiao','你别学他。我怕又想不起来一个。'],
+ {c:[{t:'「那你记住灯就行。人，换我来记。」',fx:{aff:{xiao:10}},r:[['','门开了一条缝。他没出来，只把手伸出来，把灯往里挪了挪。']]},
+  {t:'接着放，一句话都不说',fx:{aff:{xiao:8}},r:[['','灯放到第七天，门口多了一只给灯挡风的旧罐头。']]}]}
+]);
+bs('b_xiao3','xiao',80,'名字','名','overpass',()=>F('v6done'),[
+ ['xiao','我想起来了。每晚留灯的人，是你。'],['xiao','不是以前。是后来。是你每天都写那一行，我才有了“以前”。'],
+ ['xiao','我这样的人，被人记住，是要还的。……我想还。'],
+ {fn:()=>{if(freeHeart('xiao'))SC.q.unshift({c:[
+   {t:'「不用还。留下来，就算还。」',r:[partnerFx('xiao'),['xiao','……你知道你在说什么吗？'],['@','我记得。'],['','他终于笑了。很淡，可你记住了。'],['','【你与萧尘结为道侣：他会随你出战。】']]},
+   {t:'「那就一辈子当我的朋友，慢慢还。」',r:[swornFx('xiao'),['xiao','……好。慢慢还。'],['','【你与萧尘结义。】']]}]});
+  else SC.q.unshift({c:[{t:'「那就一辈子当我的朋友，慢慢还。」',r:[swornFx('xiao'),['xiao','……好。慢慢还。'],['','【你与萧尘结义。】']]}]});}}
+]);
+
+/* ---------- 行社：卷宗里第二卷就挂了牌 ---------- */
+STORY.push({id:'lizu',title:'青石·行社挂牌',g:'社',bg:'shelter',cond:()=>S.seen.includes('v2_18'),hint:'第二卷，青石行社挂牌之后',lines:[
+ ['','青石行社的木牌挂上去第三天，铁叔托人捎来一本空账簿，扉页上写着：人、粮、炉、车。'],
+ ['tie','（信里）行社是大家的。你在外面跑，家里的事要有个地方记。'],
+ ['cm','炉的那一页，我来记。'],
+ ['hong','车那一页归我。别让我看见有人在上面乱写油钱。'],
+ {c:[{t:'「好。就从今天起。」',k:0,r:[['','你在第一页写下了日期。']]},
+  {t:'「我不想当谁的头。……但这本账，我会记。」',k:1,r:[['','铁叔后来回信，只有一句：就是这句话。']]}]},
+ ['','【「行社」已开启：招人、修建、派人外出。】']
+],after:()=>{if(!S.clan){S.clan=clanHydrate({name:'青石行社',fame:5});clLog('青石行社挂牌。');try{clanSync();}catch(e){}}}});
+
+/* ---------- 行路：去掉旧版人物 ---------- */
+{const z6=STORY.find(c=>c.id==='z6');if(z6)z6.lines=[['','空气浓得像水。每呼吸一口，丹田都在发烫。'],['','碎石悬在半空，绕着一道通天的光柱慢慢转动。'],['mo','这里的灵气不是长出来的，是被什么东西往下压出来的。别待太久。']];}
+
+/* ---------- 境界上限：筑基大圆满 ---------- */
+{const _ni=nextInfo;nextInfo=function(){const o=_ni();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||'第十一卷';o.capped=true;}return o;};}
+BOND_PERK_FIX:{const bp0=bondPerk;bondPerk=k=>k==='zero'?((S.sworn||[]).includes('zero')?'初一战斗中攻击 +20%':''):bp0(k);}
+if(typeof NPCS!=='undefined'){if(NPCS.hong)NPCS.hong.name='红鹞';if(NPCS.zero)NPCS.zero.name='初一';if(NPCS.ning)NPCS.ning.unlock=()=>false;if(NPCS.zhou)NPCS.zhou.unlock=()=>S.seen.includes('v1_caravan');if(NPCS.shen)NPCS.shen.unlock=()=>S.seen.includes('v2_10');if(NPCS.qian)NPCS.qian.unlock=()=>S.seen.includes('v2_6');if(NPCS.gui)NPCS.gui.unlock=()=>false;if(NPCS.man)NPCS.man.unlock=()=>false;}
+/* 旧委托里和卷宗冲突的（阿禾妈妈的白旗船、给零号起名、陈默的妹妹、星海天庭……）撤下 */
+['he1','he2','he3','zero1','man1','man2','man3','cm1','su1','su2','gui1','shen3','mo1','mo2'].forEach(id=>{const q=QUESTS.find(x=>x.id===id);if(q)q.unlock=()=>false;});
+
+/* ================= 因果录：你做过的选择，和它们留下的东西 ================= */
+const CAUSE=[
+ {v:1,f:()=>({self:'筑基丹你自己吃了。周烈后来很久没跟你说话。',zhou:'筑基丹给了周烈。他筑了基，一直守着青石站的门。',sell:'筑基丹让红鹞带去坊市卖了，换回来的粮撑过了那个冬天。'}[typeof v1Pill==='function'?v1Pill():'']||null)},
+ {v:1,f:()=>S.seen.includes('ahe')?(F('heScar')?'你下隐道猎了蓝鳞蛇。阿禾好了，可每逢阴天，她那只手会疼。':'你散了一半修为，替阿禾压住了蓝线。她手腕上只剩一颗蓝色的小点。'):null},
+ {v:2,f:()=>F('v2HongEnd')==='trust'?'你对红鹞说：以后觉得不对，先告诉我。她答应了。':null},
+ {v:4,f:()=>F('v4Lamp')?'你陪红鹞去点了那盏灯。':null},
+ {v:5,f:()=>F('v5Sample')===1?'河边放水时，你让人先停下，取了第二碗水样对照。':F('v5Sample')===0?'河边放水时，你让人清了口子接着放。':null},
+ {v:5,f:()=>S.seen.includes('v5_21')&&isPartner('hong')?'那顿夹生的晚饭以后，你和红鹞在一起了。':null},
+ {v:6,f:()=>F('v6Defy')?'你违了令，往北壁转过去一息，受了伤。':null},
+ {v:7,f:()=>F('v7Drill')===1?'你让大家再练，练到两息。':F('v7Drill')===0?'你说三息够了，没有耽误行程。':null},
+ {v:8,f:()=>F('v8Promise')===1?'你答应连夜走，天亮前把所有人送下去。':F('v8Promise')===0?'你先问清每个人的身体，再排舱位和时辰。':null},
+ {v:9,f:()=>F('v9Risk')==='novel'?'你照短测的结果把五座药炉接进同一个循环。傍晚反吸，工具车毁了，陆怀灯受了伤。':F('v9Risk')==='early'?'你先查回收纹，只做能隔开的测试。保田的方案放弃了，车和药炉保住了大半。':null},
+ {v:10,f:()=>F('v10Zhao')===0?'在伏灯站，你识破了灯号，按住了赵笙的手。':F('v10Zhao')===1?'在伏灯站，你没看出灯号。赵笙的左掌伤得很重。':null}
+];
+const VOL_NAME=v=>{const c=STORY.find(x=>x.id===(v===1?'zhuji':'v'+v+'_1'));return v===1?'青石':c?c.title.split('·')[0]:'第'+cnNum(v)+'卷';};
+function causeOf(v){return CAUSE.filter(c=>!v||c.v===v).map(c=>{let t=null;try{t=c.f();}catch(e){}return t?{v:c.v,t}:null;}).filter(Boolean);}
+function causeHTML(){const L=causeOf();if(!L.length)return '';
+ return `<h2 class="sec">因果录 <small>你做过的选择，后来都还在</small></h2><ul class="cause-list">${L.map(c=>`<li><span class="cv">第${cnNum(c.v)}卷</span>${esc(c.t)}</li>`).join('')}</ul>`;}
+
+/* 后面的卷宗里，记得前面发生过的事 */
+const CALLBACK={
+ v4_1:()=>({zhou:['','临走前，周烈在站口把斧子扛上肩：「站里有我。」'],sell:['','临走前，铁叔又数了一遍粮仓。那颗丹换回来的米，还剩小半仓。'],self:['','临走前，周烈在站口看了你一眼，没说话，侧身让开了路。']}[typeof v1Pill==='function'?v1Pill():'']),
+ v6_1:()=>S.seen.includes('ahe')?(F('heScar')?['','下雨了。你想起阿禾那只阴天会疼的手，出门前多留了一包药。']:['','下雨了。你想起阿禾手腕上那颗蓝色的小点。']):null,
+ v7_1:()=>F('v5Sample')===1?['','你还留着河边那两碗水样的记录。纸已经泛黄，字还看得清。']:null,
+ v8_1:()=>F('v6Defy')?['','北壁那一息留下的伤，天一冷就提醒你一回。']:null,
+ v9_1:()=>F('v8Promise')===1?['','那一夜送下去的人里，有人托车队给你捎来一包干枣。']:F('v8Promise')===0?['','那张排好的舱位表，你一直夹在玉简旁边。']:null,
+ v10_1:()=>F('v9Risk')==='novel'?['','路过一处修车铺，你停下来看了很久。那辆工具车，到底没修回来。']:F('v9Risk')==='early'?['','药炉的火还在烧。那天你放下了一块田，保住了这一炉。']:null,
+ v10_21:()=>F('v10Zhao')===1?['','赵笙用右手接过了碗。左手还缠着。']:null
+};
+/* 道侣不止红鹞一个时，别的道侣也有话说 */
+const PARTNER_SEND={
+ zhou:['周烈把磨好的斧子塞进你的行李：「用不上最好。用得上，记着往回走。」','周烈托人捎来一句话，只有四个字：早点回来。','出门前，周烈替你把鞋带重新系了一遍，系得很紧。','周烈的信里画了一张歪歪扭扭的地图，标着青石站，旁边写：家。','周烈在站口等了一夜。你回来时，他假装刚起。'],
+ xiao:['萧尘在你的册子上写了一行：七〇二，萧尘，等你。','萧尘没来送。你的灯旁边，多了一只挡风的旧罐头。','萧尘问你这一趟要走几天。你说不知道，他便说：那我每天都记一遍。','萧尘把你的名字写在了他自己的登记簿上，第一行。','萧尘站在路口，冲你点了一下头。你知道他会记得。'],
+ su:['苏绾把一张手绘的路线图折好，塞进你的袖口：「水位会变，图是死的。人别死。」','苏绾的罗盘借给你了。她说差两度，够用。','苏绾在你的图上添了一个记号：回来的路。','苏绾说她会在图上留一块空白，等你回来自己画。','苏绾把笔帽咬在嘴里，没说再见，只在你手心画了一个小小的箭头。'],
+ hong:['红鹞（看了一眼你身后的人）：「行，人多，车上挤挤。」','红鹞把副驾的座垫翻了个面：「轮流坐。」','红鹞：「都上车。谁晕车谁坐前头。」','红鹞把账本上你那一格又描了一遍。','红鹞按了一声喇叭，算是送行。']
+};
+['v6_1','v7_1','v8_1','v9_1','v10_1'].forEach((id,i)=>{const c=STORY.find(x=>x.id===id);if(!c||!Array.isArray(c.lines))return;
+ c.lines=[{fn:()=>{const P=partners();const L=P.filter(k=>PARTNER_SEND[k]&&(k!=='hong'||P.length>1)).map(k=>['',PARTNER_SEND[k][i]]);if(L.length)SC.q.unshift(...L);}},...c.lines];});
+Object.keys(CALLBACK).forEach(id=>{const c=STORY.find(x=>x.id===id);if(!c||!Array.isArray(c.lines))return;c.lines=[{fn:()=>{let l=null;try{l=CALLBACK[id]();}catch(e){}if(l)SC.q.unshift(l);}},...c.lines];});
+
+/* ================= 前情提要：每一卷开头 ================= */
+function recapHTML(v){const prev=STORY.filter(c=>c.id.startsWith('v'+(v-1)+'_')&&S.seen.includes(c.id)).map(c=>c.title.split('·').slice(1).join('·'));
+ const cs=causeOf(v-1);
+ return `<div class="recap"><h3>前情提要 · ${esc(VOL_NAME(v-1))}</h3>${prev.length?`<p class="rc-path">${prev.map(esc).join(' → ')}</p>`:''}${cs.length?cs.map(c=>'<p>'+esc(c.t)+'</p>').join(''):''}<p class="note">如今是${dateName()}。下一卷：${esc(VOL_NAME(v))}。</p></div>`;}
+{const ps0=playStory;playStory=function(id){const m=/^v(\d+)_1$/.exec(id);const v=m?+m[1]:0;
+  if(v>=2&&!S.seen.includes(id)&&!S.flags['rc_'+v]&&!BT){S.flags['rc_'+v]=1;modal(recapHTML(v),[{t:'继续',cls:'gold',fn:()=>ps0(id)}]);return;}
+  return ps0.apply(this,arguments);};}
+
+/* ================= 剧情战的规矩 =================
+   卷宗里写着「不许用火」「锁住它」「认盐印别认影子」的仗，现在真的按这些规矩打。 */
+function foeRage(f){if(!f||!f.alive||(f.rage||0)>=3)return;f.rage=(f.rage||0)+1;f.atk*=1.15;btPop(f,'躁动','tag');}
+{const es0=elStrike;elStrike=function(a,t,el,d,o){
+  if(a&&a.side==='p'&&t&&t.alive&&t.mech&&el){
+   if(el==='huo'&&t.mech==='fireFeed'){btHeal(t,t.max*.12);btPop(t,'火喂藤','tag');foeRage(t);return 0;}
+   if(el==='huo'&&(t.mech==='heat'||t.mech==='lure')){BT.foes.filter(f=>f.alive&&f.mech===t.mech).forEach(foeRage);d*=.6;}
+   if(t.mech==='qiSeek'){foeRage(t);d*=.7;}}
+  return es0.call(this,a,t,el,d,o);};}
+{const sa0=stAdd;stAdd=function(t,k,n,src){
+  if(t&&t.alive&&k==='burn'&&t.side!=='p'){if(t.mech==='fireFeed'){btHeal(t,t.max*.06);btPop(t,'火喂藤','tag');return;}if(t.mech==='heat'||t.mech==='lure'){foeRage(t);return;}}
+  return sa0.apply(this,arguments);};}
+{const bh0=btHit;btHit=function(t,d,cls,src){
+  if(t&&t.alive&&t.side!=='p'&&src&&src.side==='p'){const s=t.st||{};
+   if(t.mech==='lock'&&!(s.stun>0||s.root>0||s.brk>0||t.frozen>0)){d*=.3;if(Math.random()<.45)btPop(t,'锁住它','tag');}
+   if(t.mech==='mirror'&&BT.foes.some(f=>f.alive&&f.decoy)&&Math.random()<.55){btPop(t,'镜影','tag');return;}}
+  return bh0.apply(this,arguments);};}
+{const rs0=roundStart;roundStart=function(){const r=rs0.apply(this,arguments);if(!BT)return r;const o=BT.opt||{},h=BT.party[0];
+  if(BT.round===1&&o.rule){btMsg('规矩：'+o.rule);BT.fx.push({k:'banner',x:BT.W/2,y:BT.H*.3,txt:o.rule.split('：')[0].slice(0,10),col:'#e8c878',t0:BT.t,dur:2.2});}
+  BT.foes.forEach(f=>{if(!f.alive)return;
+   if(f.mech==='qiSeek'&&f.drain&&h&&h.alive){const m=h.mmax*.1;h.mp=Math.max(0,h.mp-m);btPop(h,'灵力被吸','st');}
+   if(f.mech==='mirror'&&BT.round%3===0&&!BT.foes.some(x=>x.alive&&x.decoy)){const g=mkCustom(Math.max(0,f.z||0),{look:'镜中错影',name:'镜中错影',st:Math.max(0,S.stage-1),m:.6});g.decoy=1;g.noLoot=1;g.summ=1;
+    Object.assign(g,{side:'e',alive:true,ox:0,oy:-10,alpha:0,flash:0,buf:0,defd:false,spd:8,idx:BT.foes.length,max:g.hp});BT.foes.push(g);btLayout();tween(g,{alpha:1,oy:0},400);btMsg('镜里又多出一个影子');}});
+  if(o.surviveN&&BT.round>o.surviveN&&BT.foes.some(f=>f.alive)){BT.foes.forEach(f=>{if(f.alive){f.alive=false;tween(f,{alpha:0},500);}});btMsg(o.surviveMsg||'撑过去了。');}
+  else if(o.surviveN&&BT.round<=o.surviveN)btMsg('还要撑 '+(o.surviveN-BT.round+1)+' 回合');
+  if(o.turnLimit&&BT.round>o.turnLimit&&BT.foes.some(f=>f.alive&&f.boss)&&h){h.hp=0;h.alive=false;btMsg(o.limitMsg||'来不及了。');}
+  else if(o.turnLimit&&BT.round<=o.turnLimit&&BT.round>o.turnLimit-3)btMsg('只剩 '+(o.turnLimit-BT.round+1)+' 回合');
+  return r;};}
+/* 每场剧情战配上规矩和自己的样子 */
+const STORY_RULE={
+ '盲鳗':{rule:'它们追光：别点火，用火只会把它们全引过来。',mech:{'盲鳗':'lure'},look:{'盲鳗':'盲鳗'}},
+ '盐壳螯':{rule:'它们认热：别用火烘，火只会让它们更躁。',mech:{'盐壳螯群':'heat'},look:{'盐壳螯群':'盐壳螯'}},
+ '负碑鼋':{rule:'不必杀它：撑过六个回合，它会自己退开。',surviveN:6,surviveMsg:'负碑鼋喷出一口白气，慢慢沉回了碑下。',mech:{'负碑鼋':'jinshen','盐壳螯群':'heat'},look:{'负碑鼋':'负碑鼋','盐壳螯群':'盐壳螯'}},
+ '寄焰藤':{rule:'不许用火：火只会喂它。',mech:{'寄焰藤':'fireFeed','寄焰藤根':'fireFeed'},look:{'寄焰藤':'寄焰藤','寄焰藤根':'寄焰藤'}},
+ '护炉架':{rule:'别砍轴，锁住它：晕住、缠住或破了甲，才打得动。',mech:{'护炉架':'lock','寄焰藤':'fireFeed'},look:{'护炉架':'护炉架','寄焰藤':'寄焰藤'}},
+ '晶背蛾':{rule:'它们追灵息和火光：少用法术，拳脚更稳。',mech:{'晶背蛾群':'qiSeek'},look:{'晶背蛾群':'晶背蛾'}},
+ '井下晶背蛾':{rule:'它们追灵息：少用法术，拳脚更稳。',mech:{'晶背蛾':'qiSeek'},look:{'晶背蛾':'晶背蛾'}},
+ '晶翼':{rule:'它们吃灵息：每回合吸走你一成灵力，法术越响越招它们。',mech:{'晶翼':'qiSeek'},drain:{'晶翼':1},look:{'晶翼':'晶翼'}},
+ '岩鬃獾':{rule:'岩鬃硬得像石头：先破甲。',mech:{'岩鬃獾':'jinshen'},look:{'岩鬃獾':'岩鬃獾','晶背兽':'晶背兽'}},
+ '镜中的衡渡':{rule:'认脚下的盐印，别认镜里的影子：先打碎错影。',mech:{'衡渡':'mirror'},decoy:{'镜中错影':1},look:{'衡渡':'衡渡','镜中错影':'镜中错影'}},
+ '归相钉前':{rule:'只有这半息：八个回合内断钉。',turnLimit:8,limitMsg:'归相钉合拢了。你被震出了镜腹。',look:{'衡渡':'衡渡'}},
+ '伏灯站':{look:{'蒙面人':'蒙面人','持弩的蒙面人':'蒙面人','翻船帮的蒙面人':'蒙面人'}},
+ '折鳞舟':{rule:'看他握刀那只手的指根：他蓄力时，正是破绽。',look:{'孟确':'孟确'}}
+};
+{const rf0=rwFight;rwFight=function(o){const R=o&&STORY_RULE[o.title];if(R){o=Object.assign({},o,{rule:R.rule,surviveN:R.surviveN,surviveMsg:R.surviveMsg,turnLimit:R.turnLimit,limitMsg:R.limitMsg});
+  if(o.many)o.many=o.many.map(f=>Object.assign({},f,{mech:R.mech&&R.mech[f.name]||f.mech,decoy:R.decoy&&R.decoy[f.name]||f.decoy,look:R.look&&R.look[f.name]&&LOOK[R.look[f.name]]?R.look[f.name]:f.look}));}
+  return rf0(o);};}
+{const rb0=rwBattle;rwBattle=function(o){rb0(o);if(BT&&o&&o.many&&STORY_RULE[o.title]){const R=STORY_RULE[o.title];BT.foes.forEach(e=>{if(R.drain&&R.drain[e.n||e.name])e.drain=1;});}};}
+/* 新敌人的样子（先用像素造型顶上，等插画） */
+Object.assign(LOOK,{
+ '盲鳗':{a:'fish',k:'serpent',c:'#b8b8ae',c2:'#6a6a62',e:'#e8e8e0'},
+ '盐壳螯':{a:'crab',c:'#d8d2c2',c2:'#8a8270',e:'#ffffff'},
+ '负碑鼋':{a:'crab',c:'#5a6a5a',c2:'#3a4436',e:'#e8f0ff',spikes:1,big:1},
+ '寄焰藤':{a:'worm',k:'vine',c:'#c8c2b0',c2:'#7a6e58',e:'#ff8a3a'},
+ '护炉架':{a:'human',k:'golem',c:'#7a4a32',c2:'#4a2e20',e:'#ffb03a'},
+ '晶背蛾':{a:'flyer',k:'bee',c:'#cfe6f0',c2:'#7a98a8',e:'#bff4ff'},
+ '晶翼':{a:'flyer',k:'manta',c:'#9aa4a8',c2:'#5a6268',e:'#bff4ff'},
+ '岩鬃獾':{a:'beast',c:'#6a5a4a',c2:'#3e342a',e:'#ffcf4a',spikes:1},
+ '晶背兽':{a:'beast',c:'#8a9aa0',c2:'#4e5a60',e:'#bff4ff'},
+ '衡渡':{a:'human',k:'cult',c:'#3a4048',c2:'#22262c',e:'#e8d8a0'},
+ '镜中错影':{a:'human',k:'shadow',c:'#a8c8d8',c2:'#5a7888',e:'#ffffff'},
+ '孟确':{a:'human',k:'cult',c:'#4a2a2a',c2:'#2a1818',e:'#ff8a3a'},
+ '蒙面人':{a:'human',k:'cult',c:'#2a2e2a',c2:'#181a18',e:'#ffd070',mask:1}
+});
+
+/* ================= 分阶段引导：新东西一样一样开 ================= */
+const FEATS=[
+ {k:'retreat',c:()=>S.seen.includes('mock'),t:'「修炼」页可以闭关、歇息。闭关省事但慢；历练最快，也最花力气。'},
+ {k:'sweep',c:()=>S.bossDown.length>0,t:'打败过首领的地方可以「扫荡」：每遍三天，扫得太勤妖兽会变少。'},
+ {k:'bond',c:()=>S.seen.includes('v1_caravan'),t:'「卷宗」里有缘分：闲聊、送礼、剧情选择都会改变好感。'},
+ {k:'jade',c:()=>F('dongtian'),t:'「玉简」开了：温养法器要花日子，出门历练时它也在走。'},
+ {k:'jh',c:()=>S.seen.includes('v2_1'),t:'「江湖」开了：世上不止青石站，各处的人和事都在这里。'},
+ {k:'clan',c:()=>!!S.clan,t:'「行社」开了：招人、修建、派人出门，都按日子算。'},
+ {k:'cause',c:()=>causeOf().length>=2,t:'「卷宗」底下有因果录：你做过的选择，后面都会被记得。'}
+];
+function featCheck(){if(!S.started||SC||BT||!OV_FREE())return;for(const f of FEATS){if(S.flags['ft_'+f.k])continue;let ok=false;try{ok=f.c();}catch(e){}if(ok){S.flags['ft_'+f.k]=1;toast('新：'+f.t);return;}}}
+/* 备份提醒：每走完一卷、或者很久没导出时 */
+function backupNag(){if(!S.started)return;const d=daysAll(),last=S.expD??-1,ch=S.seen.length;
+ if(ch-(S.expCh||0)>=12&&d-last>=30&&!S.flags['bk_'+Math.floor(ch/12)]){S.flags['bk_'+Math.floor(ch/12)]=1;toast('走了不少路了。导出一份存档码，换设备、清缓存都不怕。','备份',()=>{openSaves();});}}
+setInterval(()=>{try{featCheck();backupNag();}catch(e){}},4000);
+
+/* ================= 时间线 =================
+   剧情推进时间：读完一章，日子往前走一天；写着「几年以后」「六周以后」的章节，开头就把日子推过去。 */
+function chHint(ch){let h=ch.hint||'继续探索江湖';if(ch.pg){const n=paceLeft(ch.pk,ch.pg);if(n>0)h=(ch.hint&&!/^过些日子/.test(ch.hint)?ch.hint+' · ':'')+'还要再过 '+n+' 天（出城历练、扫荡、歇息、闭关都会让日子往前走）';}return h;}
+/* 章节开始时的时间跳跃：{year:灵潮年} 或 天数 */
+const TL_JUMP={
+ v4_5:3,v4_8:2,v4_12:7,
+ v5_1:{year:11},v5_7:5,v5_15:20,v5_17:6,v5_20:6,v5_22:150,
+ v6_1:90,v6_17:1,
+ v7_1:200,v7_21:42,
+ v8_1:40,v8_15:21,v8_16:30,
+ v9_1:12,v9_15:3,v9_16:60,
+ v10_1:7,v10_3:30,v10_5:8,v10_8:3,v10_21:45
+};
+const _tlPlay=playStory;
+playStory=function(id){const c=STORY.find(x=>x.id===id);
+ if(c&&!S.seen.includes(id)&&TL_JUMP[id]!=null&&!S.flags['tl_'+id]){S.flags['tl_'+id]=1;const j=TL_JUMP[id];try{if(typeof j==='object')ensureYear(j.year);else advanceDays(j,'story');}catch(e){console.error(e);}}
+ return _tlPlay.apply(this,arguments);};
+/* 每读完一章新的主线，日子走一天 */
+STORY.forEach(c=>{if(!/^v\d+_|^(prologue|mock|ahe|dongtian|ratking|zhouleave|zhuji|exposed|hunted|caravan)$/.test(c.id))return;const a0=c.after;c.after=function(){try{if(!S.flags['td_'+c.id]){S.flags['td_'+c.id]=1;advanceDays(1,'story');}}catch(e){}return a0&&a0.apply(this,arguments);};});
+
 /* ================= GAME ================= */
 const $=s=>document.querySelector(s);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -10244,11 +10640,12 @@ const UPS=[
 /* ---------- 存档 ---------- */
 const SLOTS=3,SLOT_KEY='lingchao_slot';const slotKey=n=>n===1?'lingchao_save_v1':'lingchao_save_v1_s'+n;
 let SLOT=(()=>{try{const n=+localStorage.getItem(SLOT_KEY);return n>=1&&n<=SLOTS?n:1;}catch(e){return 1;}})();
-function fresh(){return {v:3,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
+const SAVE_V=4;
+function fresh(){return {v:SAVE_V,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
   gear:{w:null,a:null,j:null,r:null,f:null},bag:[],bossDown:[],kills:[0,0,0,0,0,0,0,0,0,0,0],abyss:0,karma:0,seen:[],pending:[],flags:{},visited:[0],
   expo:0,special:null,dt:{lv:0,slots:[]},rebirth:0,usePill:false,last:Date.now(),started:false,uid:1,taps:0,slain:0,hunts:0,
   pop:213,rep:{station:0,caravan:0,tq:0},q:{},seenEv:[],evClock:0,lastDaily:'',runs:0,meds:3,mps:1,hpF:1,mpF:1,btAuto:false,loc:'town',gems:{},books:{},learned:[],clan:null,omen:null,omenClock:0,mgW:{},raid:0,aff:{},affDay:{},giftDay:{},partner:null,sworn:[],
-  root:null,root2:null,forms:[],form:null,mats:{},dan:{xp:0},fu:{},pity:{},natal:null,xisui:0,injury:0,year:3,age:18,ppl:null,news:[],seeds:[],fateQ:[],dis:[],legacy:[],heir:null,path:null,dao:{zheng:0,mo:0,yin:0,zong:0},endings:[],sects:{},fame:0,lifeP:0,lifeB:0,jieDan:0,jzDan:0,zjDan:0,hhDan:0,xf:0,cnt:{},combos:0,closedY:0,kids:[]};}
+  root:null,root2:null,forms:[],form:null,mats:{},dan:{xp:0},fu:{},pity:{},natal:null,xisui:0,injury:0,injD:0,year:3,doy:240,daysAll:0,age:18,ppl:null,news:[],seeds:[],fateQ:[],dis:[],legacy:[],heir:null,path:null,dao:{zheng:0,mo:0,yin:0,zong:0},endings:[],sects:{},fame:0,lifeP:0,lifeB:0,jieDan:0,jzDan:0,zjDan:0,hhDan:0,xf:0,cnt:{},combos:0,closedY:0,kids:[]};}
 const OLD_IDS={0:'prologue',1:'ahe',2:'ratking',3:'caravan',4:'locust',5:'port',6:'zero',7:'fallen',8:'finale'};
 function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign(fresh().ups,(d&&d.ups)||{});o.gear=Object.assign(fresh().gear,(d&&d.gear)||{});
   o.flags=Object.assign({},(d&&d.flags)||{});o.dt=Object.assign(fresh().dt,(d&&d.dt)||{});if(!Array.isArray(o.dt.slots))o.dt.slots=[];
@@ -10259,10 +10656,17 @@ function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign
   ['mats','dan','fu','pity','dao','sects','cnt'].forEach(k=>o[k]=Object.assign(fresh()[k],(d&&d[k])||{}));['forms','news','seeds','fateQ','dis','legacy','endings','kids'].forEach(k=>{if(!Array.isArray(o[k]))o[k]=[];});
   delete o.run;if(typeof o.hpF!=='number')o.hpF=1;if(typeof o.mpF!=='number')o.mpF=1;
   lifeSync(o);return o;}
-function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t)return hydrate(JSON.parse(t));}catch(e){}return fresh();}
+/* 旧版存档不再兼容：原样留一份存档码备份，然后开新档 */
+const OLD_BAK='lingchao_old_backup';
+function oldSave(d){return !d||d.v!==SAVE_V;}
+function stashOld(raw,n){let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(raw)));}catch(e){}
+  try{const L=JSON.parse(localStorage.getItem(OLD_BAK)||'[]');L.push({n,t:Date.now(),code});localStorage.setItem(OLD_BAK,JSON.stringify(L.slice(-6)));localStorage.removeItem(slotKey(n));}catch(e){}return code;}
+let OLD_NOTE=null;
+function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t){const d=JSON.parse(t);if(!oldSave(d))return hydrate(d);if(d&&d.name)OLD_NOTE={name:d.name,code:stashOld(t,SLOT)};else localStorage.removeItem(slotKey(SLOT));}}catch(e){}return fresh();}
+function oldBackups(){try{return JSON.parse(localStorage.getItem(OLD_BAK)||'[]');}catch(e){return [];}}
 function save(){S.last=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S));}catch(e){}}
 function slotInfo(n){if(n===SLOT)return S.name?{name:S.name,realm:stName(),last:Date.now(),started:S.started,reb:S.rebirth}:null;
-  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
+  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;if(oldSave(d)){stashOld(t,n);return null;}return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
 function ago(t){const s=(Date.now()-t)/1000;return s<90?'刚刚':s<3600?Math.floor(s/60)+' 分钟前':s<86400?Math.floor(s/3600)+' 小时前':Math.floor(s/86400)+' 天前';}
 let delArm=0;
 function switchSlot(n){if(BT||n===SLOT)return;if(S.name)save();SLOT=n;try{localStorage.setItem(SLOT_KEY,String(n));}catch(e){}
@@ -10282,17 +10686,21 @@ const needQ=()=>layered(S.stage)?Math.floor(req(S.stage)*.5):req(S.stage);
 function stName(s,l){if(s==null)s=S.stage;const T=STAGES[s];if(!T||T.j==null)return T?T.name:'';if(T.j===3)return REALMS[T.r]+'大圆满';return REALMS[T.r]+NUM[T.j*3+(s===S.stage?(l==null?(S.layer||0):l):(l||0))]+'层';}
 const BN_NAME=['身关','生死关','心关'],BN_TIP=['三层之后，五行灵力要自己转起来。去险地里打一场硬仗，让身体学会。','六层之后，要在生死之间走一遭。','九层之后，问的是心。一场最难的历练。'];
 function bnAt(s){const T=STAGES[s],N=STAGES[s+1];if(!N||N.r!==T.r)return -1;if(T.r===0)return s===2?0:s===5?1:-1;return T.j!=null&&T.j<3?T.j:-1;}
-const yaoRate=()=>Math.max(idleRate()*3,needQ()*.006)*(S.injury>Date.now()?.6:1);
+const yaoRate=()=>Math.max(idleRate()*3,needQ()*.006)*(injOn()?.6:1);
 function refine(dt,tap){if(!(S.yao>0))return 0;const g=Math.min(S.yao,tap?tapGain()*4+needQ()*.004:yaoRate()*dt);S.yao-=g;if(S.yao<1e-6)S.yao=0;addQi(g,!tap);return g;}
 function toxAdd(n){S.tox=Math.min(100,(S.tox||0)+n);}
 function xlNotice(){if(S.flags.xl2)return;S.flags.xl2=1;addQi(0,true);if(!(S.stage>0||S.qi>0))return;
   setTimeout(()=>modal(`<h3>修炼之道变了</h3><p>你的境界都还在，现在显示为 <b>${stName()}</b>。</p><p>从今往后，修为只从<b>历练</b>和<b>丹药</b>来：打妖兽、做委托、走剧情直接涨修为；服聚气丹得<b>药力</b>，在「修炼」页点画面炼化。光坐着不会再涨灵气。</p><p>每个大境界分九层，三、六、九层各有一道瓶颈，要去闯一场历练。丹药吃多了会积丹毒。玉台温养会外泄灵光，满了会引来天穹会的人。</p>`,[{t:'知道了',cls:'gold'}]),1200);save();}
-function bnFight(){const ni=nextInfo();if(!ni.bn||S.qi<needQ()||BT)return;if(S.injury>Date.now()){toast('伤还没好，闯不了关','bad');return;}
+function bnFight(){const ni=nextInfo();if(!ni.bn||S.qi<needQ()||BT)return;if(injOn()){toast('伤还没好，闯不了关','bad');return;}
   const b=bnAt(S.stage),z=Math.min(maxZone(),zOfStage(S.stage+1)),V=F('v1')&&typeof V1_BN!=='undefined'?V1_BN[S.stage]:null;
   const foes=V?V.foes():[mkCustom(z,{name:'瓶颈·'+BN_NAME[b],st:S.stage+1+b,m:1.35+.15*b,boss:true})];foes.forEach(e=>e.noLoot=1);
   const s0=S.stage;startBattle(foes,{noFlee:true,bg:V?V.bg:z,onWin:()=>{S.bnPass=s0;if(V&&V.win)try{V.win();}catch(e){}wuAdd(3+2*b);addQi(0);toast('破了'+BN_NAME[b]+'。境界 '+stName(),'big');checkStory(false);render();save();},
-   onLose:()=>{S.injury=Date.now()+3*60*1000;toast(BN_NAME[b]+'没闯过去。养好伤再来。','bad');save();}});}
-const idleRate=()=>(.5+.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb()*(F('taiyi')?1.25:1)*(1+(S.learned.includes('julingp')?.15:0)+clanBonus().idle+(partners().length?.1+.1*partners().length:0)+((S.sworn||[]).includes('mo')?.1:0))*omenMul('qi')*(S.injury>Date.now()?.6:1);
+   onLose:()=>{injSet(2);toast(BN_NAME[b]+'没闯过去。养好伤再来。','bad');save();}});}
+/* 修炼节奏（第一至第十卷：炼气一层 → 筑基大圆满）
+   亲自历练一趟（约三天）≈ 本境界两成半修为；扫荡同价但灵脉会枯；闭关最省事，但同样的日子只有历练的五分之一左右。 */
+const QI_BATTLE=.012;
+const qiRetreat=d=>req(S.stage)*.04*Math.pow(d,.75)*Math.min(3,idleRate()/(.5*Math.pow(1.17,S.stage)))*(S.path==='yin'?1.3:1);
+const idleRate=()=>(.5+.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb()*(F('taiyi')?1.25:1)*(1+(S.learned.includes('julingp')?.15:0)+clanBonus().idle+(partners().length?.1+.1*partners().length:0)+((S.sworn||[]).includes('mo')?.1:0))*omenMul('qi')*(injOn()?.6:1);
 const tapGain=()=>(1+.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb()*omenMul('qi');
 const realmIdx=()=>STAGES[S.stage].r;
 const ZSC_UP=[1600,3800,9000];const zScale=z=>z===7?Math.pow(2.7,6)*1.5*Math.pow(1.12,S.abyss):z>=8?ZSC_UP[Math.min(2,z-8)]:Math.pow(2.7,Math.max(0,z));
@@ -10325,7 +10733,7 @@ function addQi(x,quiet){S.qi+=x;let moved=false,lm=false;
   for(;;){const need=needQ();if(S.qi<need)break;if(layered(S.stage)&&(S.layer||0)<2&&bnAt(S.stage)>=0){S.qi-=need;S.layer=(S.layer||0)+1;lm=true;continue;}const ni=nextInfo();if(ni.final||ni.major||ni.bn){S.qi=need;break;}S.qi-=need;S.stage++;S.layer=0;moved=true;}
   if(lm&&!moved&&!quiet){toast('突破至 '+stName());if(TAB==='cult')render();}
   if(moved){if(S.stage>=3&&!S.root&&!S.flags.rootAsk){S.flags.rootAsk=1;setTimeout(()=>{if(!BT&&OV_FREE())openRootTest();else toast('墨老：「该测一测你的灵根了。」','测灵根',openRootTest);},900);}if(!quiet)toast('突破至 '+stName());checkStory(quiet);if(TAB==='cult'&&!quiet)render();}}
-function ascend(){modal(`<h3>轮回</h3><p>你已修至大罗圆满。归墟之下，还有一道门。</p><p>轮回重修：境界、灵石、功法、装备清空；剧情、委托、声望、家族、秘籍、宝石、温养等级与深渊记录保留。</p><p>获得 <b>仙缘 +1</b>：修为、攻防、生命永久 <b>+25%</b>（当前 ${S.rebirth} 重）。</p>`,
+function ascend(){modal(`<h3>轮回</h3><p>你已修至大罗圆满。归墟之下，还有一道门。</p><p>轮回重修：境界、灵石、功法、装备清空；剧情、委托、声望、行社、秘籍、宝石、温养等级与深渊记录保留。</p><p>获得 <b>仙缘 +1</b>：修为、攻防、生命永久 <b>+25%</b>（当前 ${S.rebirth} 重）。</p>`,
   [{t:'再等等',cls:'ghost'},{t:'飞升轮回',cls:'gold',fn:()=>reincarnate(true)}]);}
 
 /* ---------- 奇遇与委托的通用效果 ---------- */
@@ -10473,25 +10881,35 @@ function dotUpdate(){$('#dotStory').hidden=!S.pending.some(id=>{const c=STORY.fi
 const bro=()=>S.gender==='f'?'姐姐':'哥哥';
 const sub=t=>String(t).replaceAll('{name}',S.name).replaceAll('{bro}',bro());
 let SC=null;
+/* 读剧情：文字速度、自动播放、回顾 */
+const VN_SPD={slow:45,mid:28,fast:12,now:0},VN_SPDN={slow:'慢',mid:'中',fast:'快',now:'瞬'};
+const VN=(()=>{let o={spd:'mid',auto:false};try{Object.assign(o,JSON.parse(localStorage.getItem('lingchao_vn')||'{}'));}catch(e){}return o;})();
+function vnSave(){try{localStorage.setItem('lingchao_vn',JSON.stringify(VN));}catch(e){}}
+/* 没有立绘的人物：印章式头像 */
+function sealPortrait(k){const n=(SPK[k]||BOND[k]&&BOND[k].n||'?').replace(/[（(].*$/,'');const ch=n.length>2?n.slice(-2):n;let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))%360;
+ return `<svg class="seal-por" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><rect x="34" y="52" width="132" height="132" rx="10" fill="hsl(${h} 22% 18%)" stroke="#b5402e" stroke-width="7"/><rect x="46" y="64" width="108" height="108" rx="4" fill="none" stroke="#b5402e" stroke-width="2.5"/><text x="100" y="${ch.length>1?132:142}" text-anchor="middle" font-size="${ch.length>1?44:64}" fill="#e8d9b8" font-family="serif" ${ch.length>1?'writing-mode="tb" ':''}>${esc(ch)}</text></svg>`;}
+const porOf=k=>PORTRAIT[k]?PORTRAIT[k]():sealPortrait(k);
 function applyFx(fx){if(typeof fx==='function')fx=fx();if(!fx)return;if(fx.stones)S.stones+=fx.stones;if(fx.pills)S.pills+=fx.pills;if(fx.qiPills)S.qiPills+=fx.qiPills;
   if(fx.qiMul)S.qi=Math.floor(S.qi*fx.qiMul);if(fx.qiFill)S.qi=Math.max(S.qi,req(S.stage));if(fx.flags)Object.assign(S.flags,fx.flags);if(fx.aff)for(const k in fx.aff)aff(k,fx.aff[k]);if(fx.gem)gGem(fx.gem[0],fx.gem[1]);if(fx.book)gBook(fx.book);if(fx.fame&&S.clan)S.clan.fame+=fx.fame;if(fx.meds)S.meds+=fx.meds;if(fx.item){EVZ=maxZone();gItem(fx.item);}if(fx.karma)S.karma+=fx.karma;
   if(fx.gift){const it=mkItem(Math.max(1,maxZone()),true,{r:2,slot:'j',n:fx.gift});it.n=fx.gift;it.hp=Math.round(it.hp*1.3);if(S.bag.length<BAG_MAX)S.bag.push(it);}}
 function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;if(SC)clearInterval(SC.typing);
-  SC={id,ch,q:ch.lines.slice(),typing:null,full:'',choice:false,bg:ch.bg};
+  SC={id,ch,q:ch.lines.slice(),typing:null,full:'',choice:false,bg:ch.bg,log:[],read:S.seen.includes(id),skipArm:false};
   const ov=$('#ov');ov.hidden=false;ov.className='vn';
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="port l hide" id="pL"></div><div class="port r hide" id="pR"></div>
-   <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><button class="st-skip" id="stSkip">跳过</button></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
+   <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
    <div class="st-box"><div class="st-s" id="stS" hidden></div><div class="st-x" id="stX"></div><div class="st-more" id="stM">▾</div></div></div>`;
   requestAnimationFrame(()=>paintTo($('#vbg'),SC.bg));
-  $('#stSkip').onclick=e=>{e.stopPropagation();skipStory();};
-  $('#stIn').onclick=()=>{if(!SC||SC.choice)return;if(SC.typing){finishType();return;}nextLine();};
+  $('#stSkip').onclick=e=>{e.stopPropagation();if(!SC.read&&!SC.skipArm){SC.skipArm=true;e.target.textContent='再点跳过未读';setTimeout(()=>{if(SC&&SC.skipArm){SC.skipArm=false;const b=$('#stSkip');if(b)b.textContent='跳过';}},2500);return;}skipStory();};
+  $('#stLog').onclick=e=>{e.stopPropagation();vnLog();};
+  $('#stSpd').onclick=e=>{e.stopPropagation();const ks=Object.keys(VN_SPD);VN.spd=ks[(ks.indexOf(VN.spd)+1)%ks.length];vnSave();e.target.textContent=VN_SPDN[VN.spd];};
+  $('#stAuto').onclick=e=>{e.stopPropagation();VN.auto=!VN.auto;vnSave();e.target.classList.toggle('on',VN.auto);e.target.setAttribute('aria-pressed',VN.auto);if(VN.auto&&SC&&!SC.typing&&!SC.choice)vnAutoNext();};
+  $('#stIn').onclick=()=>{if(!SC||SC.choice||SC.logOpen)return;clearTimeout(SC.autoT);if(SC.typing){finishType();return;}nextLine();};
   nextLine();}
 function setBg(k){SC.bg=k;const cv=$('#vbg');if(!cv)return;cv.style.opacity=0;setTimeout(()=>{paintTo(cv,k);cv.style.opacity=1;},220);}
 function showPortrait(spk){const L=$('#pL'),R=$('#pR');if(!L)return;
   if(!spk){L.classList.add('hide');R.classList.add('hide');return;}
   const hero=spk==='@';const key=hero?(S.gender==='f'?'hero_f':'hero_m'):spk;const box=hero?L:R,other=hero?R:L;
-  if(!hero&&!PORTRAIT[key]){box.classList.add('hide');box.dataset.k='';if(other.dataset.k)other.classList.add('dim');return;}
-  if(box.dataset.k!==key){box.classList.add('hide');setTimeout(()=>{box.innerHTML=(PORTRAIT[key]||PORTRAIT.mo)();box.dataset.k=key;box.classList.remove('hide','dim');},150);}else box.classList.remove('hide','dim');
+  if(box.dataset.k!==key){box.classList.add('hide');setTimeout(()=>{box.innerHTML=porOf(key);box.dataset.k=key;box.classList.remove('hide','dim');},150);}else box.classList.remove('hide','dim');
   if(other.dataset.k)other.classList.add('dim');}
 function nextLine(){for(;;){if(!SC.q.length)return endStory();const L=SC.q[0];
     if(!Array.isArray(L)&&L.bg){SC.q.shift();setBg(L.bg);continue;}
@@ -10503,13 +10921,18 @@ function nextLine(){for(;;){if(!SC.q.length)return endStory();const L=SC.q[0];
   const spk=L[0];const name=spk==='@'?S.name:(SPK[spk]||'');const tx=sub(typeof L[1]==='function'?L[1]():L[1]);
   const s=$('#stS'),x=$('#stX');s.textContent=name;s.hidden=!name;s.className='st-s'+(['zero','hong','tq','sx','zhou2'].includes(spk)?' cin':spk==='@'?' gold':'');
   x.className='st-x'+(name?'':' narr');x.textContent='';$('#stM').hidden=true;showPortrait(spk||null);
-  SC.full=tx;let i=0;clearInterval(SC.typing);
-  if(reduce){x.textContent=tx;SC.typing=null;$('#stM').hidden=false;return;}
-  const tid=setInterval(()=>{if(!SC||SC.typing!==tid){clearInterval(tid);return;}i++;x.textContent=tx.slice(0,i);if(i>=tx.length)finishType();},28);SC.typing=tid;}
-function finishType(){clearInterval(SC.typing);SC.typing=null;$('#stX').textContent=SC.full;$('#stM').hidden=false;}
+  SC.full=tx;SC.log.push([name,tx]);let i=0;clearInterval(SC.typing);
+  const ms=VN_SPD[VN.spd];if(reduce||!ms){x.textContent=tx;SC.typing=null;$('#stM').hidden=false;vnAutoNext();return;}
+  const tid=setInterval(()=>{if(!SC||SC.typing!==tid){clearInterval(tid);return;}i++;x.textContent=tx.slice(0,i);if(i>=tx.length)finishType();},ms);SC.typing=tid;}
+function finishType(){clearInterval(SC.typing);SC.typing=null;$('#stX').textContent=SC.full;$('#stM').hidden=false;vnAutoNext();}
+function vnAutoNext(){if(!SC||!VN.auto)return;clearTimeout(SC.autoT);const me=SC;SC.autoT=setTimeout(()=>{if(SC!==me||SC.choice||SC.typing||SC.logOpen||!VN.auto)return;nextLine();},900+Math.min(2600,(SC.full||'').length*45));}
+function vnLog(){if(!SC)return;SC.logOpen=true;clearTimeout(SC.autoT);const box=document.createElement('div');box.className='st-log';box.setAttribute('role','dialog');box.setAttribute('aria-label','回顾');
+ box.innerHTML=`<div class="st-log-h"><b>回顾</b><button class="st-skip" id="stLogX">关闭</button></div><div class="st-log-b">${SC.log.map(([n,t])=>`<p>${n?'<span class="ln">'+esc(n)+'</span>':''}${esc(t)}</p>`).join('')||'<p class="empty">还没有内容。</p>'}</div>`;
+ $('#ov').appendChild(box);const b=box.querySelector('.st-log-b');b.scrollTop=b.scrollHeight;
+ const close=e=>{if(e)e.stopPropagation();box.remove();if(SC){SC.logOpen=false;vnAutoNext();}};box.querySelector('#stLogX').onclick=close;box.onclick=e=>e.stopPropagation();}
 function showChoices(cs){SC.choice=true;$('#stM').hidden=true;showPortrait('@');
   const box=$('#stC');box.innerHTML=cs.map((c,i)=>`<button data-i="${i}" style="animation-delay:${i*80}ms">${esc(sub(c.t))}</button>`).join('');
-  box.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();const c=cs[+b.dataset.i];S.karma+=c.k||0;applyFx(c.fx);box.innerHTML='';SC.choice=false;SC.q=(c.r||[]).concat(SC.q);nextLine();});}
+  box.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();const c=cs[+b.dataset.i];SC.log.push(['','▸ '+sub(c.t)]);S.karma+=c.k||0;applyFx(c.fx);box.innerHTML='';SC.choice=false;SC.q=(c.r||[]).concat(SC.q);nextLine();});}
 function skipStory(){if(!SC||SC.choice)return;clearInterval(SC.typing);SC.typing=null;
   while(SC.q.length){const L=SC.q[0];if(!Array.isArray(L)&&L.c)break;SC.q.shift();if(!Array.isArray(L)){if(L.fx&&!L.c)applyFx(L.fx);if(L.bg)SC.bg=L.bg;if(L.fn){try{L.fn();}catch(e){}}}}
   if(SC.q.length){paintTo($('#vbg'),SC.bg);$('#stS').hidden=true;$('#stX').textContent='（做出你的选择）';showChoices(SC.q.shift().c);}else endStory();}
@@ -10534,7 +10957,7 @@ function npcTalk(k){const npc=NPCS[k];if(!npc||BT)return;const ready=QUESTS.find
     if(npc.menu)btns.unshift(...npc.menu().filter(Boolean));}
   {const cb=chatBtn(k);if(cb.length)btns.splice(Math.max(1,btns.length-1),0,...cb);}
   const onW=TAB==='world';const ov=$('#ov');ov.hidden=false;ov.className='vn'+(onW?' talk':'');
-  ov.innerHTML=`${onW?'':'<canvas class="vbg" id="vbg"></canvas>'}<div class="port r" id="pR">${(PORTRAIT[k]||PORTRAIT.mo)()}</div><div class="inner"><div class="st-top"><span class="tt">${WD.M&&onW?WD.M.name:'青石站'}</span></div><div class="st-sp"></div>
+  ov.innerHTML=`${onW?'':'<canvas class="vbg" id="vbg"></canvas>'}<div class="port r" id="pR">${porOf(k)}</div><div class="inner"><div class="st-top"><span class="tt">${WD.M&&onW?WD.M.name:'青石站'}</span></div><div class="st-sp"></div>
    <div class="st-choices">${btns.map((b,i)=>`<button data-i="${i}">${b.t}</button>`).join('')}</div>
    <div class="st-box"><div class="st-s ${['hong','zero'].includes(k)?'cin':''}">${npc.name}${BOND[k]?`<small class="strel">${relName(k)} ♥${avOf(k)}</small>`:''}</div><div class="st-x">${esc(text)}</div></div></div>`;
   if(!onW)requestAnimationFrame(()=>paintTo($('#vbg'),k==='mo'?'dongtian':'shelter'));
@@ -10573,7 +10996,7 @@ function breakHTML(){const ni=nextInfo(),full=S.qi>=needQ();
   if(ni.final)return `<div class="t">大罗已至圆满。归墟之下还有一道门，推开它就是新的一世。</div><div class="row"><button class="btn gold" data-act="break" ${full?'':'disabled'}>轮回</button></div>`;
   if(!ni.major&&ni.bn)return `<div class="t">下一层：<em>${ni.name}</em></div><div class="t gate">瓶颈·${ni.bn}：${BN_TIP[ni.bi]}${full?'':'（先把这一层的修为攒满）'}</div><div class="row"><button class="btn ${full?'gold':''}" data-act="bnGo" ${full?'':'disabled'}>闯关历练</button></div>`;
   if(!ni.major)return `<div class="t">下一层：<em>${ni.name}</em>　修为满后自动突破</div>`;
-  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、做宗门任务、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
+  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.capped?'金丹这一关，要等第十一卷的故事。先把手头的路走稳：修为攒满了也不会浪费。':ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、做宗门任务、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
   return `<div class="t">下一境：<em>${ni.name}</em>　成功率 <em>${Math.round(ni.ch*100)}%</em>　失败散去四成灵气</div>
    <div class="row"><button class="btn ${full?'gold':''}" data-act="break" ${full?'':'disabled'}>${ni.fs?'飞升 · 破天门':'冲击'+REALMS[STAGES[S.stage+1].r]}</button>
    ${S.pills>0?`<label class="pill"><input type="checkbox" id="usePill" ${S.usePill?'checked':''}>服用破境丹 +25%（余 ${S.pills}）</label>`:''}</div>`;}
@@ -10587,7 +11010,7 @@ VIEWS.world=()=>`<div class="wv" id="wv"><canvas id="wc"></canvas><div class="wl
    <div class="wbars"><div class="wb"><span>血</span><i class="hb"><i id="wHp"></i></i></div><div class="wb"><span>灵</span><i class="mb"><i id="wMp"></i></i></div><div class="wmeds">疗伤药 ${S.meds} · 清心丹 ${S.mps}</div></div></div>
   ${bannerHTML()}${omenHTML()}
   ${goalsHTML()}
-  <div class="wbtns"><button class="btn sm" data-act="travel">地图</button><button class="btn sm" data-act="jh">江湖</button>${abilBtns()}${WD.M&&WD.M.kind==='abyss'?'<button class="btn sm red" data-act="abyssAuto">自动闯关</button>':S.bossDown.length?'<button class="btn sm red" data-act="farm">连战</button>':''}${S.bossDown.length||S.abyss>0?'<button class="btn sm gold" data-act="sweep">扫荡</button>':''}<button class="btn sm ghost" data-act="home" id="wHome" hidden>回站</button></div>
+  <div class="wbtns"><button class="btn sm" data-act="travel">地图</button>${S.seen.includes('v2_1')?'<button class="btn sm" data-act="jh">江湖</button>':''}${abilBtns()}${WD.M&&WD.M.kind==='abyss'?'<button class="btn sm red" data-act="abyssAuto">自动闯关</button>':''}${S.bossDown.length||S.abyss>0?'<button class="btn sm gold" data-act="sweep">扫荡</button>':''}<button class="btn sm ghost" data-act="home" id="wHome" hidden>回站</button></div>
   <div class="whint">点地面行走 · 点人物交谈 · 碰到妖兽进入战斗</div>
   <div class="travel" id="travel" hidden></div><div class="wfade" id="wfade"></div></div>`;
 
@@ -10620,18 +11043,18 @@ VIEWS.bag=()=>{const st=stats();const bag=S.bag.slice().sort((a,b)=>better(b)-be
   <div class="row2"><div class="in"><div class="iname">${ico('juqi')}聚气丹 <span class="lv">持有 ${S.qiPills}</span></div><div class="istat">服用得药力（本境界修为的三成），打坐炼化；丹毒 +8</div></div><div class="ibtn">${S.qiPills?'<button class="btn sm ghost" data-act="useQi">服用</button>':''}<button class="btn sm" data-act="buyQi" ${S.stones>=qiPillCost()?'':'disabled'}>${fmt(qiPillCost())} 灵石</button></div></div>
   <div class="row2"><div class="in"><div class="iname">疗伤药 <span class="lv">持有 ${S.meds}</span></div><div class="istat">战斗中恢复同伴 50% 生命；平时服用回满生命</div></div><div class="ibtn">${S.meds&&(S.hpF??1)<1?'<button class="btn sm ghost" data-act="useMed">服用</button>':''}<button class="btn sm" data-act="buyMed" ${S.stones>=medCost()?'':'disabled'}>${fmt(medCost())} 灵石</button></div></div>
   <div class="row2"><div class="in"><div class="iname">清心丹 <span class="lv">持有 ${S.mps}</span></div><div class="istat">战斗中恢复 60% 灵力，施展法术用</div></div><button class="btn sm" data-act="buyMp" ${S.stones>=medCost()?'':'disabled'}>${fmt(medCost())} 灵石</button></div>
-  <h2 class="sec"><span>行囊 <small>${S.bag.length}/${BAG_MAX}</small></span>${worse?`<button class="btn sm ghost" data-act="sellWorse">出售 ${worse} 件较弱装备</button>`:''}</h2>
+  <h2 class="sec"><span>行囊 <small>${S.bag.length}/${BAG_MAX}</small></span><span class="ibtn">${worse?`<button class="btn sm ghost" data-act="sellWorse">出售 ${worse} 件较弱装备</button>`:''}${S.bag.length?'<button class="btn sm ghost" data-act="bagTidy">整理</button>':''}</span></h2>
   ${bag.length?bag.slice(0,BAG_SHOW).map(it=>{const up=better(it);return `<div class="row2 r-${RAR[it.r].c}"><div class="in"><div class="iname">${itemName(it)}${up?'<span class="up">▲ 更强</span>':''}</div><div class="istat">${SLOTN[it.slot]}　${statText(it)}</div>${affHTML(it)}</div>
    <div class="ibtn">${it.so?`<button class="btn sm ghost" data-act="inlay" data-arg="${it.id}">镶</button>`:''}<button class="btn sm ${up?'':'ghost'}" data-act="equip" data-arg="${it.id}">装备</button><button class="btn sm ghost" data-act="sell" data-arg="${it.id}">售 ${fmt(it.sell)}</button></div></div>`;}).join('')+(bag.length>BAG_SHOW?`<button class="btn ghost" style="width:100%;margin-top:8px" data-act="bagMore">再显示 ${Math.min(80,bag.length-BAG_SHOW)} 件（共 ${bag.length} 件）</button>`:''):'<div class="empty">空空如也。去江湖里打妖兽、开宝箱，有几率得到装备，首领必掉。</div>'}`;};
 
 const qZone=q=>{const o=q.obj;if(o.type==='fight'||o.type==='ev'||o.type==='game')return -1;return o.z!==undefined?o.z:ZONES.findIndex(z=>z.mobs.includes(o.mob));};
 const medCost=()=>Math.ceil(4*Math.pow(2.6,Math.min(maxZone(),6))*disc());
 const JOURNAL_OPEN=new Set();let BAG_SHOW=80;
-const SAVE_TITLES={world:'江湖',cult:'修炼',jade:'玉简',bag:'行囊',clan:'家族',story:'卷宗'};
+const SAVE_TITLES={world:'江湖',cult:'修炼',jade:'玉简',bag:'行囊',clan:'行社',story:'卷宗'};
 let SAVE_BACK={tab:'world',scroll:0};
 function journalFold(key,title,count,html){return `<details class="journal-fold" data-fold="${key}" ${JOURNAL_OPEN.has(key)?'open':''}><summary><span>${title}</span><small>${count}</small></summary><div class="journal-fold-body">${html}</div></details>`;}
 function chapterHTML(ch){const seen=S.seen.includes(ch.id),pend=S.pending.includes(ch.id),cls=(pend?'new':seen?'seen':'lock')+(ch.side?' side':'');
- return `<div class="ch ${cls}"><div class="th"><canvas data-scene="${ch.bg}"></canvas><span>${pend||seen?ch.g:''}</span></div><div><div class="ct">${pend||seen?ch.title:ch.hid?'隐秘·？？？':(ch.side?'支线·？？？':'主线·？？？')}</div><div class="ch-h">${pend?(ch.side?'支线剧情':'主线剧情'):seen?(ch.side?'支线 · 已读':'主线 · 已读'):ch.hid?'只有特定的机缘才能触发':'开启条件：'+(ch.hint||'继续探索江湖')}</div></div>
+ return `<div class="ch ${cls}"><div class="th"><canvas data-scene="${ch.bg}"></canvas><span>${pend||seen?ch.g:''}</span></div><div><div class="ct">${pend||seen?ch.title:ch.hid?'隐秘·？？？':(ch.side?'支线·？？？':'主线·？？？')}</div><div class="ch-h">${pend?(ch.side?'支线剧情':'主线剧情'):seen?(ch.side?'支线 · 已读':'主线 · 已读'):ch.hid?'只有特定的机缘才能触发':'开启条件：'+chHint(ch)}</div></div>
  ${pend?`<button class="btn sm gold" data-act="play" data-arg="${ch.id}">观看</button>`:seen?`<button class="btn sm ghost" data-act="play" data-arg="${ch.id}">重温</button>`:''}</div>`;}
 VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).sort((a,b)=>(qSt(b.id)==='ready')-(qSt(a.id)==='ready'));const done=QUESTS.filter(q=>qDone(q.id)).length;
  const fresh=STORY.filter(ch=>S.pending.includes(ch.id)),read=STORY.filter(ch=>S.seen.includes(ch.id)&&!S.pending.includes(ch.id)),locked=STORY.filter(ch=>!ch.rw&&!S.seen.includes(ch.id)&&!S.pending.includes(ch.id));
@@ -10662,7 +11085,7 @@ VIEWS.save=()=>`<section class="save-page">
   <p class="note">清理浏览器数据会丢档。导出后请将存档码保存到备忘录，方便备份或换设备。</p>
    <label for="saveBox">存档码</label><textarea id="saveBox" placeholder="点「导出」生成存档码；或把存档码粘贴到这里再点「导入」"></textarea>
   <div class="row"><button class="btn sm ghost" data-act="import">${importArm?'确认覆盖当前进度':'导入存档码'}</button></div>
- </div>
+ </div>${oldBackups().length?`<h2 class="sec">旧版存档备份 <small>新版本不能再读取，原样留存</small></h2><div class="closed">${oldBackups().map((b,i)=>`<button class="btn sm ghost" data-act="oldCopy" data-arg="${i}">复制旧档码 · 存档 ${b.n} · ${ago(b.t)}</button>`).join('')}</div>`:''}
  <h2 class="sec">存档位 <small>共 ${SLOTS} 个 · 进度独立</small></h2>
   <div class="slots3">${Array.from({length:SLOTS},(_,i)=>{const n=i+1,inf=slotInfo(n),cur=n===SLOT;
     return `<div class="sl3 ${cur?'cur':''}"><div class="no">${n}</div><div class="in">${inf?`<div class="iname">${esc(inf.name)}<span class="lv">${inf.realm}${inf.reb?' · 第'+(inf.reb+1)+'世':''}</span></div><div class="istat">${cur?'正在游玩':'上次游玩 '+ago(inf.last)}</div>`:'<div class="iname dim">空存档位</div><div class="istat">从头开一个新角色</div>'}</div>
@@ -10696,7 +11119,7 @@ function live(){timeTick();const need=needQ();$('#saveOpen').disabled=!S.started
 /* ---------- 交互 ---------- */
 const ACT={
  saveBack:()=>closeSaves(),cgView:a=>cgShow(a),gift:()=>giftOpen(),daoPick:()=>daoPick(),bgm:()=>bgmToggle(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
- brew:a=>brewOpen(a),natal:a=>natalForge(a),natalUp:()=>natalUp(),closed:a=>closedGo(a),eatLife:()=>{if(S.lifeP>0){S.lifeP--;S.lifeB=(S.lifeB||0)+30;S.dying=0;S.agewarn=0;toast('寿元 +30 年','big');save();render();}},
+ brew:a=>brewOpen(a),natal:a=>natalForge(a),natalUp:()=>natalUp(),closed:a=>closedGo(a),rest:a=>restDays(a),eatLife:()=>{if(S.lifeP>0){S.lifeP--;S.lifeB=(S.lifeB||0)+30;S.dying=0;S.agewarn=0;toast('寿元 +30 年','big');save();render();}},
  teach:a=>{const [i,h]=a.split('|');disTeach(i,h);},disTake:a=>disRecruit(+a),ending:a=>playEnding(a),goals:()=>goalsOpen(),fly:()=>flyToggle(),soul:()=>soulOut(),void:()=>voidStep(),jh:()=>jhOpen(),root:()=>openRootTest(),form:a=>{if(S.forms.includes(a)){S.form=a;toast('阵法：'+FORMS[a].n);save();render();}},sfx:()=>sfxMute(),path:()=>pathAsk(),zong:()=>zongFound(),xf:()=>playEvent('xf'+(S.flags.xfStage||1),{}),
  break:()=>breakthrough(),
  play:a=>playStory(a),talk:a=>npcTalk(a),
@@ -10720,13 +11143,14 @@ const ACT={
  jput:a=>{if(jHalted()){toast('洞天停转中，先击退天穹追兵','bad');return;}if(a.startsWith('item:'))jPut('item',a.slice(5));else jPut(a);},
  jtake:a=>jTake(+a),
  jup:()=>{const c=jUpCost();if(S.stones<c||S.dt.lv>=9)return;S.stones-=c;S.dt.lv++;toast('玉简洞天 第 '+S.dt.lv+' 重');render();save();},
- export:()=>{save();let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){}const box=$('#saveBox');box.value=code;
+ oldCopy:a=>{const b=oldBackups()[+a];if(!b)return;const box=$('#saveBox');box.value=b.code;const fail=()=>{box.focus();box.select();toast('已放进上面的框里，请长按全选后复制');};try{navigator.clipboard.writeText(b.code).then(()=>toast('旧档码已复制'),fail);}catch(e){fail();}},
+ export:()=>{S.expD=daysAll();S.expCh=S.seen.length;save();let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){}const box=$('#saveBox');box.value=code;
    const fail=()=>{box.focus();box.select();toast('已生成，请长按全选后手动复制');};try{navigator.clipboard.writeText(code).then(()=>toast('存档码已复制，粘贴到备忘录保存'),fail);}catch(e){fail();}},
  import:()=>{const v=$('#saveBox').value.trim();if(!v){toast('先把存档码粘贴进上面的框里','bad');return;}let d=null;
-   try{d=JSON.parse(decodeURIComponent(escape(atob(v.replace(/^LC1\./,'')))));}catch(e){}if(!d||typeof d.stage!=='number'){toast('存档码无法识别，请检查是否复制完整','bad');return;}
+   try{d=JSON.parse(decodeURIComponent(escape(atob(v.replace(/^LC1\./,'')))));}catch(e){}if(!d||typeof d.stage!=='number'){toast('存档码无法识别，请检查是否复制完整','bad');return;}if(oldSave(d)){toast('这是旧版本的存档码，新版本不再兼容','bad');return;}
    if(!importArm){importArm=true;render();$('#saveBox').value=v;return;}importArm=false;S=hydrate(d);WD.M=null;save();toast('存档已导入：'+stName(),'big');dotUpdate();render();},
  slot:a=>switchSlot(+a),
- qgame:a=>qGame(a),farm:()=>farmPick(),sweep:()=>sweepPick(),abyssAuto:()=>farmStart(7),inlay:a=>inlayOpen(+a),learn:a=>learnBook(a),fuse:a=>gemFuse(a),
+ qgame:a=>qGame(a),farm:()=>farmPick(),sweep:()=>sweepPick(),bagTidy:()=>bagTidy(),abyssAuto:()=>farmStart(7),inlay:a=>inlayOpen(+a),learn:a=>learnBook(a),fuse:a=>gemFuse(a),
  tsky:()=>{WD.tmode=WD.tmode==='sky'?'city':'sky';wTravel();},
  slotDel:a=>{const n=+a;if(n===SLOT)return;if(delArm!==n){delArm=n;render();setTimeout(()=>{if(delArm===n){delArm=0;if(TAB==='save')render();}},4000);return;}delArm=0;try{localStorage.removeItem(slotKey(n));}catch(e){}toast('存档 '+n+' 已删除');render();},
  reset:()=>{if(!resetArm){resetArm=true;render();setTimeout(()=>{if(resetArm){resetArm=false;if(TAB==='save')render();}},4000);return;}
@@ -10753,28 +11177,24 @@ addEventListener('resize',resizeGame);window.visualViewport?.addEventListener('r
 function idleEventTick(dt){if(!S.started||document.hidden||!OV_FREE()||BT)return;S.evClock=(S.evClock||0)+dt;if(S.evClock<270)return;S.evClock=0;
   const pool=IDLE_EVENTS.concat(IDLE2).filter(k=>{const ee=EVENTS[k];if(!ee||(ee.need&&!safe(ee.need)))return false;const e=EVENTS[k];if(e.once&&S.seenEv.includes(k))return false;if(k==='ahe_lunch'&&!S.seen.includes('ahe'))return false;if(k==='moremory'&&S.stage<6)return false;return true;});
   if(!pool.length)return;const k=pick(pool);toast('奇遇：'+EVENTS[k].title,'查看',()=>{if(OV_FREE())playEvent(k,{});});}
-function daily(){const d=new Date().toDateString();if(!S.started||S.lastDaily===d)return;const first=!S.lastDaily;S.lastDaily=d;if(first)return;
-  const g=Math.ceil(zsAt(maxZone(),3)*(1+.15*Math.max(0,S.rep.station))*(avOf('tie')>=40?1.5:1));S.stones+=g;setTimeout(()=>toast((F('dead_tie')?'站里的人照铁叔生前的规矩，送来了补给：灵石 +':'铁叔送来了今天的补给：灵石 +')+fmt(g)),1200);save();}
+function daily(){/* 补给改为每过七天送一次，见 supplyDays */}
 
 /* ---------- 主循环 ---------- */
 let lastT=performance.now(),uiAcc=0,fAcc=0;
 function loop(t){const dt=Math.min(.1,(t-lastT)/1000),big=Math.min(1,(t-lastT)/1000);lastT=t;try{bgmTick(big);}catch(e){}if(S.started){refine(big);S.tox=Math.max(0,(S.tox||0)-big*.12);jTick(big);idleEventTick(big);clanTick(big);omenTick(big);timeTick(big);fAcc+=big;if(fAcc>2.5){fAcc=0;fateCheck();}}
   try{if(BT)btFrame(dt);else if(TAB==='world'&&WD.cx&&WD.M){if(OV_FREE()&&S.started)wUpdate(dt);else WD.t+=dt;wRender();}}catch(e){if(!loop.err){loop.err=1;console.error(e);}}
   uiAcc+=dt;if(uiAcc>.2){uiAcc=0;live();}requestAnimationFrame(loop);}
-function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.started||sec<5)return;jTick(sec);clanTick(sec,1);daily();if(sec<90)return;const ylines='';
-  const capH=8+S.ups.juling,eff=.6+.04*S.ups.juling,t=Math.min(sec,capH*3600),before=stName(),gain=Math.min(S.yao||0,yaoRate()*t*eff);S.yao=(S.yao||0)-gain;S.tox=Math.max(0,(S.tox||0)-t*.12);addQi(gain,true);
-  const h=Math.floor(t/3600),m=Math.floor(t%3600/60),ready=S.dt.slots.filter(o=>o.left<=0).length;
-  modal(`<h3>闭关归来</h3><p>你闭关了 <b>${h?h+' 小时 ':''}${m} 分</b>${sec>capH*3600?'（上限 '+capH+' 小时）':''}</p><p>${gain>0?'炼化药力，修为 <b>+'+fmt(gain)+'</b>':'腹中没有药力，打坐只是养神。修为要靠历练和丹药。'}</p>${before!==stName()?`<p>境界 ${before} → <b>${stName()}</b></p>`:''}${ylines}${ready?`<p>玉台上有 <b>${ready}</b> 样东西温养好了。</p>`:''}${nextInfo().major&&S.qi>=needQ()?'<p>丹田已满，可以冲关了。</p>':''}`,
-   [{t:'出关',cls:'gold',fn:()=>{render();const p=S.pending.find(id=>{const c=STORY.find(x=>x.id===id);return c&&!c.side;});if(p)toast('有新剧情可看','观看',()=>playStory(p));}}],cultScene());save();}
+/* 不在的时候，世界停着：没有离线收益，日子也不会自己往前走 */
+function offline(){S.last=Date.now();}
 function intro(){const ov=$('#ov');ov.hidden=false;ov.className='vn';let g=S.gender||'m';
   let back=null;for(let n=1;n<=SLOTS;n++){if(n===SLOT)continue;const inf=slotInfo(n);if(inf&&(!back||inf.last>back.last))back=Object.assign({n},inf);}
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮${SLOT>1?' · 存档 '+SLOT:''}</div><h1>灵潮<span>修仙</span>录</h1>
-   <div class="poem"><p>那一年，天裂开了一道口子。</p><p>灵气像潮水漫过城市，三年未退。</p><p>旧城地下，一座叫青石的地铁站里，住着一百四十个人。</p><p>其中一个，每天黄昏出站，去废墟里拾些还能用的东西。</p></div>
+   ${OLD_NOTE?`<p class="note old-note">原来那份「${esc(OLD_NOTE.name)}」的存档是旧版本的，新版本已经读不了。它被原样留成了一份存档码，开局后在右上角「存档」里能复制。</p>`:''}<div class="poem"><p>那一年，天裂开了一道口子。</p><p>灵气像潮水漫过城市，三年未退。</p><p>旧城地下，一座叫青石的地铁站里，住着一百四十个人。</p><p>其中一个，每天黄昏出站，去废墟里拾些还能用的东西。</p></div>
    <p class="ask">那个人——</p><div class="seg"><button data-g="m" aria-pressed="${g==='m'}">是少年</button><button data-g="f" aria-pressed="${g==='f'}">是少女</button></div>
    <p class="ask">玉简会记住这个名字。</p><input id="nmIn" maxlength="6" placeholder="写下你的名字" autocomplete="off" aria-label="你的名字"><p class="nm-err" id="nmErr" hidden>灵潮里没有无名之人。写下你的名字，再出站。</p><button class="btn gold" id="nmGo">出站</button>${back?`<button class="btn sm ghost" id="nmBack">返回存档 ${back.n}（${esc(back.name)}）</button>`:''}</div></div>`;
   requestAnimationFrame(()=>paintTo($('#vbg'),'sky'));
   ov.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{g=b.dataset.g;ov.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));});
-  const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');if(!v){const e=$('#nmErr');e.hidden=false;const i=$('#nmIn');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake');i.focus();return;}S.gender=g;S.name=v;S.flags.v1=1;S.lastDaily=new Date().toDateString();save();playStory('prologue');};
+  const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');if(!v){const e=$('#nmErr');e.hidden=false;const i=$('#nmIn');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake');i.focus();return;}S.gender=g;S.name=v;S.flags.v1=1;S.lastDaily=dayKey();save();playStory('prologue');};
   $('#nmGo').onclick=go;if(back)$('#nmBack').onclick=()=>switchSlot(back.n);$('#nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{clockSecond=-1;timeTick();lastT=performance.now();offline();}});
 addEventListener('pagehide',save);setInterval(()=>{if(S.started)save();},5000);
@@ -10785,17 +11205,20 @@ function start(data){artLoad();S=data&&data.S?hydrate(data.S):load();pplInit();T
 const realClock=document.createElement('div');realClock.id='realClock';realClock.setAttribute('aria-label','灵潮历');document.querySelector('#view').insertAdjacentElement('beforebegin',realClock);timeTick();
 /* 卷宗·旧卷：走完一卷，就能在卷宗里从头翻阅这一卷的原文 */
 const READ_DONE=[()=>S.seen.includes('v3_12'),()=>F('v4done'),()=>F('v5done'),()=>F('v6done'),()=>F('v7done'),()=>F('v8done'),()=>F('v9done'),()=>F('v10done')];
-function readerCard(){const V=window.LC_NOVELS;if(!V||!F('v1'))return '';const ok=V.map((v,i)=>i).filter(i=>READ_DONE[i]&&safe(READ_DONE[i]));if(!ok.length)return '';
+/* 旧卷的原文很大，打开时才去取 */
+const NOVEL_T=['第三卷 雾港','第四卷 坠星','第五卷 河灯','第六卷 太一','第七卷 分山','第八卷 天隙','第九卷 归潮','第十卷 远岸'];
+function novelsLoad(cb){if(window.LC_NOVELS)return cb();toast('正在取出旧卷……');const sc=document.createElement('script');sc.src='novels.js';sc.onload=()=>{if(window.LC_NOVELS)cb();};sc.onerror=()=>{sc.remove();toast('旧卷没取出来，稍后再试','bad');};document.head.appendChild(sc);}
+function readerCard(){const V=NOVEL_T.map(title=>({title}));if(!F('v1'))return '';const ok=V.map((v,i)=>i).filter(i=>READ_DONE[i]&&safe(READ_DONE[i]));if(!ok.length)return '';
  return `<h2 class="sec">旧卷 <small>走过的路，可以从头再读一遍</small></h2><div class="closed">${ok.map(i=>`<button class="btn sm ghost" data-act="novelRead" data-arg="${i}">${esc(V[i].title)}</button>`).join('')}</div>`;}
 function novelReader(volume,chapter=0){const v=window.LC_NOVELS[volume],c=v.chapters[chapter];
 modal(`<h3>${esc(v.title)}</h3><h4>${esc(c.title)}</h4><p class="note">第 ${chapter+1}/${v.chapters.length} 章</p><div class="novel-text">${c.body.split(/\n\s*\n/).map(p=>'<p>'+esc(p)+'</p>').join('')}</div>`,[...(chapter>0?[{t:'上一章',fn:()=>novelReader(volume,chapter-1)}]:[]),...(chapter+1<v.chapters.length?[{t:'下一章',cls:'gold',fn:()=>novelReader(volume,chapter+1)}]:[]),{t:'合上',cls:'ghost'}]);}
-ACT.novelRead=a=>novelReader(+a||0);
-const _storyView0=VIEWS.story;VIEWS.story=()=>_storyView0()+readerCard();
+ACT.novelRead=a=>novelsLoad(()=>novelReader(+a||0));
+const _storyView0=VIEWS.story;VIEWS.story=()=>_storyView0()+causeHTML()+readerCard();
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={sweepGo,sweepPick,partners,liveDays,mkParty,retreatApply,RETREATS,retreatCost,offline,timeTick,giftPick,novelReader,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={STORY,QUESTS,BOND,sweepGo,sweepPick,partners,advanceDays,daysAll,mkParty,retreatApply,RETREATS,retreatCost,offline,timeTick,giftPick,novelReader,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
-function cultMore(){const R=realmIdx();return `${daoHTML()}${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
+function cultMore(){const R=realmIdx();return `${daoHTML()}${injOn()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${injLeft()+' 天'}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
  <div class="skl">${SKILLS.filter(s=>s.root&&hasRoot(s.root)).map(s=>`<span class="${realmIdx()>=(s.rl||0)?'':'dim'}"><i class="elg" style="--ec:${EL[s.el].c}">${EL[s.el].n}</i>${s.n}${realmIdx()>=(s.rl||0)?'':'（'+REALMS[s.rl]+'）'}</span>`).join('')}</div>
  <h3 class="sub">阵法 <small>战斗前布下，影响全队</small></h3><div class="forms">${S.forms.map(k=>`<button class="fm ${S.form===k?'on':''}" data-act="form" data-arg="${k}"><b>${FORMS[k].n}</b><small>${FORMS[k].d}</small></button>`).join('')}</div>
