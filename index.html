@@ -3144,8 +3144,24 @@ function startBattle(foes,opt){if(BT)return;opt=opt||{};const bgk=opt.bg!==undef
 function btFit(){const st=$('#btStage'),cv=$('#btc');const f=fitCanvas(cv,st,260);Object.assign(BT,{W:f.W,H:f.H,k:f.k,dpr:f.dpr,offX:f.ox,offY:f.oy,cx:cv.getContext('2d')});}
 function btLayout(){const FP={1:[[.30,.6]],2:[[.22,.52],[.38,.7]],3:[[.16,.5],[.38,.58],[.22,.74]]},PP={1:[[.72,.8]],2:[[.64,.72],[.84,.82]],3:[[.60,.66],[.84,.72],[.70,.85]]};
  const fl=FP[Math.min(3,BT.foes.length)],pl=PP[Math.min(3,BT.party.length)];BT.foes.forEach((f,i)=>{const p=fl[i]||fl[0];f.bx=Math.round(BT.W*p[0]);f.by=Math.round(BT.H*p[1]);});BT.party.forEach((a,i)=>{const p=pl[i];a.bx=Math.round(BT.W*p[0]);a.by=Math.round(BT.H*p[1]);});}
-function btSpr(a){if(a.jie)return cvMemo('jiecv',()=>{const c=jieCv();return btUp(c,1.4);});if(a.side==='p'){const fr=a.walk?[1,2][Math.floor(BT.t*8)%2]:0;return cvMemo('hbp|'+a.spr+'|'+fr,()=>btUp(chSpr(a.spr,1,fr,9),2));}
+function btSpr(a){const art=btPortrait(a);if(art)return art;if(a.jie)return cvMemo('jiecv',()=>{const c=jieCv();return btUp(c,1.4);});if(a.side==='p'){const fr=a.walk?[1,2][Math.floor(BT.t*8)%2]:0;return cvMemo('hbp|'+a.spr+'|'+fr,()=>btUp(chSpr(a.spr,1,fr,9),2));}
  return cvMemo('hbf|'+a.look+'|'+(a.boss?1:0)+'|'+(a.tint?1:0),()=>btUp(monCv(a.look,a.boss?1.5:1,a.tint,9),monIsHuman(a.look)?1.55:2));}
+// Reuse the transparent story portraits without changing source assets or map sprites.
+function btPortrait(a){
+ if(a.jie)return null;
+ const look=LOOK[a.look]||{},key=a.side==='p'?a.spr:(look.k==='cult'?'zhou':MON_CH[look.k]);
+ const im=ART_IMG['por_'+key];if(!im)return null;
+ const h=Math.round(Math.max(34,Math.min(96,BT.H*.43,BT.W*.34))),w=Math.round(h*.62);
+ return cvMemo('battle-portrait|'+key+'|'+a.side+'|'+w+'x'+h,()=>{
+  const cv=mkCv(w*3,h*3),x=cv.getContext('2d');cv.ww=w;cv.hh=h;cv.artKey=key;
+  // Keep head, hands and clothing intact; soften the lower edge into the battlefield.
+  const scale=Math.min(cv.width/im.width,cv.height/im.height),iw=im.width*scale,ih=im.height*scale;
+  if(a.side==='e'){x.translate(cv.width,0);x.scale(-1,1);}
+  x.drawImage(im,(cv.width-iw)/2,cv.height-ih,iw,ih);
+  x.globalCompositeOperation='destination-in';const g=x.createLinearGradient(0,cv.height*.86,0,cv.height);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,cv.width,cv.height);
+  return cv;
+ });
+}
 function btUp(c,k){const n=mkCv(c.width,c.height);n.getContext('2d').drawImage(c,0,0);n.ww=dw(c)*k;n.hh=dh(c)*k;return n;}
 const btWhite=(a,s)=>cvMemo('bw|'+(a.side==='p'?a.spr+(a.walk?1:0):a.look+(a.boss?1:0)+(a.tint?1:0))+s.ww,()=>whiteCv(s));
 function btMsg(s){const m=$('#btMsg');if(m){m.textContent=s;m.classList.remove('on');void m.offsetWidth;m.classList.add('on');}}
@@ -4097,8 +4113,12 @@ function pityHTML(){const P=S.pity;return `<p class="note">保底：仙品装备
 const CN='零一二三四五六七八九';
 function cnNum(n){n=Math.floor(n);if(n<10)return CN[n];if(n<20)return '十'+(n%10?CN[n%10]:'');if(n<100)return CN[Math.floor(n/10)]+'十'+(n%10?CN[n%10]:'');if(n<1000){const h=Math.floor(n/100),r=n%100;return CN[h]+'百'+(r?(r<10?'零'+CN[r]:(r<20?'一':'')+cnNum(r)):'');}return String(n);}
 const yearName=y=>'灵潮'+cnNum(y==null?S.year:y)+'年';
-const LIFE=[100,200,500,1000,2000,3000,5000,8000,12000];
-const lifeOf=st=>st<0?75:(LIFE[STAGES[Math.min(st,LAST)].r]||99999);
+// Human lifespan progression inspired by 聚宝仙盆; 渡劫/真仙 adapt its different realm chain to this game's single calendar.
+// Infinity is derived, never persisted in saves.
+const LIFE=[100,200,500,1000,2000,5000,10000,100000,100000,1000000,10000000,Infinity,Infinity,Infinity];
+const lifeOf=st=>st<0?75:LIFE[STAGES[Math.max(0,Math.min(st,LAST))].r];
+const lifeText=n=>Number.isFinite(n)?(n>=10000&&n%10000===0?n/10000+'万':String(n))+' 年':'无尽（不因衰老坐化）';
+function lifeSync(o){const limit=lifeOf(o.stage)+(o.lifeB||0);if(o.age<limit){o.dying=0;o.fateQ=(o.fateQ||[]).filter(e=>e.k!=='old');}if(o.age<limit-10)o.agewarn=0;}
 const myLife=()=>lifeOf(S.stage)+(S.lifeB||0);
 const realmOf=st=>st<0?'凡人':STAGES[Math.min(st,LAST)].name;
 
@@ -4173,11 +4193,11 @@ function personDied(p){if(!p.known)return;if(p.bg){if(p.st>=21||p.lead)news(p.n+
 /* ---------- 时间推进 ---------- */
 let yAcc=0;
 function timeTick(dt){if(!S.started)return;yAcc+=dt;if(yAcc<1200)return;yAcc=0;const L=simYears(1);toast(yearName()+' · 一年过去了','');if(L.length)toast(L[0].slice(0,24));ageCheck();}
-function ageCheck(){if(S.age>=myLife()&&!S.dying){S.dying=1;S.fateQ.unshift({k:'old'});}else if(S.age>=myLife()-10&&!S.agewarn){S.agewarn=1;toast('寿元将尽：还剩 '+(myLife()-S.age)+' 年。突破境界或服寿元丹可以延寿','bad');}}
+function ageCheck(){lifeSync(S);if(S.age>=myLife()&&!S.dying){S.dying=1;S.fateQ.unshift({k:'old'});}else if(S.age<myLife()&&S.age>=myLife()-10&&!S.agewarn){S.agewarn=1;toast('寿元将尽：还剩 '+(myLife()-S.age)+' 年。突破境界或服寿元丹可以延寿','bad');}}
 function fateCheck(){if(!S.started||BT||!OV_FREE()||SC||!S.fateQ.length)return;const sd=S.fateQ.shift();save();fatePlay(sd);}
 
 /* ---------- 因果事件 ---------- */
-function fatePlay(sd){const p=sd.pid&&P_(sd.pid),Y=yearName();let ev=null;
+function fatePlay(sd){if(sd.k==='old'&&S.age<myLife()){lifeSync(S);return;}const p=sd.pid&&P_(sd.pid),Y=yearName();let ev=null;
  if(sd.k==='old'){ev={title:'寿元',g:'寿',lines:['你醒来的时候，看见自己的手背上长出了斑。','你修了 '+(S.age-18)+' 年，终究没能修过天命。'],choices:[
    ...(S.lifeP>0?[{t:'服下寿元丹（剩 '+S.lifeP+' 颗）',act:()=>{S.lifeP--;S.lifeB=(S.lifeB||0)+30;S.dying=0;S.agewarn=0;return '药力化开，斑点慢慢褪去。你又多了三十年。';}}]:[]),
    {t:'兵解转世',act:()=>{setTimeout(()=>reincarnate(false),300);return '你盘膝坐下，散去一身修为。下一世，从头来过。';}}]};}
@@ -4217,8 +4237,9 @@ const LEGACY={
 
 /* ---------- 闭关 ---------- */
 function closedHTML(){const left=myLife()-S.age;const opts=[1,5,10,30,100].filter(y=>y<left);
- return `<h2 class="sec">闭关 <small>${yearName()} · 年岁 ${S.age} / 寿元 ${myLife()}</small></h2>
+ return `<h2 class="sec">闭关 <small>${yearName()} · 年岁 ${S.age} / 寿元 ${lifeText(myLife())}</small></h2>
  <p class="note">闭关时，世界不会等你。好友会老去，仇人会变强，弟子会自己冲关。出关时会告诉你这些年发生了什么。${S.path==='yin'?'（隐者：闭关所得 ×1.5，岁月流逝减半）':''}</p>
+ <details class="note"><summary>各境界寿元上限</summary><p>突破大境界提高寿元上限，年龄不会重置；寿元丹额外延寿。金仙以上不因衰老坐化，仍可能在斗法或天劫中败亡。</p><p>${REALMS.map((n,r)=>n+'：'+lifeText(LIFE[r])).join(' · ')}</p></details>
  <div class="closed">${opts.map(y=>`<button class="btn sm ${y>=30?'red':''}" data-act="closed" data-arg="${y}">${y} 年</button>`).join('')||'<span class="dim">寿元所剩无几，经不起闭关了</span>'}</div>
  ${S.lifeP>0?`<div class="row2"><div class="in"><div class="iname">寿元丹 <span class="lv">持有 ${S.lifeP}</span></div><div class="istat">自己服下延寿三十年，也可以在「江湖·人物」里赠给凡人故交</div></div><button class="btn sm ghost" data-act="eatLife">服用</button></div>`:''}`;}
 function closedGo(y){y=+y;if(BT||y>=myLife()-S.age)return;const ni=nextInfo();const gain=idleRate()*y*480*(S.path==='yin'?1.5:1);const q0=S.qi;addQi(gain,true);const got=S.qi-q0;
@@ -4390,12 +4411,12 @@ function aucPass(i){const l=aucStock()[i];if(!l||l.st)return;l.st=2;const rv=P_(
 /* ---------- 人物 ---------- */
 function personTalk(p){if(!p||!p.alive)return;const Y=S.year;const rel=attName(p);
  const line=p.att<=-40?'“'+(p.goal.includes('仇')||p.goal.includes('后悔')?'等着。':'你怎么还没死？')+'”':p.att>=40?'“又见面了。”':'“'+pick(['最近江湖不太平。','有事？','我在等人。','听说你也在找东西？'])+'”';
- modal(`<h3>${esc(p.n)}</h3><p>${realmOf(p.st)}${p.sect?' · '+SECTS[p.sect].n+(p.lead?SECTS[p.sect].lt:''):''} · ${p.age} 岁（寿元 ${pLife(p)}）</p><p>心愿：${esc(p.goal)}<br>对你：<b>${rel}</b></p><p>${esc(line)}</p>`,[
+ modal(`<h3>${esc(p.n)}</h3><p>${realmOf(p.st)}${p.sect?' · '+SECTS[p.sect].n+(p.lead?SECTS[p.sect].lt:''):''} · ${p.age} 岁（寿元 ${lifeText(pLife(p))}）</p><p>心愿：${esc(p.goal)}<br>对你：<b>${rel}</b></p><p>${esc(line)}</p>`,[
   {t:'切磋',cls:p.st>=0?'':'ghost',fn:()=>{if(p.st<0){toast(p.n+'是凡人');return;}const e=mkCustom(zOfStage(p.st),{look:LOOK[p.n]?p.n:'无名剑客',name:p.n,m:1.4});e.human=1;e.noLoot=1;startBattle([e],{bg:'town',onWin:()=>{p.att+=p.att<-20?-5:6;toast(p.att<-20?p.n+'更恨你了':p.n+'：「好身手。」');save();},onLose:()=>{p.att+=3;toast(p.n+'：「承让。」');save();}});}},
   {t:'赠礼 · '+fmt(zsAt(maxZone(),3))+' 灵石',fn:()=>{const c=zsAt(maxZone(),3);if(S.stones<c){toast('灵石不够','bad');return;}S.stones-=c;p.att=Math.min(100,p.att+(p.att<-40?3:10));toast(p.n+'收下了。（'+attName(p)+'）');save();}},
   {t:'告辞',cls:'ghost'}]);}
 function pplHTML(){const L=S.ppl.filter(p=>p.known&&(!p.bg||p.lead||p.att)).sort((a,b)=>(b.alive-a.alive)||Math.abs(b.att)-Math.abs(a.att));
- return `<p class="note">${yearName()} · 你 ${S.age} 岁（寿元 ${myLife()}）。人会老，会变强，也会记仇。</p>${L.map(p=>{const dead=!p.alive,mortal=p.st<0;return `<div class="row2 ppl ${dead?'dim':''} ${p.att<=-40?'foe':p.att>=40?'friend':''}"><img class="mini" src="${clSprite(p.ch&&CH[p.ch]?p.ch:'tie')}" alt=""><div class="in"><div class="iname">${esc(p.n)}<span class="lv">${dead?yearName(p.dy)+'故去':realmOf(p.st)+' · '+p.age+'/'+pLife(p)+' 岁'}</span></div>
+ return `<p class="note">${yearName()} · 你 ${S.age} 岁（寿元 ${lifeText(myLife())}）。人会老，会变强，也会记仇。</p>${L.map(p=>{const dead=!p.alive,mortal=p.st<0;return `<div class="row2 ppl ${dead?'dim':''} ${p.att<=-40?'foe':p.att>=40?'friend':''}"><img class="mini" src="${clSprite(p.ch&&CH[p.ch]?p.ch:'tie')}" alt=""><div class="in"><div class="iname">${esc(p.n)}<span class="lv">${dead?yearName(p.dy)+'故去':realmOf(p.st)+' · '+p.age+' 岁 / 寿元 '+lifeText(pLife(p))}</span></div>
   <div class="istat">${p.sect?SECTS[p.sect].n+(p.lead?SECTS[p.sect].lt:'')+' · ':''}${attName(p)} · ${esc(p.goal)}</div></div><div class="ibtn">${!dead&&mortal&&p.fr&&S.lifeP>0?`<button class="btn sm gold" data-act="giveLife" data-arg="${p.id}">赠寿元丹</button>`:''}${dead&&p.fr&&S.hhDan>0?`<button class="btn sm gold" data-act="revive" data-arg="${p.id}">还魂</button>`:''}</div></div>`;}).join('')}`;}
 function giveLife(id){const p=P_(id);if(!p||!(S.lifeP>0))return;S.lifeP--;p.life=(p.life||75)+15;p.att=Math.min(100,p.att+20);news(S.name+'送给'+p.n+'一颗寿元丹。');toast(p.n+'多了十五年阳寿','big');save();jhRender();}
 function revive(id){const p=P_(id);if(!p||p.alive||!(S.hhDan>0))return;S.hhDan--;p.alive=true;p.age=Math.min(p.age,pLife(p)-10);delete S.flags['dead_'+p.fr];news(p.n+'死而复生。',1);toast(p.n+'回来了','big');sfx('rise');save();jhRender();}
@@ -4588,7 +4609,7 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  return g;}
 function goalsHTML(){const g=goals();return `<button class="goalbar" data-act="goals"><span class="gs">近</span>${esc(g.s.t)}</button>`;}
 function goalsOpen(){const g=goals(),row=(k,n,o)=>`<div class="row2 goal"><div class="gk">${n}</div><div class="in"><div class="iname">${esc(o.t)}</div>${o.sub?`<div class="istat">${esc(o.sub)}</div>`:''}</div><button class="btn sm" data-gl="${o.a}">去</button></div>`;
- modal(`<h3>目标</h3>${row('s','近',g.s)}${row('m','中',g.m)}${row('l','远',g.l)}<p class="note">${yearName()} · 年岁 ${S.age}/${myLife()} · ${jhRank()>100?'江湖榜外':'江湖榜第 '+jhRank()} · ${S.path?PATHS[S.path].n:'道途未定'}</p>`,[{t:'好',cls:'ghost'}]);
+ modal(`<h3>目标</h3>${row('s','近',g.s)}${row('m','中',g.m)}${row('l','远',g.l)}<p class="note">${yearName()} · 年岁 ${S.age}/${lifeText(myLife())} · ${jhRank()>100?'江湖榜外':'江湖榜第 '+jhRank()} · ${S.path?PATHS[S.path].n:'道途未定'}</p>`,[{t:'好',cls:'ghost'}]);
  $('#ov').querySelectorAll('[data-gl]').forEach(b=>b.onclick=()=>{$('#ov').hidden=true;$('#ov').innerHTML='';goalGo(b.dataset.gl);});}
 function goalGo(a){if(a==='story'||a==='ends'){TAB='story';render();}else if(a==='cult'){TAB='cult';render();}else if(a==='world'){TAB='world';render();}else if(a==='root')openRootTest();else if(a==='fate')fateCheck();else if(a==='path')pathAsk();else if(['bounty','sect','rank'].includes(a))jhOpen(a);}
 
@@ -4620,7 +4641,7 @@ function breakthrough(){const need=req(S.stage);if(S.qi<need||BT)return;const ni
  const r1=STAGES[S.stage+1].r;if(ni.major&&r1>=2){jieAsk(ni);return;}
  const used=ni.major&&S.usePill&&S.pills>0;if(used)S.pills--;
  if(Math.random()<ni.ch)breakOk(ni);else breakFail(ni,used);}
-function breakOk(ni){const old=stats(),need=req(S.stage);S.qi=Math.max(0,S.qi-need);S.stage++;if(S.pills<=0)S.usePill=false;
+function breakOk(ni){const old=stats(),need=req(S.stage);S.qi=Math.max(0,S.qi-need);S.stage++;lifeSync(S);if(S.pills<=0)S.usePill=false;
  if(!ni.major){toast('破境！踏入 '+STAGES[S.stage].name,'big');flashStage('gold');sfx('win');checkStory();render();save();return;}
  const r=realmIdx(),yrs=BT_YEARS[r]||0,L=yrs?simYears(yrs):[];S.dao.yin+=yrs>=10?1:0;
  if(r>=2&&S.root){const sk=SKILLS.find(s=>s.root===S.root&&s.rl===2);if(sk)S.flags.sk2=1;}
@@ -4649,7 +4670,7 @@ function ceremony(old,r,yrs,L,done){const nw=stats(),el=$('#cer')||(()=>{const d
   <div class="cer-t"><small>破境</small><b>${REALMS[r]}</b><span>${STAGES[S.stage].name}</span></div>
   <p class="cer-o">天地异象 · ${OMEN_TXT[r]||'天地共鸣'}</p>
   <div class="cer-box"><div class="cjs">${row('攻',old.atk,nw.atk)}${row('防',old.def,nw.def)}${row('血',old.hp,nw.hp)}</div>
-  <div class="cer-u">${unlockList(r).map(u=>`<div><b>解锁 · ${u[0]}</b><small>${u[1]}</small></div>`).join('')}<div><b>寿元 · ${lifeOf(S.stage)+(S.lifeB||0)} 年</b><small>当前 ${S.age} 岁</small></div></div>
+  <div class="cer-u">${unlockList(r).map(u=>`<div><b>解锁 · ${u[0]}</b><small>${u[1]}</small></div>`).join('')}<div><b>寿元 · ${lifeText(myLife())}</b><small>当前 ${S.age} 岁</small></div></div>
   ${yrs?`<div class="cer-y"><b>闭关 ${yrs} 年 · ${yearName()}</b>${imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
   <button class="btn gold" id="cerOk">出关</button></div>`;
  CER={t:0,last:performance.now(),r,bolts:[],parts:[],flash:0};const cv=$('#cerCv');
@@ -4743,7 +4764,7 @@ function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign
   if(o.seen.includes('ratking')&&!o.flags.duel_zhou&&!o.special)o.special='zhou';
   ['mats','dan','fu','pity','dao','sects','cnt'].forEach(k=>o[k]=Object.assign(fresh()[k],(d&&d[k])||{}));['forms','news','seeds','fateQ','dis','legacy','endings','kids'].forEach(k=>{if(!Array.isArray(o[k]))o[k]=[];});
   delete o.run;if(typeof o.hpF!=='number')o.hpF=1;if(typeof o.mpF!=='number')o.mpF=1;
-  return o;}
+  lifeSync(o);return o;}
 function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t)return hydrate(JSON.parse(t));}catch(e){}return fresh();}
 function save(){S.last=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S));}catch(e){}}
 function slotInfo(n){if(n===SLOT)return S.name?{name:S.name,realm:STAGES[S.stage].name,last:Date.now(),started:S.started,reb:S.rebirth}:null;
@@ -5219,7 +5240,7 @@ function start(data){artLoad();S=data&&data.S?hydrate(data.S):load();pplInit();T
   requestAnimationFrame(t=>{lastT=t;loop(t);});}
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
 function cultMore(){const R=realmIdx();return `${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
