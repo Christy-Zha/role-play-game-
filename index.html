@@ -3132,7 +3132,7 @@ function mkParty(){const st=stats(),mm0=Math.round(20+S.stage*3),mm=Math.round(m
  if(F('feisheng')&&avOf('su')>=40)add('su','苏绾',1);if(F('chenmoStay')&&!F('chenmoGone')&&avOf('cm')>=50)add('cm','陈默',.85);C.forEach(c=>P.push(c));
  return P.map(a=>Object.assign(a,{side:'p',alive:true,ox:0,oy:0,alpha:1,flash:0,buf:0,defd:false,walk:0}));}
 function startBattle(foes,opt){if(BT)return;opt=opt||{};const bgk=opt.bg!==undefined?opt.bg:(WD.M&&WD.M.kind!=='town'?WD.M.z:'town');
- BT={opt,bgk,party:mkParty(),foes:foes.map((e,i)=>Object.assign(e,{side:'e',alive:true,ox:-28,oy:-14,alpha:0,flash:0,buf:0,defd:false,spd:e.spd||(7+Math.random()*4),idx:i,max:e.max||e.hp})),q:[],round:0,auto:!!S.btAuto,phase:'intro',t:0,fx:[],parts:[],shake:0,pend:null,loot:[],cur:null};btPrep();
+ BT={opt,bgk,party:mkParty(),foes:foes.map((e,i)=>Object.assign(e,{side:'e',alive:true,ox:-28,oy:-14,alpha:0,flash:0,buf:0,defd:false,spd:e.spd||(7+Math.random()*4),idx:i,max:e.max||e.hp})),q:[],round:0,auto:!!S.btAuto,phase:'intro',t:0,fx:[],parts:[],shake:0,pend:null,loot:[],cur:null};btScale();btPrep();
  const el=$('#bt');el.hidden=false;el.innerHTML=`<div class="bt-stage" id="btStage"><canvas id="btc"></canvas><div class="bt-msg" id="btMsg"></div><button class="bt-auto" id="btAuto">自动</button><div class="bt-fx" id="btFx"></div></div>
   <div class="bt-panel"><div class="bt-party" id="btParty"></div><div class="bt-cmd" id="btCmd"></div></div><div class="bt-res" id="btRes" hidden></div>`;
  btFit();btLayout();BT.party.forEach(p=>{p.ox=26;p.oy=14;p.alpha=0;});btParty();btAutoBtn();if(opt.farm&&FARM)btMsg('连战 · 第 '+FARM.n+' 场');
@@ -3141,6 +3141,8 @@ function startBattle(foes,opt){if(BT)return;opt=opt||{};const bgk=opt.bg!==undef
  $('#btc').onpointerdown=e=>{if(!BT||!BT.pend)return;const r=e.currentTarget.getBoundingClientRect(),gx=(e.clientX-r.left)/r.width*BT.W,gy=(e.clientY-r.top)/r.height*BT.H;let best=null,bd=1e9;
   BT.foes.forEach(f=>{if(!f.alive)return;const s=btSpr(f),d=Math.abs(gx-f.bx)+Math.abs(gy-(f.by-s.hh/2));if(d<bd&&d<s.ww){bd=d;best=f;}});if(best)btExec(best);};
  (async()=>{await Promise.all([...BT.foes,...BT.party].map(a=>tween(a,{ox:0,oy:0,alpha:1},420)));const f0=BT.foes[0];btMsg(BT.foes.length>1?'妖兽成群扑了上来！':f0.boss?'「'+f0.n+'」挡在你面前！':f0.n+' 出现了！');await bwait(650);btRound();})();}
+/* 敌人按我方人数调整：一个人打首领，不必面对三人份的血量 */
+function btScale(){const n=Math.min(3,BT.party.length),hk=[1,.38,.72,1][n],ak=[1,.8,.9,1][n];BT.foes.forEach(f=>{if(f.pk&&!f.pkd){f.pkd=1;f.hp*=hk;f.max*=hk;f.atk*=ak;}});}
 function btFit(){const st=$('#btStage'),cv=$('#btc');const f=fitCanvas(cv,st,260);Object.assign(BT,{W:f.W,H:f.H,k:f.k,dpr:f.dpr,offX:f.ox,offY:f.oy,cx:cv.getContext('2d')});}
 function btLayout(){const FP={1:[[.30,.6]],2:[[.22,.52],[.38,.7]],3:[[.16,.5],[.38,.58],[.22,.74]]},PP={1:[[.72,.8]],2:[[.64,.72],[.84,.82]],3:[[.60,.66],[.84,.72],[.70,.85]]};
  const fl=FP[Math.min(3,BT.foes.length)],pl=PP[Math.min(3,BT.party.length)];BT.foes.forEach((f,i)=>{const p=fl[i]||fl[0];f.bx=Math.round(BT.W*p[0]);f.by=Math.round(BT.H*p[1]);});BT.party.forEach((a,i)=>{const p=pl[i];a.bx=Math.round(BT.W*p[0]);a.by=Math.round(BT.H*p[1]);});}
@@ -3195,6 +3197,7 @@ function btTargets(){const fs=BT.foes.filter(f=>f.alive);if(fs.length===1){btExe
 function btExec(t){const p=BT.pend;BT.pend=null;if(!p)return;p.t=t;btDo(BT.cur,p);}
 function btAI(a){const fs=BT.foes.filter(f=>f.alive),ps=BT.party.filter(p=>p.alive);const weak=fs.reduce((m,f)=>f.hp<m.hp?f:m,fs[0]);
  if(a.key==='hero'){const sk=k=>SKILLS.find(s=>s.k===k&&skOk(s)&&a.mp>=s.mp);const boss=fs.find(f=>f.boss);
+  if(fs.some(f=>f.chg)&&!a.mw&&!(a.buf>0)&&!(a.sh>a.max*.2)){if(sk('mingwang'))return {type:'sk',sk:sk('mingwang')};return {type:'def'};}
   if(boss&&a.mp>=a.mmax*.6&&sk('feixian'))return {type:'sk',sk:sk('feixian'),t:boss};if(a.hp<a.max*.45&&!a.mw&&sk('mingwang'))return {type:'sk',sk:sk('mingwang')};
   if(ps.some(p=>p.hp<p.max*.4)&&sk('huichun'))return {type:'sk',sk:sk('huichun')};if(a.hp<a.max*.3&&S.meds>0)return {type:'it',k:'meds'};
   const smart=btSmart(a,fs,ps,sk,boss);if(smart)return smart;
@@ -3205,7 +3208,11 @@ function btAI(a){const fs=BT.foes.filter(f=>f.alive),ps=BT.party.filter(p=>p.ali
  if(a.key==='zero'&&Math.random()<.4)return {type:'csk',n:'灵弹',fx:'orb',pow:1.8,t:pick(fs)};
  if(a.key==='zhou'&&Math.random()<.35)return {type:'call',n:'烈火掌',fx:'fire',pow:1.05};
  return {type:'atk',t:pick(fs)};}
-function btFoeAI(a){const ps=BT.party.filter(p=>p.alive);if(a.jie)return {type:'jie'};a.cnt=(a.cnt||0)+1;if(a.boss&&a.cnt%3===0&&ps.length)return {type:'eall'};
+function btFoeAI(a){const ps=BT.party.filter(p=>p.alive);if(a.jie)return {type:'jie'};a.cnt=(a.cnt||0)+1;
+ if(a.boss&&!a.enr&&a.hp<a.max*.3){a.enr=1;a.atk*=1.3;btPop(a,'狂暴','st burn');btMsg(a.n+'狂暴了！攻击大增');}
+ if(a.boss&&a.chg&&ps.length){a.chg=0;return {type:'eheavy',t:ps.find(p=>p.key==='hero')||ps[0]};}
+ if(a.boss&&a.cnt%3===0&&ps.length)return {type:'eall'};
+ if(a.boss&&a.cnt%4===2&&ps.length)return {type:'echarge'};
  const t=Math.random()<.55?ps[0]:pick(ps);return {type:'eatk',t};}
 
 /* ---------- 行动演出 ---------- */
@@ -3233,6 +3240,8 @@ async function btDo(a,act){if(!BT)return;BT.phase='anim';BT.pend=null;btSetCmd('
  else if(act.type==='jie'){await jieStrike(a);}
  else if(act.type==='flee'){btMsg(a.name+' 想要脱身……');await bwait(400);if(Math.random()<(realmIdx()>=5?1:.6)){await Promise.all(BT.party.map(p=>tween(p,{ox:40,oy:20,alpha:0},300)));btEnd('flee');return;}btMsg('没能逃掉！');await bwait(350);}
  else if(act.type==='eatk'){const t=act.t;btMsg(a.n+' 扑了过来');await btLunge(a,t);BT.fx.push({k:'claw',x:t.bx,y:t.by-btSpr(t).hh*.55,t0:BT.t,dur:.26});btHit(t,dmgF(a.atk,t.def),'',a);if(a.atkSt&&t.alive&&Math.random()<.6)stAdd(t,a.atkSt[0],a.atkSt[1],a);await btBack(a);}
+ else if(act.type==='echarge'){a.chg=1;btMsg(a.n+'蓄力！下一击极重——快防御或上护盾');btPop(a,'蓄力','st shock');BT.fx.push({k:'ring',x:a.bx,y:a.by-24,col:'#ff6a4a',t0:BT.t,dur:.9});await tween(a,{oy:-8},260);await tween(a,{oy:0},160);await bwait(250);}
+ else if(act.type==='eheavy'){const t=act.t;btMsg(a.n+' 全力一击！');await btLunge(a,t);BT.shake=.6;BT.fx.push({k:'claw',x:t.bx,y:t.by-btSpr(t).hh*.55,t0:BT.t,dur:.3});BT.fx.push({k:'flash',t0:BT.t,dur:.3});btHit(t,dmgF(a.atk*2.3,t.def),'',a);await btBack(a);}
  else if(act.type==='eall'){btMsg(a.n+' 发出一声怒吼，震动全场！');await tween(a,{oy:-10},150);BT.shake=.45;BT.fx.push({k:'wave',x:a.bx,y:a.by-10,t0:BT.t,dur:.55});await tween(a,{oy:0},150);await bwait(200);BT.party.filter(p=>p.alive).forEach(p=>btHit(p,dmgF(a.atk*.72,p.def),'',a));}
  btParty();await bwait(330);if(BT)btNext();}
 async function btArea(fx,a,ts){if(fx==='sweep'){BT.fx.push({k:'sweep',x0:a.bx,y0:a.by-24,x1:BT.W*.08,y1:BT.H*.5,t0:BT.t,dur:.45});await bwait(420);}
@@ -4376,7 +4385,7 @@ const zOfStage=st=>st>=38?Math.min(10,8+Math.floor((st-38)/5)):Math.max(0,Math.m
 function sectLead(k){return S.ppl.find(p=>p.sect===k&&p.lead&&p.alive);}
 function sectFoe(k,rank){const D=SECTS[k],lead=sectLead(k);const st=rank===2&&lead?Math.max(lead.st,D.st+2):D.st+[-3,0,3][rank];
  const nm=rank===2?(lead?lead.n:D.n+D.lt):D.n+RANKN[rank],look=rank===2&&lead&&LOOK[lead.n]?lead.n:SECT_LOOK[k][rank?1:0];
- const e=mkCustom(zOfStage(st),{look,name:nm,m:[1.05,1.4,1.9][rank]*(1+Math.max(0,st-(zOfStage(st)*5+1))*.06),boss:rank===2});e.el=D.el;e.human=1;e.sect=k;if(rank>=1)e.mech=D.mech;
+ const e=mkCustom(zOfStage(st),{look,name:nm,st,m:[1.05,1.4,1.9][rank],boss:rank===2});e.el=D.el;e.human=1;e.sect=k;if(rank>=1)e.mech=D.mech;
  if(rank===2&&k==='tianqiong'){e.p2=1;e.n2='顾长风·雷霆真身';}if(k==='youming')e.demon=1;
  e.atkSt={huo:['burn',1],bing:['chill',1],shui:['wet',2],lei:['shock',1]}[D.el]||null;return e;}
 function sectFight(k){const R=S.sects[k]||(S.sects[k]={beat:0,rel:null});if(R.rel==='vassal'||R.rel==='gone'){toast('这个宗门已经不在了','bad');return;}const rank=Math.min(2,R.beat);
@@ -4406,7 +4415,7 @@ const jhRank=()=>jhList().findIndex(x=>x.me)+1+jhVirt();
 const BNT_K=[{k:'mo',n:'魔修',why:['血祭了两个村子','专挑孩子下手','在城外布下噬魂阵'],look:'虚无行者',demon:1},{k:'rob',n:'劫修',why:['劫了红鹞商队的货','在官道上杀人越货','抢了百草谷的药'],look:'黑市打手'},{k:'trait',n:'叛徒',why:['盗走了宗门秘典','出卖了同门','投了天穹会'],look:'天穹追兵'}];
 function bntList(){const d=new Date().toDateString();if(S.bnt&&S.bnt.day===d)return S.bnt.L;const L=[];for(let i=0;i<3;i++){const K=pick(BNT_K),st=Math.max(1,Math.min(LAST,S.stage+[-2,0,3][i]));
   L.push({id:i,k:K.k,n:pick(CL_SUR.split(''))+pick(['屠','枭','煞','狼','七','九','蛇','鬼'])+pick(['','子','郎','娘']),why:pick(K.why),look:K.look,demon:K.demon,st,done:0,tier:i});}S.bnt={day:d,L};return L;}
-function bntFight(i){const b=bntList()[i];if(!b||b.done)return;jhClose();const e=mkCustom(zOfStage(b.st),{look:b.look,name:b.n,m:[1.2,1.6,2.1][b.tier],boss:b.tier===2});e.human=1;if(b.demon)e.demon=1;
+function bntFight(i){const b=bntList()[i];if(!b||b.done)return;jhClose();const e=mkCustom(zOfStage(b.st),{look:b.look,name:b.n,st:b.st,m:[1.2,1.6,2.1][b.tier],boss:b.tier===2});e.human=1;if(b.demon)e.demon=1;
  startBattle([e],{bg:WD.M&&WD.M.kind!=='town'?WD.M.z:'market',onWin:()=>{b.done=1;const k=S.path==='zheng'?1.5:1;S.stones+=Math.ceil(zsAt(zOfStage(b.st),[6,10,18][b.tier])*k);S.fame+=[2,4,8][b.tier];
    let extra='';if(b.k==='mo'){S.dao.zheng+=1;kar(1);news(b.n+'伏诛。附近的村子保住了。');if(Math.random()<.4){const p=mkPerson({n:pick(CL_SUR.split(''))+pick(['无','血','夜','孤'])+pick(['尘','衣','生','影']),st:Math.max(0,b.st-8),age:14,tal:.95,att:-80,known:false,goal:'为师父报仇'});seedAdd('modis',p.id,S.year+15+Math.floor(Math.random()*20),{mname:b.n});extra='\n（逃走的人里，好像有一个孩子。）';}}
    if(b.k==='trait'){const sk=pick(SECT_ORD);S.sects[sk]=S.sects[sk]||{beat:0,rel:null};const lead=sectLead(sk);if(lead)lead.att=Math.min(100,lead.att+10);extra='\n'+SECTS[sk].n+'记下了你的人情。';}
@@ -4432,7 +4441,7 @@ function aucPass(i){const l=aucStock()[i];if(!l||l.st)return;l.st=2;const rv=P_(
 function personTalk(p){if(!p||!p.alive)return;const Y=S.year;const rel=attName(p);
  const line=p.att<=-40?'“'+(p.goal.includes('仇')||p.goal.includes('后悔')?'等着。':'你怎么还没死？')+'”':p.att>=40?'“又见面了。”':'“'+pick(['最近江湖不太平。','有事？','我在等人。','听说你也在找东西？'])+'”';
  modal(`<h3>${esc(p.n)}</h3><p>${realmOf(p.st)}${p.sect?' · '+SECTS[p.sect].n+(p.lead?SECTS[p.sect].lt:''):''} · ${p.age} 岁（寿元 ${lifeText(pLife(p))}）</p><p>心愿：${esc(p.goal)}<br>对你：<b>${rel}</b></p><p>${esc(line)}</p>`,[
-  {t:'切磋',cls:p.st>=0?'':'ghost',fn:()=>{if(p.st<0){toast(p.n+'是凡人');return;}const e=mkCustom(zOfStage(p.st),{look:LOOK[p.n]?p.n:'无名剑客',name:p.n,m:1.4});e.human=1;e.noLoot=1;startBattle([e],{bg:'town',onWin:()=>{p.att+=p.att<-20?-5:6;toast(p.att<-20?p.n+'更恨你了':p.n+'：「好身手。」');save();},onLose:()=>{p.att+=3;toast(p.n+'：「承让。」');save();}});}},
+  {t:'切磋',cls:p.st>=0?'':'ghost',fn:()=>{if(p.st<0){toast(p.n+'是凡人');return;}const e=mkCustom(zOfStage(p.st),{look:LOOK[p.n]?p.n:'无名剑客',name:p.n,st:p.st,m:1.4});e.human=1;e.noLoot=1;startBattle([e],{bg:'town',onWin:()=>{p.att+=p.att<-20?-5:6;toast(p.att<-20?p.n+'更恨你了':p.n+'：「好身手。」');save();},onLose:()=>{p.att+=3;toast(p.n+'：「承让。」');save();}});}},
   {t:'赠礼 · '+fmt(zsAt(maxZone(),3))+' 灵石',fn:()=>{const c=zsAt(maxZone(),3);if(S.stones<c){toast('灵石不够','bad');return;}S.stones-=c;p.att=Math.min(100,p.att+(p.att<-40?3:10));toast(p.n+'收下了。（'+attName(p)+'）');save();}},
   {t:'告辞',cls:'ghost'}]);}
 function pplHTML(){const L=S.ppl.filter(p=>p.known&&(!p.bg||p.lead||p.att)).sort((a,b)=>(b.alive-a.alive)||Math.abs(b.att)-Math.abs(a.att));
@@ -4663,7 +4672,7 @@ function rwFlush(n){if(!RW_F)return;setTimeout(()=>{if(!RW_F)return;if((!OV_FREE
 function rwBattle(o){const p=o.pid?P_(o.pid):null;let foes;
  if(o.foes)foes=o.foes();
  else foes=(o.many||[o]).map(f=>{const q=f.pid?P_(f.pid):p;const st=f.st!=null?f.st:q?q.st:S.stage;const look=f.look||(q&&LOOK[q.n]?q.n:'无名剑客');
-  const e=mkCustom(f.z!=null?f.z:zOfStage(st),{look,name:f.name||(q?q.n:look),m:f.m||1.5,boss:!!f.boss,p2:f.p2,n2:f.n2});if(!f.beast)e.human=1;e.noLoot=1;if(f.el)e.el=f.el;if(f.demon)e.demon=1;return e;});
+  const e=mkCustom(f.z!=null?f.z:zOfStage(st),{look,name:f.name||(q?q.n:look),st:f.z!=null?undefined:(q?Math.min(st,S.stage+2):st),m:f.m||1.5,boss:!!f.boss,p2:f.p2,n2:f.n2});if(!f.beast)e.human=1;e.noLoot=1;if(f.el)e.el=f.el;if(f.demon)e.demon=1;return e;});
  if(typeof jhClose==='function')jhClose();
  startBattle(foes,{bg:o.bg||'market',noFlee:!!o.noFlee,
   onWin:()=>{let t='';try{t=o.win?o.win():'';}catch(e){console.error(e);}rwMsg(o.title||'胜',t);},
@@ -5250,7 +5259,7 @@ const tapGain=()=>(1+.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb()*omenMul('qi');
 const realmIdx=()=>STAGES[S.stage].r;
 const ZSC_UP=[1600,3800,9000];const zScale=z=>z===7?Math.pow(2.7,6)*1.5*Math.pow(1.12,S.abyss):z>=8?ZSC_UP[Math.min(2,z-8)]:Math.pow(2.7,Math.max(0,z));
 const zSt=z=>z===7?Math.pow(2.6,6):z>=8?Math.pow(2.6,6)*[3,7,15][Math.min(2,z-8)]:Math.pow(2.6,Math.max(0,Math.min(z,6)));
-const zRec=z=>STAGES[Math.min(z>=8?38+(z-8)*5:z===7?34:z*5+1,LAST)].name;
+const zRec=z=>STAGES[Math.min(zEntry(z),LAST)].name+' · 首领：'+STAGES[Math.min(zGate(z),LAST)].name;
 const disc=()=>Math.max(.65,(1-.03*Math.max(0,S.rep.caravan))*(F('trustHong')?.9:1)*(avOf('hong')>=40?.9:1));
 const pillCost=()=>Math.ceil(25*Math.pow(2.6,realmIdx())*disc());
 const qiPillCost=()=>Math.ceil(6*Math.pow(2.6,realmIdx())*disc());
@@ -5312,18 +5321,33 @@ function stationDot(){const any=Object.keys(NPCS).some(k=>safe(NPCS[k].unlock)&&
 
 /* ---------- 敌人 ---------- */
 const zoneUnlocked=i=>i===7?S.bossDown.includes(6):i===8?F('feisheng')&&S.bossDown.includes(6):i===9?S.bossDown.includes(8):i===10?S.bossDown.includes(9):(i===0||S.bossDown.includes(i-1));
-function mkEnemy(z,boss,special){const sc=zScale(z);let n,m=1,tint=false;
+/* ---------- 难度：敌人按「对标境界」与玩家成长曲线对齐 ----------
+   REF_A 是该境界一个「中等养成」玩家（适当装备、御剑/金刚体若干重、两名同伴）的攻击力。
+   区域首领对标该区域的「关口境界」（本大境界圆满）——你卡在瓶颈时去打它，应当是一场硬仗。 */
+const REF_T=[0,4,8,12,16,20,24,28,32,41,45,49],REF_A=[10,30,80,230,578,1643,3960,10023,25280,144493,346376,779197];
+function refA(t){t=Math.max(0,t);if(t>=49)return REF_A[11]*Math.pow(1.24,t-49);let i=0;while(REF_T[i+1]<t)i++;const a=REF_T[i],b=REF_T[i+1];return REF_A[i]*Math.pow(REF_A[i+1]/REF_A[i],(t-a)/(b-a));}
+const zEntry=z=>z===0?0:z<=6?4*z+5:z===7?32:[38,42,46][Math.min(2,z-8)];
+const zGate=z=>z===0?8:z<=6?4*z+8:z===7?32:[41,45,49][Math.min(2,z-8)];
+const zT=z=>z===7?Math.max(S.stage,32):Math.max(zEntry(z),Math.min(S.stage,zGate(z)));
+const BOSS_SOFT=[.6,.8,.92,1,1,1,1,1,1,1,1];
+function mkEnemy(z,boss,special){let n,m=1,tint=false;
   if(special==='zhou'){const s0=zScale(0);return {n:'周烈',look:'周烈',hp:40*s0*3.6,max:40*s0*3.6,atk:6*s0*1.4,def:2*s0*1.2,boss:true,z:0,stones:60,special};}
-  if(special==='hunter'){const mz=maxZone(),s1=zScale(mz)*1.15,first=!F('hunter1');const hp=40*s1*(first?3.2:3.6);
-    return {n:first?'天穹追兵·周烈':'天穹追兵',look:'天穹追兵',hp,max:hp,atk:6*s1*1.4,def:2*s1*1.2,boss:true,z:mz,stones:zsAt(mz,8),special};}
+  if(special==='hunter'){const mz=maxZone(),A=refA(S.stage),first=!F('hunter1');const hp=A*(first?14:18);
+    return {n:first?'天穹追兵·周烈':'天穹追兵',look:'天穹追兵',hp,max:hp,atk:A*.85,def:A*.12,boss:true,z:mz,stones:zsAt(mz,8),special,pk:1};}
   if(special&&special.startsWith('quest:')){const q=qOf(special.slice(6)),f=q.obj.foe;return mkCustom(maxZone(),Object.assign({boss:true},f),special);}
   if(z===7){n='深渊·第'+(S.abyss+1)+'层';boss=true;tint=true;}else if(boss)n=ZONES[z].boss;else{n=pick(ZONES[z].mobs);m=.8+Math.random()*.4;}
   const look=z===7?ABYSS_POOL[S.abyss%ABYSS_POOL.length]:n;
-  const hm=boss?(z===7?3.2:4.5):1,am=boss?1.6:1,hp=40*sc*m*hm;
+  const p2=boss&&z!==7&&(z>=5||Math.random()<.2);
+  let hp,atk,def;
+  if(z===7){const A=refA(32+S.abyss*.6);hp=18*A;atk=.85*A;def=.14*A;}
+  else if(boss){const A=refA(zGate(z)),k=BOSS_SOFT[Math.min(z,10)];hp=32*A*k*(p2?.72:1);atk=1.9*A*Math.sqrt(k);def=.15*A;}
+  else{const A=refA(zT(z));hp=5*A*m;atk=.7*A*m;def=.1*A*m;}
   let st=4*zSt(z)*m*(boss?10:1);if(z===7)st=4*Math.pow(2.6,6)*12*Math.pow(1.1,S.abyss);
-  const e={n,look,tint,hp,max:hp,atk:6*sc*m*am,def:2*sc*m*(boss?1.3:1),boss,z,stones:Math.ceil(st)};if(boss&&z!==7&&(z>=5||Math.random()<.2))e.p2=1;return omenFoe(e);}
-function mkCustom(z,f,special){const zz=z===7?6:Math.max(0,z),sc=zScale(zz),m=f.m||1.4,look=f.look||pick(ZONES[zz].mobs);const hp=40*sc*m*(f.boss?2.6:1.3);
-  return {n:f.name||look,look,hp,max:hp,atk:6*sc*(.7+m*.35),def:2*sc*(.8+m*.2),boss:!!f.boss,z:zz,stones:zsAt(zz,m*1.5),special,after:f.after,elite:true,p2:f.p2,n2:f.n2};}
+  const e={n,look,tint,hp,max:hp,atk,def,boss,z,stones:Math.ceil(st),pk:1};if(p2)e.p2=1;return omenFoe(e);}
+/* f.st：对手自己的境界（宗门、江湖人物、悬赏）；没有时按所在区域与你的境界取值 */
+function mkCustom(z,f,special){const zz=z===7?6:Math.max(0,z),m=f.m||1.4,look=f.look||pick(ZONES[zz].mobs),A=refA(f.st!=null?f.st:zT(zz));
+  const hp=f.boss?A*(12+8*m):A*m*4.5,atk=f.boss?A*(.6+.45*m):A*(.3+.3*m),def=A*(f.boss?.13:.08*m);
+  return {n:f.name||look,look,hp,max:hp,atk,def,boss:!!f.boss,z:zz,stones:zsAt(zz,m*1.5),special,after:f.after,elite:true,p2:f.p2,n2:f.n2,pk:1};}
 const dmgF=(a,d)=>a*a/(a+d)*(.9+Math.random()*.2);
 function evPool(z){return Object.keys(EVENTS).filter(k=>{const e=EVENTS[k];if(k.startsWith('q_')||ZONE_SCRIPT.includes(k)||e.zones==='cult')return false;if(e.once&&S.seenEv.includes(k))return false;
   if(['trap_floor','ambush','jianke','lost_kid'].includes(k)&&k!=='lost_kid')return false;if(e.need&&!safe(e.need))return false;return e.zones==='any'||Array.isArray(e.zones)&&e.zones.includes(z);});}
