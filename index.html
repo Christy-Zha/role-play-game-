@@ -3263,7 +3263,7 @@ function btHeal(t,v){if(t.side==='p')v*=1+(BT.healP||0);t.hp=Math.min(t.max,t.hp
 function btFoeDie(e){S.slain++;
  if(e.special==='zhou'){S.flags.duel_zhou=1;S.special=null;checkStory();}
  else if(e.special==='hunter'){S.expo=0;S.hunts++;rep('tq',-1);if(!F('hunter1')){S.flags.hunter1=1;checkStory();}S.special=null;BT.loot.push('灵光外泄已清零，洞天恢复运转');}
- else if(!e.special){const z=e.z;let first=false;if(z!==7&&z>=0&&!e.elite&&S.kills[z]!==undefined)S.kills[z]++;if(e.boss&&!e.elite&&z!==7&&!S.bossDown.includes(z)){S.bossDown.push(z);first=true;BT.loot.push('新的地点已开启');checkStory();}if(z===7&&e.boss){S.abyss++;if(S.abyss>=10){const t=xfGet('abyss');if(t)BT.loot.push(t.trim());}}
+ else if(!e.special){const z=e.z;let first=false;if(z!==7&&z>=0&&!e.elite&&S.kills[z]!==undefined)S.kills[z]++;if(e.boss&&!e.elite&&z!==7&&!S.bossDown.includes(z)){S.bossDown.push(z);first=true;wuAdd(15);BT.loot.push('新的地点已开启');checkStory();}if(z===7&&e.boss){S.abyss++;if(S.abyss>=10){const t=xfGet('abyss');if(t)BT.loot.push(t.trim());}}
   if(e.boss&&!e.elite&&UNIQ[e.look]){S.pity.uniq=(S.pity.uniq||0)+1;if(first||S.pity.uniq>=8||Math.random()<.12*(1+stats().luck)){const it=mkUnique(e.look,z);if(it){BT.uniq=it;S.pity.uniq=0;}}}}
  if(e.human&&S.path==='mo'&&!e.noLoot){BT.loot.push('吞噬：灵气 +'+fmt(req(S.stage)*.15));addQi(req(S.stage)*.15,true);}
  qProgress('kill',{look:e.look,z:e.z});if(S.kills[e.z]===5||S.kills[e.z]===6)checkStory();
@@ -4095,7 +4095,7 @@ function brewOpen(k){const r=RECIPES.find(x=>x.k===k);if(!r||!canBrew(r))return;
  modal(`<h3>开炉 · ${r.n}</h3><p class="note">炉火在跳。指针扫到金色区间时收火——越靠中心，品相越好。${pity?'<b>（炉中隐有宝光：这一炉必出极品）</b>':''}</p><div class="brew"><div class="bz" style="left:${(zc-zw)*100}%;width:${zw*200}%"></div><div class="bz2" style="left:${(zc-zw*.35)*100}%;width:${zw*70}%"></div><i id="brN"></i></div>`,[{t:'收火',cls:'gold',keep:1,fn:brewStop}]);
  const tick=()=>{if(!BREW||BREW.done)return;const p=((performance.now()-BREW.t0)/1000*BREW.sp)%2,v=p>1?2-p:p;BREW.v=v;const n=$('#brN');if(n){n.style.left=(v*100)+'%';requestAnimationFrame(tick);}};requestAnimationFrame(tick);}
 function brewStop(){if(!BREW||BREW.done)return;BREW.done=true;const B=BREW,d=Math.abs(B.v-B.zc);let q=d<B.zw*.35?3:d<B.zw?2:d<B.zw*2?1:0;S.pity.dan=S.pity.dan||0;if(q===3)S.pity.dan=0;else S.pity.dan++;
- const Q=['下品','中品','上品','极品'][q],mul=q===3?2:q>=1?1:(Math.random()<.5?1:0);const txt=mul?B.r.out(mul):'丹药成了一炉焦炭';const xp=2+B.r.rk*4+q;S.dan.xp+=xp;const rk0=danRank();
+ const Q=['下品','中品','上品','极品'][q],mul=q===3?2:q>=1?1:(Math.random()<.5?1:0);const txt=mul?B.r.out(mul):'丹药成了一炉焦炭';const xp=2+B.r.rk*4+q;S.dan.xp+=xp;if(mul)wuAdd(2,1);const rk0=danRank();
  sfx(q===3?'win':q?'coin':'bad');save();BREW=null;setTimeout(()=>{modal(`<h3>${Q} · ${B.r.n}</h3><p>${txt}。</p><p class="note">丹道 +${xp}（${DAN_RANK[rk0].n}）</p>`,[{t:'再开一炉',cls:'gold',fn:()=>brewOpen(B.r.k)},{t:'好',cls:'ghost'}]);if(TAB==='cult')render();},120);}
 
 /* ---------- 符箓 ---------- */
@@ -4204,7 +4204,7 @@ function oneYear(){S.year++;S.age++;const Y=S.year;
   if(p.age>=pLife(p)){p.alive=false;p.dy=Y;personDied(p);}}
  bgFill(true);
  /* 宗主更替 */
- Object.keys(SECTS).forEach(k=>{const lead=S.ppl.find(p=>p.sect===k&&p.lead);if(lead&&lead.alive)return;const cand=S.ppl.filter(p=>p.alive&&p.sect===k&&p.st>=0).sort((a,b)=>b.st-a.st)[0];
+ Object.keys(SECTS).forEach(k=>{if(S.sm&&S.sm.k===k&&S.sm.rank>=5)return;const lead=S.ppl.find(p=>p.sect===k&&p.lead);if(lead&&lead.alive)return;const cand=S.ppl.filter(p=>p.alive&&p.sect===k&&p.st>=0).sort((a,b)=>b.st-a.st)[0];
   if(lead)lead.lead=0;if(cand){cand.lead=1;news(cand.n+'继任'+SECTS[k].n+(k==='baicao'?'谷主':k==='tiegu'?'帮主':k==='youming'?'殿主':k==='tianqiong'?'会首':'宗主')+'。'+(cand.att<=-40?'你的仇人，如今是一宗之主了。':cand.att>=40?'是你的老朋友。':''),1);if(cand.fr==='he')S.flags.heLead=1;}});
  /* 弟子 */
  disYear();
@@ -4300,7 +4300,7 @@ function disRecruit(i){if(S.dis.filter(d=>d.alive&&!d.gone).length>=disMax()){to
  const d=disAdd(c);S.disC.L.splice(i,1);S.kids=(S.kids||[]).filter(k=>k.n!==c.n);S.dao.zong+=1;news(d.n+'拜入你的门下。');sfx('bell');toast('收 '+d.n+' 为徒','big');save();render();}
 function disYear(){const zb=S.path==='zong'?1.3:1,db=S.clan?1+S.clan.bld.dan*.05:1;
  for(const d of S.dis){if(!d.alive||d.gone)continue;d.age++;const r=STAGES[Math.min(d.st,LAST)].r,nx=Math.min(d.st+1,LAST),major=STAGES[nx].r>r;
-  if(d.age>=lifeOf(d.st)){d.alive=false;d.dy=S.year;disDied(d,'寿元耗尽');continue;}
+  if(d.age>=lifeOf(d.st)+(d.lifeB||0)){d.alive=false;d.dy=S.year;disDied(d,'寿元耗尽');continue;}
   if(!major){if(Math.random()<(.2+d.apt*.09)*zb*db/(1+r*.5))d.st++;continue;}
   if(Math.random()<.35){const ch=Math.min(.9,.22+d.apt*.08+legacyBonus()+(d.dan?.25:0)-r*.03);d.dan=0;
    if(Math.random()<ch){d.st++;d.loy=Math.min(100,d.loy+3);news('弟子'+d.n+'突破至'+REALMS[STAGES[d.st].r]+'！',1);}
@@ -4396,7 +4396,7 @@ function sectFoe(k,rank){const D=SECTS[k],lead=sectLead(k);const st=rank===2&&le
 function sectFight(k){const R=S.sects[k]||(S.sects[k]={beat:0,rel:null});if(R.rel==='vassal'||R.rel==='gone'){toast('这个宗门已经不在了','bad');return;}const rank=Math.min(2,R.beat);
  const foes=[sectFoe(k,rank)];if(rank===2)foes.push(sectFoe(k,1));if(rank===0)foes.push(sectFoe(k,0));jhClose();
  startBattle(foes,{bg:'market',noFlee:rank===2,onWin:()=>sectWin(k,rank),onLose:()=>{S.injury=Date.now()+5*60*1000;toast(SECTS[k].n+'：「回去再练几年吧。」（轻伤五分钟）','bad');save();}});}
-function sectWin(k,rank){const D=SECTS[k],R=S.sects[k];const first=R.beat<=rank;if(first)R.beat=rank+1;S.fame+=[3,8,25][rank];let L=[];
+function sectWin(k,rank){const D=SECTS[k],R=S.sects[k];const first=R.beat<=rank;if(first){R.beat=rank+1;wuAdd(6);}S.fame+=[3,8,25][rank];let L=[];
  if(first&&rank===0)L.push(gS(zsAt(zOfStage(D.st),8)),gMat('he',3));
  if(first&&rank===1){L.push(learnForm(D.form)||gS(zsAt(zOfStage(D.st),12)));}
  if(first&&rank===2){S.books[D.book]=(S.books[D.book]||0)+1;L.push(' 获得'+D.n+'镇派绝学 '+BOOKS[D.book].n+'（在「囊」里研读）。');news(S.name+'挑落'+D.n+D.lt+'，名动江湖。',1);if(SECT_ORD.every(sectBeat))checkStory();}
@@ -4421,7 +4421,7 @@ const BNT_K=[{k:'mo',n:'魔修',why:['血祭了两个村子','专挑孩子下手
 function bntList(){const d=new Date().toDateString();if(S.bnt&&S.bnt.day===d)return S.bnt.L;const L=[];for(let i=0;i<3;i++){const K=pick(BNT_K),st=Math.max(1,Math.min(LAST,S.stage+[-2,0,3][i]));
   L.push({id:i,k:K.k,n:pick(CL_SUR.split(''))+pick(['屠','枭','煞','狼','七','九','蛇','鬼'])+pick(['','子','郎','娘']),why:pick(K.why),look:K.look,demon:K.demon,st,done:0,tier:i});}S.bnt={day:d,L};return L;}
 function bntFight(i){const b=bntList()[i];if(!b||b.done)return;jhClose();const e=mkCustom(zOfStage(b.st),{look:b.look,name:b.n,st:b.st,m:[1.2,1.6,2.1][b.tier],boss:b.tier===2});e.human=1;if(b.demon)e.demon=1;
- startBattle([e],{bg:WD.M&&WD.M.kind!=='town'?WD.M.z:'market',onWin:()=>{b.done=1;const k=S.path==='zheng'?1.5:1;S.stones+=Math.ceil(zsAt(zOfStage(b.st),[6,10,18][b.tier])*k);S.fame+=[2,4,8][b.tier];
+ startBattle([e],{bg:WD.M&&WD.M.kind!=='town'?WD.M.z:'market',onWin:()=>{b.done=1;wuAdd(4);const k=S.path==='zheng'?1.5:1;S.stones+=Math.ceil(zsAt(zOfStage(b.st),[6,10,18][b.tier])*k);S.fame+=[2,4,8][b.tier];
    let extra='';if(b.k==='mo'){S.dao.zheng+=1;kar(1);news(b.n+'伏诛。附近的村子保住了。');if(Math.random()<.4){const p=mkPerson({n:pick(CL_SUR.split(''))+pick(['无','血','夜','孤'])+pick(['尘','衣','生','影']),st:Math.max(0,b.st-8),age:14,tal:.95,att:-80,known:false,goal:'为师父报仇'});seedAdd('modis',p.id,S.year+15+Math.floor(Math.random()*20),{mname:b.n});extra='\n（逃走的人里，好像有一个孩子。）';}}
    if(b.k==='trait'){const sk=pick(SECT_ORD);S.sects[sk]=S.sects[sk]||{beat:0,rel:null};const lead=sectLead(sk);if(lead)lead.att=Math.min(100,lead.att+10);extra='\n'+SECTS[sk].n+'记下了你的人情。';}
    save();modal(`<h3>悬赏 · ${esc(b.n)}</h3><p>赏金已到手。江湖声望 +${[2,4,8][b.tier]}${esc(extra)}</p>`,[{t:'好',cls:'gold'}]);}});}
@@ -4476,7 +4476,7 @@ function jhBody(){const t=JH.tab;
   if(JH.sub==='sell')h+=`<p class="note">多余的材料可以卖掉，换些灵石。</p>${Object.keys(MATS).filter(k=>S.mats[k]>0).map(k=>`<div class="row2"><div class="in"><div class="iname">${MATS[k].n}<span class="lv">${S.mats[k]}</span></div></div><button class="btn sm ghost" data-ja="sellMat" data-arg="${k}">卖一半 · ${fmt(Math.floor(matPrice(k)*.4)*Math.ceil(S.mats[k]/2))}</button></div>`).join('')||'<p class="empty">没有材料。</p>'}`;
   return h;}
  if(t==='bounty')return `<p class="note">悬赏每天更新三条。${S.path==='zheng'?'正道：赏金 ×1.5。':''}斩魔修能救一方百姓——但魔修也有徒弟。</p>${bntList().map((b,i)=>`<div class="row2 ${b.done?'dim':''}"><div class="in"><div class="iname">${esc(b.n)}<span class="lv">${BNT_K.find(x=>x.k===b.k).n} · ${realmOf(b.st)}</span></div><div class="istat">${b.why}${b.done?' · 已伏诛':''}</div></div>${b.done?'':`<button class="btn sm ${b.tier===2?'red':''}" data-ja="bnt" data-arg="${i}">缉拿</button>`}</div>`).join('')}`;
- if(t==='sect')return `<p class="note">挑战一个宗门要连赢三阵：弟子、长老、宗主。每家宗主都有自己的门道，只靠境界硬打，往往要吃亏——看清他们的五行和手段，带对灵根、功法、符箓和阵法。</p>${SECT_ORD.map(k=>{const D=SECTS[k],R=S.sects[k]||{beat:0},lead=sectLead(k);return `<div class="row2 sect"><div class="seal" style="--ec:${EL[D.el].c}">${D.n[0]}</div><div class="in"><div class="iname">${D.n}<span class="lv">${EL[D.el].n} · ${D.align}道 · 建议 ${realmOf(D.st)}</span></div><div class="istat">${D.d}<br>${D.lt}：${lead?esc(lead.n)+'（'+realmOf(lead.st)+'）':'空悬'} · 进度 ${'●'.repeat(Math.min(3,R.beat))}${'○'.repeat(3-Math.min(3,R.beat))}${R.rel?' · '+{ally:'盟友',hostile:'交恶',vassal:'已并入家族',beaten:'已服'}[R.rel]:''}</div></div>
+ if(t==='sect')return `<p class="note">挑战一个宗门要连赢三阵：弟子、长老、宗主。每家宗主都有自己的门道，只靠境界硬打，往往要吃亏——看清他们的五行和手段，带对灵根、功法、符箓和阵法。</p>${SECT_ORD.map(k=>{const D=SECTS[k],R=S.sects[k]||{beat:0},lead=sectLead(k);return `<div class="row2 sect"><div class="seal" style="--ec:${EL[D.el].c}">${D.n[0]}</div><div class="in"><div class="iname">${D.n}<span class="lv">${EL[D.el].n} · ${D.align}道 · 建议 ${realmOf(D.st)}</span></div><div class="istat">${D.d}<br>${D.lt}：${S.sm&&S.sm.k===k&&S.sm.rank>=5?'你':lead?esc(lead.n)+'（'+realmOf(lead.st)+'）':'空悬'} · 进度 ${'●'.repeat(Math.min(3,R.beat))}${'○'.repeat(3-Math.min(3,R.beat))}${R.rel?' · '+{ally:'盟友',hostile:'交恶',vassal:'已并入家族',beaten:'已服'}[R.rel]:''}</div></div>
   ${R.rel==='vassal'?'':`<button class="btn sm ${R.beat>=2?'red':''}" data-ja="sect" data-arg="${k}">${R.beat>=3?'再战宗主':'挑战'+RANKN[Math.min(2,R.beat)]}</button>`}</div>`;}).join('')}`;
  if(t==='rank'){const L=jhList(),idx=L.findIndex(x=>x.me),me=jhRank(),onB=me<=100,tot=JH_POP+L.length;
   const fmtN=n=>n>=10000?(n/10000).toFixed(1).replace(/\.0$/,'')+' 万':String(n);
@@ -4633,7 +4633,7 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
  else if(S.injury>Date.now())g.s={t:'重伤未愈：'+fmtT((S.injury-Date.now())/1000),a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
  else{const b=S.bnt&&S.bnt.day===new Date().toDateString()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
  if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};
@@ -5245,6 +5245,184 @@ RJ({id:'rj_end',t:'别',g:'别',bg:'shelter',need:()=>rjR()>=8&&S.seen.includes(
 /* 飞升关口：没走完人间篇，天门不开 */
 const RJ_GATE='人间';
 
+/* ================= 感悟 · 赠丹 · 宗门（拜入、晋升、任职、任务、宝库、宗主之争）· 天下宗门大比 ================= */
+
+/* ---------- 感悟：破大境界的门槛。只能从「做事」里来，光打坐攒不到 ---------- */
+const WU_NEED=[0,0,30,60,100,150,210,280,360,450,550,650,760,880];
+const wuNeed=r1=>WU_NEED[Math.min(r1,WU_NEED.length-1)]||0;
+function wuAdd(n,quiet){if(!S||!S.started||!n)return;S.wu=(S.wu||0)+n;if(!quiet)toast('感悟 +'+n);}
+const _wuES=endStory;endStory=function(){const ch=SC&&SC.ch;const first=ch&&!S.seen.includes(ch.id);_wuES.apply(this,arguments);if(first&&ch.id!=='prologue')wuAdd(ch.rw||ch.side?3:5);};
+const _wuMG=mgEnd;mgEnd=function(win,quit){if(MG&&!MG.done&&!quit)wuAdd(win?6:2);return _wuMG.apply(this,arguments);};
+
+/* ---------- 赠丹：选丹药、选人 ---------- */
+const GIFT_PILLS=[
+ {k:'lifeP',n:'寿元丹',d:'凡人 +15 年；修士 +30 年寿元'},
+ {k:'jz',n:'九转金丹',d:'凡人 +40 年；修士 +80 年寿元',has:()=>(S.jzDan||0)+(F('rw_jz')?1:0)},
+ {k:'pills',n:'破境丹',d:'修士：小境界必破，大境界六成'},
+ {k:'zjDan',n:'筑基丹',d:'凡人：三成机会生出灵根；修士：+好感'},
+ {k:'qiPills',n:'聚气丹',d:'修士：三成机会破一个小境界'},
+ {k:'meds',n:'疗伤药',d:'一点心意'},
+ {k:'hhDan',n:'还魂丹',d:'起死回生（只能给已故之人）',dead:1}
+];
+const pillHave=g=>g.has?g.has():(S[g.k]||0);
+function pillUse(g){if(g.k==='jz'){if((S.jzDan||0)>0)S.jzDan--;else S.flags.rw_jz=0;}else S[g.k]--;}
+function giftWho(dead){const P=S.ppl.filter(p=>p.known&&(dead?!p.alive&&!p.bg:p.alive&&(!p.bg||p.lead||p.att))).map(p=>({t:'p',o:p,n:p.n,sub:(p.alive?realmOf(p.st)+' · '+p.age+'/'+lifeText(pLife(p))+' 岁':'已故')+' · '+attName(p)}));
+ const D=dead?[]:(S.dis||[]).filter(d=>d.alive&&!d.gone).map(d=>({t:'d',o:d,n:d.n,sub:'弟子 · '+realmOf(d.st)+' · '+d.age+'/'+lifeText(lifeOf(d.st)+(d.lifeB||0))+' 岁'}));return D.concat(P);}
+function giftOpen(pid){const L=GIFT_PILLS.filter(g=>pillHave(g)>0);if(!L.length){toast('身上没有能送人的丹药。丹铺、丹房、宗门宝库里能弄到','bad');return;}
+ modal(`<h3>赠丹</h3><p>选一种丹药。${pid?'':'下一步再选送给谁。'}</p>`,L.map(g=>({t:g.n+'（'+pillHave(g)+'）· '+g.d,fn:()=>pid?giftGive(g,pid):giftPickWho(g)})).concat([{t:'算了',cls:'ghost'}]));}
+function giftPickWho(g){const W=giftWho(g.dead);if(!W.length){toast(g.dead?'没有可以救回的人':'没有可以送的人','bad');return;}
+ modal(`<h3>${g.n} · 送给谁</h3><p class="note">${g.d}</p>`,W.slice(0,40).map(w=>({t:w.n+'<small style="display:block;opacity:.7;font-size:11px">'+esc(w.sub)+'</small>',fn:()=>giftGive(g,(w.t==='d'?'d':'')+w.o.id)})).concat([{t:'算了',cls:'ghost'}]));}
+function giftGive(g,id){const isD=String(id).startsWith('d')&&!P_(id),o=isD?(S.dis||[]).find(d=>'d'+d.id===String(id)):P_(id);if(!o||pillHave(g)<=0)return;
+ if(g.dead&&o.alive){toast('还魂丹只能给已故之人','bad');return;}if(!g.dead&&!o.alive)return;
+ const mortal=!isD&&o.st<0;let t='';
+ if(g.k==='lifeP'){if(mortal)o.life=(o.life||75)+15;else o.lifeB=(o.lifeB||0)+30;t=o.n+'多了'+(mortal?'十五':'三十')+'年寿元。';}
+ else if(g.k==='jz'){if(mortal)o.life=(o.life||75)+40;else o.lifeB=(o.lifeB||0)+80;t=o.n+'服下九转金丹，多了'+(mortal?'四十':'八十')+'年寿元。';}
+ else if(g.k==='pills'){if(mortal){toast('凡人受不住破境丹的药力','bad');return;}const nx=Math.min(o.st+1,LAST),major=STAGES[nx].r>STAGES[o.st].r;if(o.st<LAST&&(!major||Math.random()<.6)){o.st++;t=o.n+'借破境丹突破至'+realmOf(o.st)+'！';if(major)news(o.n+'服下'+S.name+'所赠破境丹，突破至'+REALMS[STAGES[o.st].r]+'。',1);}else t=o.n+'冲关未成，药力化作了根基。';}
+ else if(g.k==='zjDan'){if(isD){o.dan=1;t=o.n+'收下筑基丹，下次冲关更稳。';}else if(mortal){if(Math.random()<.3){o.st=0;o.tal=Math.max(o.tal||.3,.4);t=o.n+'体内生出了一条灵根！从此踏上仙途。';news(o.n+'服下筑基丹，以凡人之躯生出灵根。',1);}else t='药力散了。'+o.n+'没能生出灵根，却觉得身子轻了很多。';}else t=o.n+'收下了。';}
+ else if(g.k==='qiPills'){if(mortal){toast('凡人用不上聚气丹','bad');return;}const nx=Math.min(o.st+1,LAST);if(o.st<LAST&&STAGES[nx].r===STAGES[o.st].r&&Math.random()<.3){o.st++;t=o.n+'借聚气丹破至'+realmOf(o.st)+'。';}else t=o.n+'收下了，修为稳了一些。';}
+ else if(g.k==='hhDan'){o.alive=true;o.age=Math.min(o.age,(isD?lifeOf(o.st):pLife(o))-10);if(o.fr)delete S.flags['dead_'+o.fr];t=o.n+'死而复生。';news(o.n+'死而复生。',1);}
+ else t=o.n+'收下了你的心意。';
+ pillUse(g);if(isD)o.loy=Math.min(100,(o.loy||50)+(g.k==='lifeP'||g.k==='jz'||g.k==='hhDan'?20:8));else o.att=Math.min(100,o.att+(g.k==='lifeP'||g.k==='jz'||g.k==='hhDan'?20:g.k==='pills'?15:6));
+ if(!isD&&o.fr&&BOND[o.fr])aff(o.fr,g.k==='meds'?3:10,true);sfx('rise');toast(t,'big');save();if($('#jh')&&!$('#jh').hidden)jhRender();else render();}
+const _zdPpl=pplHTML;pplHTML=function(){return `<div class="row2"><div class="in"><div class="iname">赠丹</div><div class="istat">选一种丹药，送给任何一位故人、江湖人物或弟子。寿元丹能续命，破境丹能助人破境，筑基丹能让凡人生出灵根。</div></div><div class="ibtn"><button class="btn sm gold" data-ja="gift">赠丹</button></div></div>`+_zdPpl();};
+JH_ACT.gift=()=>giftOpen();
+
+/* ---------- 宗门：拜入 · 晋升 · 任职 ---------- */
+const SM_RANK=['外门弟子','内门弟子','真传弟子','执事','长老','宗主'];
+const SM_TOT=[0,150,450,1100,2600,5000];
+const smSt=(k,r)=>Math.max(0,SECTS[k].st+[-6,-3,0,2,5,8][r]);
+const SM_POST={
+ chuan:{n:'传功堂 · 讲师',d:'吐纳 +12%'},
+ zhifa:{n:'执法堂 · 执法',d:'攻击 +8%，暴击 +4%'},
+ danfang:{n:'丹房 · 掌炉',d:'每年领破境丹一颗，每两年领寿元丹一颗'},
+ waiwu:{n:'外务堂 · 管事',d:'俸禄翻倍，宝库八折'}};
+const smOn=()=>!!(S.sm&&S.sm.k&&SECTS[S.sm.k]);
+const smName=()=>smOn()?SECTS[S.sm.k].n:'';
+const smTitle=()=>smOn()?(S.sm.rank>=5?SECTS[S.sm.k].lt:SM_RANK[S.sm.rank]):'';
+function smCanJoin(k){const R=S.sects[k]||{};if(smOn())return '你已是'+smName()+'的人';if(S.clan&&S.clan.zong)return '你已开宗立派';if(['hostile','gone','vassal'].includes(R.rel))return '与你有仇，或已不存在';if(S.stage<smSt(k,0))return '需 '+STAGES[smSt(k,0)].name;return '';}
+function smJoin(k){const why=smCanJoin(k);if(why){toast(why,'bad');return;}const R=S.sects[k]||(S.sects[k]={beat:0,rel:null});const r0=R.beat>=3?2:R.beat>=2?1:0;
+ S.sm={k,rank:r0,gx:0,tot:SM_TOT[r0],post:null,y:S.year,tasks:null,got:{}};if(R.rel!=='ally')R.rel='member';const lead=sectLead(k);if(lead)lead.att=Math.min(100,lead.att+15);
+ news(S.name+'拜入'+SECTS[k].n+'，为'+SM_RANK[r0]+'。',1);wuAdd(5);sfx('bell');save();
+ modal(`<h3>拜入${SECTS[k].n}</h3><p>${lead?esc(lead.n)+'亲手':'执事'}把一块刻着你名字的令牌交给你。${r0?'你挑过本门，众人都认得你，直接入'+SM_RANK[r0]+'。':'从外门弟子做起。'}</p><p class="note">做宗门任务攒贡献，贡献够了就能晋升。执事起可以任职，长老之后可以争宗主之位。每五年有一次天下宗门大比。</p>`,[{t:'好',cls:'gold',fn:()=>jhOpen('sect')}]);}
+function smLeave(){if(!smOn())return;const k=S.sm.k,D=SECTS[k];modal(`<h3>叛出${D.n}？</h3><p>贡献清零，${D.n}从此与你为敌。</p>`,[{t:'叛出',cls:'red',fn:()=>{S.sects[k]=S.sects[k]||{beat:0,rel:null};S.sects[k].rel='hostile';const lead=sectLead(k);if(lead)lead.att=-60;
+  if(S.sm.rank>=5){const c=S.ppl.filter(p=>p.alive&&p.sect===k&&p.st>=0).sort((a,b)=>b.st-a.st)[0];if(c){c.lead=1;c.att=-60;}}
+  seedAdd('sect',null,S.year+6+Math.floor(Math.random()*6),{sect:k});news(S.name+'叛出'+D.n+'。',1);S.sm=null;save();jhRender();}},{t:'算了',cls:'ghost'}]);}
+function smNextReq(){const r=S.sm.rank+1;if(r>5)return null;return {r,tot:SM_TOT[r],st:smSt(S.sm.k,r)};}
+function smPromote(){if(!smOn())return;const q=smNextReq();if(!q)return;if(S.sm.tot<q.tot){toast('累计贡献不足：'+S.sm.tot+'/'+q.tot,'bad');return;}if(S.stage<q.st){toast('境界不足：需 '+STAGES[q.st].name,'bad');return;}
+ const k=S.sm.k,D=SECTS[k];
+ if(q.r===2){jhClose();startBattle([sectFoe(k,1)],{bg:'market',onWin:()=>{smRankUp(2,'真传考核，你接下了长老三十招，最后一招逼退了他。');},onLose:()=>{toast('考核未过。长老说：「再练练。」','bad');save();}});return;}
+ if(q.r===5){const lead=sectLead(k);jhClose();startBattle([sectFoe(k,2),sectFoe(k,1)],{bg:'market',noFlee:true,onWin:()=>{if(lead){lead.lead=0;lead.att=Math.max(-100,lead.att-30);lead.goal=lead.att<=-40?'夺回宗主之位':'辅佐新宗主';if(lead.att<=-40)seedAdd('revenge',lead.id,S.year+8+Math.floor(Math.random()*8),{why:D.n+'的宗主之位，是我的。'});}S.ppl.forEach(p=>{if(p.sect===k)p.lead=0;});smRankUp(5,(lead?lead.n:'老'+D.lt)+'放下了兵刃。满门弟子，向你行礼。');news(S.name+'成为'+D.n+D.lt+'。',1);},onLose:()=>{S.sm.gx=Math.floor(S.sm.gx*.7);toast('宗主之争落败，贡献折损三成','bad');save();}});return;}
+ smRankUp(q.r,'执事堂贴出了告示。');}
+function smRankUp(r,txt){S.sm.rank=r;wuAdd(10,1);sfx('win');save();setTimeout(()=>modal(`<h3>${SECTS[S.sm.k].n} · ${r>=5?SECTS[S.sm.k].lt:SM_RANK[r]}</h3><p>${esc(txt)}</p><p class="note">${r===3?'你可以在宗门里任职了。':r===4?'长老可以在宗主之争里挑战宗主。':r>=5?'你是一宗之主了：本门加成三倍，俸禄三倍，大比由你领队。':'俸禄与本门加成都提高了。'} 感悟 +10。</p>`,[{t:'好',cls:'gold',fn:()=>jhOpen('sect')}]),300);}
+function smPost(p){if(!smOn()||S.sm.rank<3){toast('执事以上才能任职','bad');return;}S.sm.post=p;toast('就任 '+SM_POST[p].n,'big');save();jhRender();}
+/* 本门加成：随职位升高 */
+const _smBF=buildFx;buildFx=function(){const A=_smBF.apply(this,arguments);if(!smOn())return A;const D=SECTS[S.sm.k],m=S.sm.rank>=5?3:.5+.4*S.sm.rank;
+ if(D.ally&&!(S.sects[S.sm.k]&&S.sects[S.sm.k].rel==='ally'))for(const q in D.ally)A[q]=(A[q]||0)+D.ally[q]*m;else if(D.ally)for(const q in D.ally)A[q]=(A[q]||0)+D.ally[q]*(m-1);
+ if(S.sm.post==='zhifa'){A.atkP=(A.atkP||0)+.08;A.critA=(A.critA||0)+.04;}return A;};
+const _smCB=clanBonus;clanBonus=function(){const b=Object.assign({},_smCB.apply(this,arguments));if(smOn()&&S.sm.post==='chuan')b.idle=(b.idle||0)+.12;return b;};
+
+/* ---------- 宗门任务：每年三件 ---------- */
+function smTasks(){if(!smOn())return [];if(S.sm.tasks&&S.sm.tasks.y===S.year)return S.sm.tasks.L;const k=S.sm.k,z=maxZone(),rivals=SECT_ORD.filter(x=>x!==k&&SECTS[x].align!==SECTS[k].align),rv=pick(rivals.length?rivals:SECT_ORD.filter(x=>x!==k));
+ const mk=Object.keys(S.mats||{}).filter(m=>MATS[m]);const mat=pick(['cao','he','gu','tie'].concat(ZMAT[z]||[]));
+ const pool=[{k:'jiao',n:'剿妖',d:'去「'+ZONES[z].n+'」清剿一窝妖兽',gx:35},{k:'xun',n:'巡山',d:'赶走在山门外窥探的'+SECTS[rv].n+'弟子',gx:45,rv},{k:'shang',n:'上缴灵材',d:'上缴 '+MATS[mat].n+' ×3',gx:25,mat},{k:'jiang',n:'讲经',d:'给外门弟子讲一堂课（耗去两成灵气）',gx:20},{k:'dan',n:'上供丹药',d:'上缴聚气丹 ×2',gx:30},{k:'hu',n:'护送',d:'护送本门商队过「'+ZONES[Math.max(0,z-1)].n+'」',gx:40}];
+ const L=pool.sort(()=>Math.random()-.5).slice(0,3).map((t,i)=>Object.assign({i,done:0},t));S.sm.tasks={y:S.year,L};return L;}
+function smTaskDo(i){const t=smTasks()[+i];if(!t||t.done)return;const k=S.sm.k,z=maxZone();
+ const fin=(txt)=>{t.done=1;const g=Math.round(t.gx*(1+.15*S.sm.rank));S.sm.gx+=g;S.sm.tot+=g;S.stones+=zsAt(z,2);wuAdd(8,1);sfx('coin');save();toast((txt||t.n+'完成')+' · 贡献 +'+g+' · 感悟 +8','big');if($('#jh')&&!$('#jh').hidden)jhRender();};
+ if(t.k==='shang'){if((S.mats[t.mat]||0)<3){toast(MATS[t.mat].n+'不够（'+(S.mats[t.mat]||0)+'/3）','bad');return;}S.mats[t.mat]-=3;fin();return;}
+ if(t.k==='dan'){if((S.qiPills||0)<2){toast('聚气丹不够','bad');return;}S.qiPills-=2;fin();return;}
+ if(t.k==='jiang'){gQi(-.2);fin('你讲了一个时辰，台下的外门弟子听得入神');return;}
+ jhClose();let foes;
+ if(t.k==='jiao')foes=[0,1,2].map(i=>{const f=mkEnemy(z,false);if(!i){f.hp*=1.6;f.max=f.hp;f.atk*=1.2;f.n='狂暴'+f.n;}return f;});
+ else if(t.k==='xun')foes=[mkCustom(z,{look:SECT_LOOK[t.rv][0],name:SECTS[t.rv].n+'弟子',st:S.stage,m:1.3}),mkCustom(z,{look:SECT_LOOK[t.rv][0],name:SECTS[t.rv].n+'弟子',st:S.stage,m:1.1})];
+ else foes=[mkCustom(Math.max(0,z-1),{look:'黑市打手',name:'劫道的散修',m:1.3}),mkCustom(Math.max(0,z-1),{look:'黑市打手',name:'劫道的散修',m:1.1}),mkCustom(Math.max(0,z-1),{look:'黑市打手',name:'劫道的散修',m:.9})];
+ foes.forEach(f=>{f.human=t.k!=='jiao'?1:0;f.noLoot=t.k!=='jiao'?1:0;});
+ startBattle(foes,{bg:t.k==='jiao'?z:'market',onWin:()=>{fin();if(t.k==='xun'){const l=sectLead(t.rv);if(l)l.att=Math.max(-100,l.att-3);}},onLose:()=>{toast('任务失败了。明年还有机会','bad');t.done=1;save();}});}
+
+/* ---------- 宝库：用贡献换东西 ---------- */
+const SM_SHOP=[
+ {k:'life',n:'寿元丹',gx:220,fn:()=>{S.lifeP=(S.lifeP||0)+1;return '寿元丹 +1';}},
+ {k:'pill',n:'破境丹',gx:130,fn:()=>{S.pills++;return '破境丹 +1';}},
+ {k:'zj',n:'筑基丹',gx:90,fn:()=>{S.zjDan=(S.zjDan||0)+1;return '筑基丹 +1';}},
+ {k:'qi',n:'聚气丹 ×3',gx:40,fn:()=>{S.qiPills+=3;return '聚气丹 +3';}},
+ {k:'dj',n:'渡劫丹',gx:260,r:4,fn:()=>{S.jieDan=(S.jieDan||0)+1;return '渡劫丹 +1';}},
+ {k:'form',n:'本门阵图',gx:350,r:1,once:1,fn:()=>(learnForm(SECTS[S.sm.k].form)||'已学会').trim()},
+ {k:'book',n:'镇派绝学',gx:700,r:2,once:1,fn:()=>{const b=SECTS[S.sm.k].book;S.books[b]=(S.books[b]||0)+1;return '获得 '+BOOKS[b].n+'（在「囊」里研读）';}},
+ {k:'gear',n:'本门法宝',gx:520,r:3,fn:()=>gItemNamed(pick(SLOT5),3,SECTS[S.sm.k].n+'·'+pick(['镇岳','流火','青冥','玄霜','惊雷','归元']),maxZone()).trim()}];
+const smPrice=it=>Math.ceil(it.gx*(S.sm.post==='waiwu'?.8:1));
+function smBuy(k){const it=SM_SHOP.find(x=>x.k===k);if(!it||!smOn())return;if((it.r||0)>S.sm.rank){toast('需 '+SM_RANK[it.r],'bad');return;}if(it.once&&S.sm.got[k]){toast('已经领过了');return;}const p=smPrice(it);if(S.sm.gx<p){toast('贡献不够','bad');return;}
+ S.sm.gx-=p;if(it.once)S.sm.got[k]=1;const t=it.fn();sfx('coin');toast(t,'big');save();jhRender();}
+
+/* ---------- 每年：俸禄、丹房、大比 ---------- */
+const _smOY=oneYear;oneYear=function(){const r=_smOY.apply(this,arguments);try{smYear();}catch(e){console.error(e);}return r;};
+function smYear(){if(smOn()){const m=(S.sm.rank+1)*(S.sm.post==='waiwu'?2:1)*(S.sm.rank>=5?3:1);S.stones+=zsAt(maxZone(),1.5*m);S.sm.gx+=5*(S.sm.rank+1);S.sm.tot+=5*(S.sm.rank+1);
+  if(S.sm.post==='danfang'){S.pills++;if(S.year%2===0)S.lifeP=(S.lifeP||0)+1;}}
+ dbYear();}
+
+/* ---------- 天下宗门大比：每五年一届 ---------- */
+const DB_EXTRA={penglai:{n:'蓬莱阁',el:'shui',look:'苏绾'},sanxiu:{n:'散修盟',el:'jin',look:'无名剑客'}};
+const teamName=t=>t==='me'?(S.clan&&S.clan.zong?S.clan.name:'散修 · '+S.name):SECTS[t]?SECTS[t].n:DB_EXTRA[t].n;
+function dbInit(){if(!S.db)S.db={next:S.year+2,cur:null,pts:{},hist:[]};return S.db;}
+function dbChamp(t){if(t==='me'||(smOn()&&t===S.sm.k))return {me:1,n:S.name,st:S.stage};
+ if(SECTS[t]){const P=S.ppl.filter(p=>p.alive&&p.sect===t&&p.st>=0).sort((a,b)=>b.st-a.st)[0];return P?{n:P.n,st:P.st,pid:P.id}:{n:SECTS[t].n+'首席',st:SECTS[t].st+2};}
+ return {n:DB_EXTRA[t].n+'首席',st:Math.max(10,S.stage+(t==='penglai'?2:0))};}
+function dbYear(){const D=dbInit();
+ if(D.cur&&!D.cur.done&&S.year>=D.cur.y+2){while(!D.cur.done)dbRound(true);}
+ if(!D.cur||D.cur.done){if(S.year>=D.next&&S.stage>=6){const teams=SECT_ORD.slice();teams.push(smOn()?'sanxiu':'me','penglai');teams.sort(()=>Math.random()-.5);
+   D.cur={y:S.year,round:0,teams,alive:teams.slice(),log:[],place:{},done:false};D.next=S.year+5;news('天下宗门大比开幕。八方宗门齐聚落雁湖。'+(smOn()?'你将代表'+smName()+'出战。':''),1);toast('天下宗门大比开幕！在「江湖 · 宗门」里出战','big');}}}
+const myTeam=()=>smOn()?S.sm.k:'me';
+function dbPow(t){const c=dbChamp(t);return c.st+Math.random()*5;}
+/* 一轮：若你还在场，先打你的那一场 */
+function dbRound(auto){const C=S.db.cur;if(!C||C.done)return;const A=C.alive,next=[],names=['八强','四强','决赛'];const lose=t=>{C.place[t]=[4,3,2][C.round];};
+ for(let i=0;i<A.length;i+=2){const a=A[i],b=A[i+1];let w;
+  if(a===myTeam()||b===myTeam()){if(!auto)continue;w=a===myTeam()?b:a;C.log.push(names[C.round]+'：'+teamName(myTeam())+' 弃权');}
+  else w=dbPow(a)>=dbPow(b)?a:b;
+  const l=w===a?b:a;lose(l);next.push(w);C.log.push(names[C.round]+'：'+teamName(w)+' 胜 '+teamName(l));}
+ if(!auto&&A.includes(myTeam()))return;dbAdvance(next);}
+function dbAdvance(next){const C=S.db.cur;C.alive=next;C.round++;if(next.length===1){C.place[next[0]]=1;dbFinish();}save();}
+function dbFinish(){const C=S.db.cur;C.done=true;const pts=[0,10,6,3,1];Object.keys(C.place).forEach(t=>{if(SECTS[t]||t==='me'||DB_EXTRA[t])S.db.pts[t]=(S.db.pts[t]||0)+pts[C.place[t]];});
+ const w=Object.keys(C.place).find(t=>C.place[t]===1);S.db.hist.unshift({y:C.y,w,me:C.place[myTeam()]||0});if(S.db.hist.length>8)S.db.hist.length=8;
+ news('天下宗门大比落幕。魁首：'+teamName(w)+(w===myTeam()?'——是你。':'。'),1);}
+function dbMyMatch(){const C=S.db&&S.db.cur;if(!C||C.done)return null;const A=C.alive,i=A.indexOf(myTeam());if(i<0)return null;return A[i%2?i-1:i+1];}
+function dbFight(){const opp=dbMyMatch();if(!opp||BT)return;const c=dbChamp(opp),C=S.db.cur,rn=['八强','四强','决赛'][C.round];
+ const D=SECTS[opp]||DB_EXTRA[opp],look=c.pid&&LOOK[c.n]?c.n:SECTS[opp]?SECT_LOOK[opp][1]:DB_EXTRA[opp].look;
+ const e=mkCustom(zOfStage(c.st),{look,name:teamName(opp)+' · '+c.n,st:c.st,m:1.7,boss:true});e.human=1;e.noLoot=1;e.el=D.el;if(SECTS[opp]&&C.round>=1)e.mech=SECTS[opp].mech;jhClose();
+ startBattle([e],{bg:'market',noFlee:true,onWin:()=>{wuAdd(10,1);dbAfter(opp,true,rn);},onLose:()=>dbAfter(opp,false,rn)});}
+function dbAfter(opp,win,rn){const C=S.db.cur,me=myTeam(),A=C.alive,next=[];const names=['八强','四强','决赛'];
+ for(let i=0;i<A.length;i+=2){const a=A[i],b=A[i+1];let w;if(a===me||b===me)w=win?me:opp;else w=dbPow(a)>=dbPow(b)?a:b;const l=w===a?b:a;C.place[l]=[4,3,2][C.round];next.push(w);C.log.push(names[C.round]+'：'+teamName(w)+' 胜 '+teamName(l));}
+ const c=dbChamp(opp);if(c.pid){const p=P_(c.pid);if(p)p.att+=win?-3:4;}
+ dbAdvance(next);if(!win)while(!C.done)dbRound(true);const done=C.done,pl=C.place[me]||0;let txt=(win?'你赢下了'+rn+'。':'你在'+rn+'落败。')+(done||!win?'':' 下一轮在「江湖 · 宗门」里出战。');
+ if(!win||done){const R=[0,{gx:900,st:70,wu:30},{gx:450,st:35,wu:20},{gx:220,st:16,wu:12},{gx:90,st:6,wu:6}][pl];if(R){if(smOn()){S.sm.gx+=R.gx;S.sm.tot+=R.gx;}S.stones+=zsAt(maxZone(),R.st);wuAdd(R.wu,1);S.fame+=[0,40,20,10,4][pl];
+   txt+='\n名次：'+['','魁首','亚元','四强','八强'][pl]+'。'+(smOn()?'贡献 +'+R.gx+'，':'')+'灵石 +'+fmt(zsAt(maxZone(),R.st))+'，感悟 +'+R.wu+'。';if(pl===1){txt+=gItem(3);news(S.name+'代表'+teamName(me)+'夺得天下宗门大比魁首！',1);}}}
+ save();setTimeout(()=>modal(`<h3>宗门大比 · ${rn}</h3><p>${esc(txt).replace(/\n/g,'<br>')}</p>`,[{t:'好',cls:'gold'}]),300);}
+
+/* ---------- 江湖 · 宗门 页 ---------- */
+function smHTML(){let h='';const D0=dbInit();
+ if(smOn()){const k=S.sm.k,D=SECTS[k],q=smNextReq(),T=smTasks();
+  h+=`<div class="banner zong"><div class="t">${D.n} · ${smTitle()}<small>贡献 ${S.sm.gx}（累计 ${S.sm.tot}）· ${S.sm.post?SM_POST[S.sm.post].n:'未任职'} · 每年俸禄与贡献自动到账</small></div></div>`;
+  h+=`<h3 class="sub">宗门任务 <small>${yearName()} · 每年三件</small></h3>`+T.map(t=>`<div class="row2 ${t.done?'dim':''}"><div class="in"><div class="iname">${t.n}<span class="lv">贡献 ${Math.round(t.gx*(1+.15*S.sm.rank))} · 感悟 8</span></div><div class="istat">${esc(t.d)}</div></div><div class="ibtn">${t.done?'<span class="dim">已完成</span>':`<button class="btn sm gold" data-ja="smTask" data-arg="${t.i}">去做</button>`}</div></div>`).join('');
+  h+=q?`<div class="row2"><div class="in"><div class="iname">晋升 · ${q.r>=5?D.lt:SM_RANK[q.r]}</div><div class="istat">累计贡献 ${S.sm.tot}/${q.tot} · 境界 ${STAGES[q.st].name}${q.r===2?' · 需通过长老考核':q.r===5?' · 需在宗主之争中击败现任'+D.lt:''}</div></div><div class="ibtn"><button class="btn sm ${S.sm.tot>=q.tot&&S.stage>=q.st?'gold':'ghost'}" data-ja="smUp">${q.r===2?'考核':q.r===5?'争位':'晋升'}</button></div></div>`:'';
+  if(S.sm.rank>=3)h+=`<h3 class="sub">任职</h3>`+Object.keys(SM_POST).map(p=>`<div class="row2 ${S.sm.post===p?'friend':''}"><div class="in"><div class="iname">${SM_POST[p].n}</div><div class="istat">${SM_POST[p].d}</div></div><div class="ibtn">${S.sm.post===p?'<span>在任</span>':`<button class="btn sm" data-ja="smPost" data-arg="${p}">就任</button>`}</div></div>`).join('');
+  h+=`<h3 class="sub">宝库 <small>用贡献换</small></h3>`+SM_SHOP.map(it=>{const lock=(it.r||0)>S.sm.rank,got=it.once&&S.sm.got[it.k];return `<div class="row2 ${lock||got?'dim':''}"><div class="in"><div class="iname">${it.n}<span class="lv">${smPrice(it)} 贡献</span></div><div class="istat">${lock?'需 '+SM_RANK[it.r]:got?'已领取':''}</div></div><div class="ibtn">${lock||got?'':`<button class="btn sm" data-ja="smBuy" data-arg="${it.k}" ${S.sm.gx>=smPrice(it)?'':'disabled'}>换</button>`}</div></div>`;}).join('');
+  h+=`<p style="text-align:right"><button class="btn sm ghost" data-ja="smLeave">叛出宗门</button></p>`;}
+ else{h+=`<p class="note">拜入一个宗门：做宗门任务攒贡献，一步步从外门弟子做到长老、宗主；执事起可以任职；每五年代表宗门出战天下宗门大比。（已开宗立派的人不能再拜入别家）</p>`+SECT_ORD.map(k=>{const why=smCanJoin(k);return `<div class="row2 ${why?'dim':''}"><div class="in"><div class="iname">${SECTS[k].n}<span class="lv">${SECTS[k].align}道 · 入门 ${STAGES[smSt(k,0)].name}</span></div><div class="istat">${why||'本门加成：'+Object.keys(SECTS[k].ally).map(q=>({atkP:'攻击',defP:'防御',healP:'治疗',mp:'灵力',ls:'吸血',critA:'暴击'}[q]||q)+' +'+Math.round(SECTS[k].ally[q]*100)+'%').join('、')+'（随职位提高）'}</div></div><div class="ibtn">${why?'':`<button class="btn sm gold" data-ja="smJoin" data-arg="${k}">拜入</button>`}</div></div>`;}).join('');}
+ /* 大比 */
+ const C=D0.cur,h0=h;h='';h+=`<h3 class="sub">天下宗门大比 <small>每五年一届</small></h3>`;
+ if(C&&!C.done){const opp=dbMyMatch();h+=`<div class="banner"><div class="t">第 ${Math.floor(C.y/5)+1} 届 · ${['八强赛','半决赛','决赛'][C.round]}<small>${C.alive.map(teamName).join(' · ')}</small></div></div>`+
+   (opp?`<div class="row2"><div class="in"><div class="iname">你的对手：${esc(teamName(opp))}</div><div class="istat">出战的是 ${esc(dbChamp(opp).n)}（${realmOf(dbChamp(opp).st)}）· ${yearName(C.y+2)}之前不出战算弃权</div></div><div class="ibtn"><button class="btn sm red" data-ja="dbFight">出战</button></div></div>`:`<p class="note">你已经出局了。大比会在${yearName(C.y+2)}落幕。</p>`)+
+   (C.log.length?`<p class="note">${C.log.slice(-6).map(esc).join('<br>')}</p>`:'');}
+ else h+=`<p class="note">下一届：${yearName(D0.next)}${S.stage<6?'（修到炼气七层才能参加）':''}。${smOn()?'你将代表'+smName()+'出战。':S.clan&&S.clan.zong?'你将代表'+esc(S.clan.name)+'出战。':'没有宗门，就以散修身份出战。'}</p>`;
+ const rk=Object.keys(D0.pts).filter(t=>D0.pts[t]>0).sort((a,b)=>D0.pts[b]-D0.pts[a]);
+ if(rk.length)h+=`<p class="note">宗门积分榜：${rk.slice(0,8).map((t,i)=>(i+1)+'. '+esc(teamName(t))+' '+D0.pts[t]).join(' · ')}</p>`;
+ if(D0.hist.length)h+=`<p class="note">往届魁首：${D0.hist.slice(0,4).map(x=>yearName(x.y)+' '+esc(teamName(x.w))+(x.me?'（你：'+['','魁首','亚元','四强','八强'][x.me]+'）':'')).join(' · ')}</p>`;
+ h=C&&!C.done?h+h0:h0+h;
+ return h+`<h3 class="sub">挑战宗门</h3>`;}
+const _smJB=jhBody;jhBody=function(){const b=_smJB.apply(this,arguments);if(JH.tab!=='sect')return b;return smHTML()+b;};
+Object.assign(JH_ACT,{smJoin:k=>smJoin(k),smLeave:()=>smLeave(),smUp:()=>smPromote(),smPost:p=>smPost(p),smTask:i=>smTaskDo(i),smBuy:k=>smBuy(k),dbFight:()=>dbFight()});
+const _smSF=sectFight;sectFight=function(k){if(smOn()&&S.sm.k===k){toast('这是你自己的宗门','bad');return;}return _smSF.apply(this,arguments);};
+
+/* ---------- 读档：老存档补上感悟 ---------- */
+const _smPI=pplInit;pplInit=function(){const r=_smPI.apply(this,arguments);if(S.wu==null){S.wu=Math.min(250,(S.seen||[]).length*3+Object.keys(S.q||{}).filter(id=>S.q[id].s==='done').length*8);}dbInit();return r;};
+
 /* ================= 境界：解锁的能力 · 突破仪式 · 天劫 · 地图神通 ================= */
 const REALM_UNLOCK={
  1:[['御剑飞行','地图上御剑：移动快一倍，妖兽追不上你'],['收徒','在「族」页收徒，把你的道传下去']],
@@ -5265,12 +5443,12 @@ function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <sma
 
 /* ---------- 突破 ---------- */
 function breakthrough(){const need=req(S.stage);if(S.qi<need||BT)return;const ni=nextInfo();if(ni.final)return ascend();
- if(ni.gate){toast(ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
+ if(ni.gate){toast(ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、做宗门任务、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
  if(S.injury>Date.now()){toast('重伤未愈，经不起冲关（还要 '+fmtT((S.injury-Date.now())/1000)+'）','bad');return;}
  const r1=STAGES[S.stage+1].r;if(ni.major&&r1>=2){jieAsk(ni);return;}
  const used=ni.major&&S.usePill&&S.pills>0;if(used)S.pills--;
  if(Math.random()<ni.ch)breakOk(ni);else breakFail(ni,used);}
-function breakOk(ni){const old=stats(),need=req(S.stage);S.qi=Math.max(0,S.qi-need);S.stage++;lifeSync(S);if(S.pills<=0)S.usePill=false;
+function breakOk(ni){const old=stats(),need=req(S.stage);S.qi=Math.max(0,S.qi-need);if(ni.major&&ni.wuN)S.wu=Math.max(0,(S.wu||0)-ni.wuN);S.stage++;lifeSync(S);if(S.pills<=0)S.usePill=false;
  if(!ni.major){toast('破境！踏入 '+STAGES[S.stage].name,'big');flashStage('gold');sfx('win');checkStory();render();save();return;}
  const r=realmIdx(),yrs=BT_YEARS[r]||0,L=yrs?simYears(yrs):[];S.dao.yin+=yrs>=10?1:0;
  if(r>=2&&S.root){const sk=SKILLS.find(s=>s.root===S.root&&s.rl===2);if(sk)S.flags.sk2=1;}
@@ -5437,7 +5615,8 @@ function nextInfo(){const s=S.stage;if(s>=LAST)return {final:true};
   const r0=STAGES[s].r,r1=STAGES[s+1].r,major=r1>r0;let gate=null,gz=0,fs=false,ch=1;
   if(major){const g=GATE(r1);if(g==='fs'){fs=true;if(!S.seen.includes('finale'))gate='终章';else if(!S.seen.includes('rj_end'))gate=RJ_GATE;}else{gz=g;if(!S.bossDown.includes(g))gate=ZONES[g].boss;}
     ch=Math.max(.25,.6-.03*Math.min(r1,8)-.03*Math.max(0,r1-8));if(S.karma>=3)ch+=.05;if(S.usePill&&S.pills>0)ch+=.25;ch=Math.min(ch,.95);}
-  return {major,gate,gz,fs,ch,name:STAGES[s+1].name};}
+  const wuN=major?wuNeed(r1):0;let wuG=0;if(major&&!gate&&(S.wu||0)<wuN){gate='感悟';wuG=wuN;}
+  return {major,gate,gz,fs,ch,wuN,wuG,name:STAGES[s+1].name};}
 function addQi(x,quiet){S.qi+=x;let moved=false;
   for(;;){const need=req(S.stage);if(S.qi<need)break;const ni=nextInfo();if(ni.final||ni.major){S.qi=need;break;}S.qi-=need;S.stage++;moved=true;}
   if(moved){if(S.stage>=3&&!S.root&&!S.flags.rootAsk){S.flags.rootAsk=1;setTimeout(()=>{if(!BT&&OV_FREE())openRootTest();else toast('墨老：「该测一测你的灵根了。」','测灵根',openRootTest);},900);}if(!quiet)toast('突破至 '+STAGES[S.stage].name);checkStory(quiet);if(TAB==='cult'&&!quiet)render();}}
@@ -5528,7 +5707,7 @@ function playEvent(id,ctx){const ev=EVENTS[id];if(!ev||BT)return;ctx=ctx||{};EVC
    <div class="st-choices" id="evC"></div><div class="st-box"><div class="st-s gold">${ctx.qid?'委托':ZONE_SCRIPT.includes(id)?'见闻':'奇遇'}${onW?' · '+ev.title:''}</div><div class="st-x narr" id="evX">${esc(lines.join('\n\n'))}</div></div></div>`;
   if(!onW)requestAnimationFrame(()=>paintTo($('#vbg'),bg));
   const box=$('#evC');box.innerHTML=ev.choices.map((c,i)=>{const ok=!c.need||safe(c.need);return `<button data-i="${i}" ${ok?'':'disabled style="opacity:.4"'}>${esc(sub(typeof c.t==='function'?c.t():c.t))}</button>`;}).join('');
-  box.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.disabled)return;let res=ev.choices[+b.dataset.i].act();if(typeof res==='string')res={text:res};
+  box.querySelectorAll('button').forEach(b=>b.onclick=e=>{e.stopPropagation();if(b.disabled)return;wuAdd(2,1);let res=ev.choices[+b.dataset.i].act();if(typeof res==='string')res={text:res};
     if((ev.once||ZONE_SCRIPT.includes(id))&&!S.seenEv.includes(id))S.seenEv.push(id);
     if(res.game){const G=res.game;box.innerHTML='';openMini(G.k,{lv:G.lv,title:G.title||ev.title,stake:G.stake,onDone:w=>{const t=(w?G.onWin:G.onLose)();const r2=typeof t==='string'?{text:t}:t;Object.assign(res,r2,{game:null});
       $('#evX').textContent=sub(res.text||'').trim();$('#evX').className='st-x';box.innerHTML=`<button id="evGo">${res.fight?'迎战':'继续'}</button>`;$('#evGo').onclick=ev2=>{ev2.stopPropagation();ov.hidden=true;ov.innerHTML='';ov.className='';EVC=null;endEvent(id,ctx,res);};}});return;}
@@ -5640,7 +5819,7 @@ function endStory(){const ch=SC.ch;clearInterval(SC.typing);if(!S.seen.includes(
 /* ---------- NPC 对话 ---------- */
 function npcTalk(k){const npc=NPCS[k];if(!npc||BT)return;const ready=QUESTS.find(q=>q.npc===k&&qSt(q.id)==='ready');const avail=QUESTS.find(q=>q.npc===k&&qAvail(q));
   let text,btns;
-  if(ready){text=sub(typeof ready.done==='function'?ready.done():ready.done);btns=[{t:'交付委托',cls:'gold',fn:()=>{const r=(ready.reward()||'')+(BOND[k]?aff(k,8,true):'');S.q[ready.id].s='done';toast(('委托「'+ready.title+'」完成。'+r).replace(/\s+/g,' '),'big');stationDot();if(TAB!=='world')render();save();}}];}
+  if(ready){text=sub(typeof ready.done==='function'?ready.done():ready.done);btns=[{t:'交付委托',cls:'gold',fn:()=>{wuAdd(10);const r=(ready.reward()||'')+(BOND[k]?aff(k,8,true):'');S.q[ready.id].s='done';toast(('委托「'+ready.title+'」完成。'+r).replace(/\s+/g,' '),'big');stationDot();if(TAB!=='world')render();save();}}];}
   else if(avail){text=sub(avail.offer);btns=[{t:'接下委托',cls:'gold',fn:()=>{S.q[avail.id]={s:'on',p:0};toast('接下委托：'+avail.title);stationDot();
     if(avail.obj.type==='fight'&&WD.M&&WD.M.kind==='town')WD.M.ents.push(mkEnt({kind:'npc',k:'corpse',c:23,r:3,dir:1,qfight:avail.id,name:'尸潮'}));
     if(TAB!=='world')render();save();if(avail.obj.type==='ev')setTimeout(()=>playEvent(avail.obj.ev,{qid:avail.id}),200);if(avail.obj.type==='game')setTimeout(()=>qGame(avail.id),200);}},...(npc.menu?npc.menu().filter(Boolean):[]),{t:'以后再说',cls:'ghost'}];}
@@ -5687,7 +5866,7 @@ let breakSig='';
 function breakHTML(){const ni=nextInfo(),full=S.qi>=req(S.stage);
   if(ni.final)return `<div class="t">大罗已至圆满。归墟之下还有一道门，推开它就是新的一世。</div><div class="row"><button class="btn gold" data-act="break" ${full?'':'disabled'}>轮回</button></div>`;
   if(!ni.major)return `<div class="t">下一层：<em>${ni.name}</em>　灵气满后自动突破</div>`;
-  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
+  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、做宗门任务、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
   return `<div class="t">下一境：<em>${ni.name}</em>　成功率 <em>${Math.round(ni.ch*100)}%</em>　失败散去四成灵气</div>
    <div class="row"><button class="btn ${full?'gold':''}" data-act="break" ${full?'':'disabled'}>${ni.fs?'飞升 · 破天门':'冲击'+REALMS[STAGES[S.stage+1].r]}</button>
    ${S.pills>0?`<label class="pill"><input type="checkbox" id="usePill" ${S.usePill?'checked':''}>服用破境丹 +25%（余 ${S.pills}）</label>`:''}</div>`;}
@@ -5892,7 +6071,7 @@ function start(data){artLoad();S=data&&data.S?hydrate(data.S):load();pplInit();T
   requestAnimationFrame(t=>{lastT=t;loop(t);});}
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
 function cultMore(){const R=realmIdx();return `${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
