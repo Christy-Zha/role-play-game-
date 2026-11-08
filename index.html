@@ -644,6 +644,10 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .bt-tip span{color:#cdbb92;font-size:12.5px}
 .bt-tip.off{opacity:0}
 
+.ico{width:30px;height:30px;object-fit:contain;vertical-align:middle;margin:-6px 6px -4px 0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.bt-cmd .li .ico{width:24px;height:24px;margin:-4px 4px -4px 0}
+.modal .ico{width:26px;height:26px}
+
 </style>
 </head>
 <body>
@@ -3202,7 +3206,7 @@ function btCmdTap(b){const a=BT.cur;if(!a||BT.phase!=='cmd')return;
  if(b.startsWith('f:')){btDo(a,{type:'fu',k:b.slice(2)});return;}
  if(b==='sk'){const L=SKILLS.filter(skOk);btSetCmd(L.map(s=>`<button class="li" data-b="s:${s.k}" ${a.mp<skCost(s)?'disabled':''}><b>${s.el?'<i class="elg" style="--ec:'+EL[s.el].c+'">'+EL[s.el].n+'</i>':''}${s.n}</b><small>${s.d} · 灵力 ${skCost(s)}</small></button>`).join('')+`<p class="hint">${SKILLS.find(s=>!s.book&&S.stage<s.lv)?'境界提升后会领悟更多法术；研读秘籍还能学到别的。':''}</p><button class="li back" data-b="back">返回</button>`,'list');return;}
  if(b.startsWith('s:')){const sk=SKILLS.find(s=>s.k===b.slice(2));if(sk.ty==='one'){BT.pend={type:'sk',sk};btTargets();}else btDo(a,{type:'sk',sk});return;}
- if(b==='it'){btSetCmd(`<button class="li" data-b="i:meds" ${S.meds?'':'disabled'}><b>疗伤药 ×${S.meds}</b><small>恢复生命最低的同伴 50% 生命</small></button><button class="li" data-b="i:mps" ${S.mps?'':'disabled'}><b>清心丹 ×${S.mps}</b><small>恢复 60% 灵力</small></button>${Object.keys(FU).filter(k=>S.fu[k]>0).map(k=>`<button class="li" data-b="f:${k}"><b>${FU[k].n} ×${S.fu[k]}</b><small>${FU[k].d}</small></button>`).join('')}<button class="li back" data-b="back">返回</button>`,'list');return;}
+ if(b==='it'){btSetCmd(`<button class="li" data-b="i:meds" ${S.meds?'':'disabled'}><b>疗伤药 ×${S.meds}</b><small>恢复生命最低的同伴 50% 生命</small></button><button class="li" data-b="i:mps" ${S.mps?'':'disabled'}><b>清心丹 ×${S.mps}</b><small>恢复 60% 灵力</small></button>${Object.keys(FU).filter(k=>S.fu[k]>0).map(k=>`<button class="li" data-b="f:${k}"><b>${ico('fu_'+k)}${FU[k].n} ×${S.fu[k]}</b><small>${FU[k].d}</small></button>`).join('')}<button class="li back" data-b="back">返回</button>`,'list');return;}
  if(b.startsWith('i:')){btDo(a,{type:'it',k:b.slice(2)});return;}
  if(b==='def'){btDo(a,{type:'def'});return;}
  if(b==='flee'){btDo(a,{type:'flee'});return;}
@@ -3865,9 +3869,9 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['por_xiao','por_sx','por_tq','por_mu','boss_shuwang','boss_baizu','boss_huaiyao','boss_haiyan','boss_zero','boss_duoxian','boss_lingchao','boss_shouguan','boss_jing','boss_tianjiang','boss_muzhe','boss_jieyun','por_lie','por_yun','por_lin','por_mowen','por_chiyang','por_shuiyue','por_huagu','por_shi','por_yan','por_gu','por_liu','por_luo','por_ying','por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
+const ART_HAVE=['ico_shouyuan','ico_pojing','ico_juqi','ico_zhuji','ico_jiuzhuan','ico_huanhun','ico_fu_lei','ico_fu_huo','ico_fu_hu','por_xiao','por_sx','por_tq','por_mu','boss_shuwang','boss_baizu','boss_huaiyao','boss_haiyan','boss_zero','boss_duoxian','boss_lingchao','boss_shouguan','boss_jing','boss_tianjiang','boss_muzhe','boss_jieyun','por_lie','por_yun','por_lin','por_mowen','por_chiyang','por_shuiyue','por_huagu','por_shi','por_yan','por_gu','por_liu','por_luo','por_ying','por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
 const ART_IMG={};
-function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.match(/^(por|boss)_/)?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261107':'');});}
+function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.match(/^(por|boss|ico)_/)?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261107':'');});}
 function SCC_CLEAR(){try{_scnCache.clear();for(const k of _cvc.keys())if(k.startsWith('hbg|'))_cvc.delete(k);}catch(e){}}
 const _sceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){const im=ART_IMG['scene_'+key];if(!im)return _sceneCanvas(key,w,h);
  return cvMemo('img|'+key+'|'+Math.round(w)+'x'+Math.round(h),()=>{const dpr=Math.min(2,window.devicePixelRatio||1),cv=mkCv(Math.round(w*dpr),Math.round(h*dpr)),x=cv.getContext('2d');const s=Math.max(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,(cv.height-im.height*s)/2,im.width*s,im.height*s);return cv;});};
@@ -5273,20 +5277,20 @@ const _wuMG=mgEnd;mgEnd=function(win,quit){if(MG&&!MG.done&&!quit)wuAdd(win?6:2)
 
 /* ---------- 赠丹：选丹药、选人 ---------- */
 const GIFT_PILLS=[
- {k:'lifeP',n:'寿元丹',d:'凡人 +15 年；修士 +30 年寿元'},
- {k:'jz',n:'九转金丹',d:'凡人 +40 年；修士 +80 年寿元',has:()=>(S.jzDan||0)+(F('rw_jz')?1:0)},
- {k:'pills',n:'破境丹',d:'修士：小境界必破，大境界六成'},
- {k:'zjDan',n:'筑基丹',d:'凡人：三成机会生出灵根；修士：+好感'},
- {k:'qiPills',n:'聚气丹',d:'修士：三成机会破一个小境界'},
+ {k:'lifeP',n:'寿元丹',ic:'shouyuan',d:'凡人 +15 年；修士 +30 年寿元'},
+ {k:'jz',n:'九转金丹',ic:'jiuzhuan',d:'凡人 +40 年；修士 +80 年寿元',has:()=>(S.jzDan||0)+(F('rw_jz')?1:0)},
+ {k:'pills',n:'破境丹',ic:'pojing',d:'修士：小境界必破，大境界六成'},
+ {k:'zjDan',n:'筑基丹',ic:'zhuji',d:'凡人：三成机会生出灵根；修士：+好感'},
+ {k:'qiPills',n:'聚气丹',ic:'juqi',d:'修士：三成机会破一个小境界'},
  {k:'meds',n:'疗伤药',d:'一点心意'},
- {k:'hhDan',n:'还魂丹',d:'起死回生（只能给已故之人）',dead:1}
+ {k:'hhDan',n:'还魂丹',ic:'huanhun',d:'起死回生（只能给已故之人）',dead:1}
 ];
 const pillHave=g=>g.has?g.has():(S[g.k]||0);
 function pillUse(g){if(g.k==='jz'){if((S.jzDan||0)>0)S.jzDan--;else S.flags.rw_jz=0;}else S[g.k]--;}
 function giftWho(dead){const P=S.ppl.filter(p=>p.known&&(dead?!p.alive&&!p.bg:p.alive&&(!p.bg||p.lead||p.att))).map(p=>({t:'p',o:p,n:p.n,sub:(p.alive?realmOf(p.st)+' · '+p.age+'/'+lifeText(pLife(p))+' 岁':'已故')+' · '+attName(p)}));
  const D=dead?[]:(S.dis||[]).filter(d=>d.alive&&!d.gone).map(d=>({t:'d',o:d,n:d.n,sub:'弟子 · '+realmOf(d.st)+' · '+d.age+'/'+lifeText(lifeOf(d.st)+(d.lifeB||0))+' 岁'}));return D.concat(P);}
 function giftOpen(pid){const L=GIFT_PILLS.filter(g=>pillHave(g)>0);if(!L.length){toast('身上没有能送人的丹药。丹铺、丹房、宗门宝库里能弄到','bad');return;}
- modal(`<h3>赠丹</h3><p>选一种丹药。${pid?'':'下一步再选送给谁。'}</p>`,L.map(g=>({t:g.n+'（'+pillHave(g)+'）· '+g.d,fn:()=>pid?giftGive(g,pid):giftPickWho(g)})).concat([{t:'算了',cls:'ghost'}]));}
+ modal(`<h3>赠丹</h3><p>选一种丹药。${pid?'':'下一步再选送给谁。'}</p>`,L.map(g=>({t:ico(g.ic)+g.n+'（'+pillHave(g)+'）· '+g.d,fn:()=>pid?giftGive(g,pid):giftPickWho(g)})).concat([{t:'算了',cls:'ghost'}]));}
 function giftPickWho(g){const W=giftWho(g.dead);if(!W.length){toast(g.dead?'没有可以救回的人':'没有可以送的人','bad');return;}
  modal(`<h3>${g.n} · 送给谁</h3><p class="note">${g.d}</p>`,W.slice(0,40).map(w=>({t:w.n+'<small style="display:block;opacity:.7;font-size:11px">'+esc(w.sub)+'</small>',fn:()=>giftGive(g,(w.t==='d'?'d':'')+w.o.id)})).concat([{t:'算了',cls:'ghost'}]));}
 function giftGive(g,id){const isD=String(id).startsWith('d')&&!P_(id),o=isD?(S.dis||[]).find(d=>'d'+d.id===String(id)):P_(id);if(!o||pillHave(g)<=0)return;
@@ -5357,10 +5361,10 @@ function smTaskDo(i){const t=smTasks()[+i];if(!t||t.done)return;const k=S.sm.k,z
 
 /* ---------- 宝库：用贡献换东西 ---------- */
 const SM_SHOP=[
- {k:'life',n:'寿元丹',gx:220,fn:()=>{S.lifeP=(S.lifeP||0)+1;return '寿元丹 +1';}},
- {k:'pill',n:'破境丹',gx:130,fn:()=>{S.pills++;return '破境丹 +1';}},
- {k:'zj',n:'筑基丹',gx:90,fn:()=>{S.zjDan=(S.zjDan||0)+1;return '筑基丹 +1';}},
- {k:'qi',n:'聚气丹 ×3',gx:40,fn:()=>{S.qiPills+=3;return '聚气丹 +3';}},
+ {k:'life',n:'寿元丹',ic:'shouyuan',gx:220,fn:()=>{S.lifeP=(S.lifeP||0)+1;return '寿元丹 +1';}},
+ {k:'pill',n:'破境丹',ic:'pojing',gx:130,fn:()=>{S.pills++;return '破境丹 +1';}},
+ {k:'zj',n:'筑基丹',ic:'zhuji',gx:90,fn:()=>{S.zjDan=(S.zjDan||0)+1;return '筑基丹 +1';}},
+ {k:'qi',n:'聚气丹 ×3',ic:'juqi',gx:40,fn:()=>{S.qiPills+=3;return '聚气丹 +3';}},
  {k:'dj',n:'渡劫丹',gx:260,r:4,fn:()=>{S.jieDan=(S.jieDan||0)+1;return '渡劫丹 +1';}},
  {k:'form',n:'本门阵图',gx:350,r:1,once:1,fn:()=>(learnForm(SECTS[S.sm.k].form)||'已学会').trim()},
  {k:'book',n:'镇派绝学',gx:700,r:2,once:1,fn:()=>{const b=SECTS[S.sm.k].book;S.books[b]=(S.books[b]||0)+1;return '获得 '+BOOKS[b].n+'（在「囊」里研读）';}},
@@ -5419,7 +5423,7 @@ function smHTML(){let h='';const D0=dbInit();
   h+=`<h3 class="sub">宗门任务 <small>${yearName()} · 每年三件</small></h3>`+T.map(t=>`<div class="row2 ${t.done?'dim':''}"><div class="in"><div class="iname">${t.n}<span class="lv">贡献 ${Math.round(t.gx*(1+.15*S.sm.rank))} · 感悟 8</span></div><div class="istat">${esc(t.d)}</div></div><div class="ibtn">${t.done?'<span class="dim">已完成</span>':`<button class="btn sm gold" data-ja="smTask" data-arg="${t.i}">去做</button>`}</div></div>`).join('');
   h+=q?`<div class="row2"><div class="in"><div class="iname">晋升 · ${q.r>=5?D.lt:SM_RANK[q.r]}</div><div class="istat">累计贡献 ${S.sm.tot}/${q.tot} · 境界 ${STAGES[q.st].name}${q.r===2?' · 需通过长老考核':q.r===5?' · 需在宗主之争中击败现任'+D.lt:''}</div></div><div class="ibtn"><button class="btn sm ${S.sm.tot>=q.tot&&S.stage>=q.st?'gold':'ghost'}" data-ja="smUp">${q.r===2?'考核':q.r===5?'争位':'晋升'}</button></div></div>`:'';
   if(S.sm.rank>=3)h+=`<h3 class="sub">任职</h3>`+Object.keys(SM_POST).map(p=>`<div class="row2 ${S.sm.post===p?'friend':''}"><div class="in"><div class="iname">${SM_POST[p].n}</div><div class="istat">${SM_POST[p].d}</div></div><div class="ibtn">${S.sm.post===p?'<span>在任</span>':`<button class="btn sm" data-ja="smPost" data-arg="${p}">就任</button>`}</div></div>`).join('');
-  h+=`<h3 class="sub">宝库 <small>用贡献换</small></h3>`+SM_SHOP.map(it=>{const lock=(it.r||0)>S.sm.rank,got=it.once&&S.sm.got[it.k];return `<div class="row2 ${lock||got?'dim':''}"><div class="in"><div class="iname">${it.n}<span class="lv">${smPrice(it)} 贡献</span></div><div class="istat">${lock?'需 '+SM_RANK[it.r]:got?'已领取':''}</div></div><div class="ibtn">${lock||got?'':`<button class="btn sm" data-ja="smBuy" data-arg="${it.k}" ${S.sm.gx>=smPrice(it)?'':'disabled'}>换</button>`}</div></div>`;}).join('');
+  h+=`<h3 class="sub">宝库 <small>用贡献换</small></h3>`+SM_SHOP.map(it=>{const lock=(it.r||0)>S.sm.rank,got=it.once&&S.sm.got[it.k];return `<div class="row2 ${lock||got?'dim':''}"><div class="in"><div class="iname">${it.ic?ico(it.ic):''}${it.n}<span class="lv">${smPrice(it)} 贡献</span></div><div class="istat">${lock?'需 '+SM_RANK[it.r]:got?'已领取':''}</div></div><div class="ibtn">${lock||got?'':`<button class="btn sm" data-ja="smBuy" data-arg="${it.k}" ${S.sm.gx>=smPrice(it)?'':'disabled'}>换</button>`}</div></div>`;}).join('');
   h+=`<p style="text-align:right"><button class="btn sm ghost" data-ja="smLeave">叛出宗门</button></p>`;}
  else{h+=`<p class="note">拜入一个宗门：做宗门任务攒贡献，一步步从外门弟子做到长老、宗主；执事起可以任职；每五年代表宗门出战天下宗门大比。（已开宗立派的人不能再拜入别家）</p>`+SECT_ORD.map(k=>{const why=smCanJoin(k);return `<div class="row2 ${why?'dim':''}"><div class="in"><div class="iname">${SECTS[k].n}<span class="lv">${SECTS[k].align}道 · 入门 ${STAGES[smSt(k,0)].name}</span></div><div class="istat">${why||'本门加成：'+Object.keys(SECTS[k].ally).map(q=>({atkP:'攻击',defP:'防御',healP:'治疗',mp:'灵力',ls:'吸血',critA:'暴击'}[q]||q)+' +'+Math.round(SECTS[k].ally[q]*100)+'%').join('、')+'（随职位提高）'}</div></div><div class="ibtn">${why?'':`<button class="btn sm gold" data-ja="smJoin" data-arg="${k}">拜入</button>`}</div></div>`;}).join('');}
  /* 大比 */
@@ -5557,6 +5561,11 @@ const _baP=btPortrait;btPortrait=function(a){const k=bossArtKey(a),im=k&&ART_IMG
  const asp=im.width/im.height;const h=Math.max(40,Math.round(Math.min(BT.H*(a.jie?.45:.62),BT.W*.6/asp))),w=Math.round(h*asp);
  return cvMemo('boss-art|'+k+'|'+w+'x'+h,()=>{const cv=mkCv(w*2,h*2),x=cv.getContext('2d');cv.ww=w;cv.hh=h;x.translate(cv.width,0);x.scale(-1,1);x.drawImage(im,0,0,cv.width,cv.height);x.setTransform(1,0,0,1,0,0);
   x.globalCompositeOperation='destination-in';const g=x.createLinearGradient(0,cv.height*.9,0,cv.height);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,cv.width,cv.height);return cv;});};
+
+/* ---------- 丹药与符箓图标 ---------- */
+function ico(k){const im=ART_IMG['ico_'+k];return im?`<img class="ico" src="${im.src}" alt="">`:'';}
+function danHTML(){const L=[['shouyuan','寿元丹',S.lifeP||0,'延寿三十年；可自服，也可赠人','<button class="btn sm" data-act="eatLife">服用</button>'],['zhuji','筑基丹',S.zjDan||0,'可赠凡人生出灵根，或给弟子冲关',''],['jiuzhuan','九转金丹',(S.jzDan||0)+(F('rw_jz')?1:0),'续寿极多，可赠人',''],['huanhun','还魂丹',S.hhDan||0,'起死回生，只能给已故之人','']].filter(x=>x[2]>0);
+ if(!L.length)return '';return `<h2 class="sec">丹药匣 <button class="btn sm gold" data-act="gift">赠丹</button></h2>`+L.map(x=>`<div class="row2"><div class="in"><div class="iname">${ico(x[0])}${x[1]} <span class="lv">持有 ${x[2]}</span></div><div class="istat">${x[3]}</div></div><div class="ibtn">${x[4]}</div></div>`).join('');}
 
 /* ================= 宿敌 · 萧尘：拿走另外半块玉简的人 =================
    他永远比你快半步。他那半块玉里住着堕仙残存的意志，一步步推着他走。
@@ -6143,9 +6152,10 @@ VIEWS.bag=()=>{const st=stats();const bag=S.bag.slice().sort((a,b)=>better(b)-be
   return `<h2 class="sec">法身 <small>战力 <b>${fmt(myCP())}</b> · 攻 ${fmt(st.atk)} · 防 ${fmt(st.def)} · 血 ${fmt(st.hp)} · 暴击 ${(st.crit*100).toFixed(1)}%</small></h2>${extra.length?`<p class="note">${extra.join(' · ')}</p>`:''}
   <div class="slots">${SLOT5.map(k=>{const it=S.gear[k];return `<div class="slot ${it?'r-'+RAR[it.r].c:''}"><div class="sl">${SLOTN[k]}</div>${it?`<div class="sn">${itemName(it)}</div><div class="ss">${statText(it).replaceAll('　','<br>')}</div>${affHTML(it)}${it.so?`<button class="btn sm ghost xs" data-act="inlay" data-arg="${it.id}">镶嵌</button>`:''}`:'<div class="ss">空</div>'}</div>`;}).join('')}</div>
   ${bookHTML()}${gemHTML()}
+  ${danHTML()}
   <h2 class="sec">坊市 <small>${disc()<1?'红鹞商队给你打 '+Math.round(disc()*100)/10+' 折':'红鹞商队'}</small></h2>
-  <div class="row2"><div class="in"><div class="iname">破境丹 <span class="lv">持有 ${S.pills}</span></div><div class="istat">冲击大境界时服用，成功率 +25%</div></div><button class="btn sm" data-act="buyPill" ${S.stones>=pillCost()?'':'disabled'}>${fmt(pillCost())} 灵石</button></div>
-  <div class="row2"><div class="in"><div class="iname">聚气丹 <span class="lv">持有 ${S.qiPills}</span></div><div class="istat">服用获得本层所需灵气的 25%</div></div><div class="ibtn">${S.qiPills?'<button class="btn sm ghost" data-act="useQi">服用</button>':''}<button class="btn sm" data-act="buyQi" ${S.stones>=qiPillCost()?'':'disabled'}>${fmt(qiPillCost())} 灵石</button></div></div>
+  <div class="row2"><div class="in"><div class="iname">${ico('pojing')}破境丹 <span class="lv">持有 ${S.pills}</span></div><div class="istat">冲击大境界时服用，成功率 +25%</div></div><button class="btn sm" data-act="buyPill" ${S.stones>=pillCost()?'':'disabled'}>${fmt(pillCost())} 灵石</button></div>
+  <div class="row2"><div class="in"><div class="iname">${ico('juqi')}聚气丹 <span class="lv">持有 ${S.qiPills}</span></div><div class="istat">服用获得本层所需灵气的 25%</div></div><div class="ibtn">${S.qiPills?'<button class="btn sm ghost" data-act="useQi">服用</button>':''}<button class="btn sm" data-act="buyQi" ${S.stones>=qiPillCost()?'':'disabled'}>${fmt(qiPillCost())} 灵石</button></div></div>
   <div class="row2"><div class="in"><div class="iname">疗伤药 <span class="lv">持有 ${S.meds}</span></div><div class="istat">战斗中恢复同伴 50% 生命；平时服用回满生命</div></div><div class="ibtn">${S.meds&&(S.hpF??1)<1?'<button class="btn sm ghost" data-act="useMed">服用</button>':''}<button class="btn sm" data-act="buyMed" ${S.stones>=medCost()?'':'disabled'}>${fmt(medCost())} 灵石</button></div></div>
   <div class="row2"><div class="in"><div class="iname">清心丹 <span class="lv">持有 ${S.mps}</span></div><div class="istat">战斗中恢复 60% 灵力，施展法术用</div></div><button class="btn sm" data-act="buyMp" ${S.stones>=medCost()?'':'disabled'}>${fmt(medCost())} 灵石</button></div>
   <h2 class="sec"><span>行囊 <small>${S.bag.length}/${BAG_MAX}</small></span>${worse?`<button class="btn sm ghost" data-act="sellWorse">出售 ${worse} 件较弱装备</button>`:''}</h2>
@@ -6222,7 +6232,7 @@ function live(){const need=req(S.stage);$('#saveOpen').disabled=!S.started;
 
 /* ---------- 交互 ---------- */
 const ACT={
- saveBack:()=>closeSaves(),daoPick:()=>daoPick(),bgm:()=>bgmToggle(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
+ saveBack:()=>closeSaves(),gift:()=>giftOpen(),daoPick:()=>daoPick(),bgm:()=>bgmToggle(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
  brew:a=>brewOpen(a),natal:a=>natalForge(a),natalUp:()=>natalUp(),closed:a=>closedGo(a),eatLife:()=>{if(S.lifeP>0){S.lifeP--;S.lifeB=(S.lifeB||0)+30;S.dying=0;S.agewarn=0;toast('寿元 +30 年','big');save();render();}},
  teach:a=>{const [i,h]=a.split('|');disTeach(i,h);},disTake:a=>disRecruit(+a),ending:a=>playEnding(a),goals:()=>goalsOpen(),fly:()=>flyToggle(),soul:()=>soulOut(),void:()=>voidStep(),jh:()=>jhOpen(),root:()=>openRootTest(),form:a=>{if(S.forms.includes(a)){S.form=a;toast('阵法：'+FORMS[a].n);save();render();}},sfx:()=>sfxMute(),path:()=>pathAsk(),zong:()=>zongFound(),xf:()=>playEvent('xf'+(S.flags.xfStage||1),{}),
  break:()=>breakthrough(),
