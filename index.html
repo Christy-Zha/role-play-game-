@@ -383,7 +383,7 @@ h2.sec:first-child{margin-top:0}
 .wl .pl.rf{color:#e0b8ff;border-color:rgba(200,140,255,.6)}
 .tsky{position:absolute;right:12px;top:12px;z-index:2;background:rgba(40,30,70,.85);border-color:#c9a0f0}
 /* 小游戏 */
-#mg{position:fixed;inset:0;z-index:45;background:#0e0c09;display:flex;padding:calc(env(safe-area-inset-top,0px) + 10px) max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(12px,env(safe-area-inset-left,0px))}
+#miniGameOverlay{position:fixed;inset:0;z-index:45;background:#0e0c09;display:flex;padding:calc(env(safe-area-inset-top,0px) + 10px) max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(12px,env(safe-area-inset-left,0px))}
 .mg-in{width:100%;max-width:520px;margin:auto;display:flex;flex-direction:column;gap:10px;max-height:100%;overflow-y:auto}
 .mg-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .mg-top .btn{white-space:nowrap;flex-shrink:0}
@@ -661,7 +661,7 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 </div>
 <div id="toasts"></div>
 <div id="bt" hidden></div>
-<div id="mg" hidden></div>
+<div id="miniGameOverlay" hidden></div>
 <div id="ov" hidden></div>
 <script>
 (function(){
@@ -3353,14 +3353,14 @@ const MG_DESC={
  boxes:['三匣','三只匣子里只有一只装着宝物。选好之后，庄家会打开另一只空匣，问你要不要换。'],
  memory:['翻牌','翻开两张相同的牌就能消掉。错的次数用完就输了。']
 };
-function mgHost(){let el=$('#mg');if(!el){el=document.createElement('div');el.id='mg';el.hidden=true;document.body.appendChild(el);}return el;}
+function mgHost(){let el=$('#miniGameOverlay');if(!el){el=document.createElement('div');el.id='miniGameOverlay';el.hidden=true;document.body.appendChild(el);}return el;}
 function openMini(k,o){o=o||{};const el=mgHost();const D=MG_DESC[k];MG={k,o,lv:o.lv||1,done:false};el.hidden=false;
  el.innerHTML=`<div class="mg-in"><div class="mg-top"><div><b>${esc(o.title||D[0])}</b>${o.lv?`<span class="mg-lv">${LV_NAME[o.lv]}</span>`:''}<small>${D[1]}</small></div>${o.story?'':'<button class="btn sm ghost" id="mgQuit">离开</button>'}</div>
   <div class="mg-msg" id="mgMsg"></div><div class="mg-area" id="mgArea"></div><div class="mg-ctl" id="mgCtl"></div></div>`;
  const q=$('#mgQuit');if(q)q.onclick=()=>mgEnd(k==='sicbo'?MG.net>0:false,true);
  ({gomoku:gmInit,sicbo:sbInit,duel:dlInit,boxes:bxInit,memory:mmInit})[k]();}
 function mgMsg(t,cls){const m=$('#mgMsg');if(m){m.textContent=t;m.className='mg-msg '+(cls||'');}}
-function mgEnd(win,quit){if(!MG||MG.done&&!quit)return;MG.done=true;const o=MG.o;const el=$('#mg');
+function mgEnd(win,quit){if(!MG||MG.done&&!quit)return;MG.done=true;const o=MG.o;const el=$('#miniGameOverlay');
  const fin=()=>{el.hidden=true;el.innerHTML='';const m=MG;MG=null;if(m.k!=='sicbo'||!quit){S.mgW[m.k+(m.lv||1)]=(S.mgW[m.k+(m.lv||1)]||0)+(win?1:0);}o.onDone&&o.onDone(!!win);save();};
  if(quit){fin();return;}const c=$('#mgCtl');if(c)c.innerHTML=`<button class="btn gold" id="mgOk">${win?'赢了！继续':'输了……继续'}</button>`;const b=$('#mgOk');if(b)b.onclick=fin;}
 
@@ -3817,10 +3817,10 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
+const ART_HAVE=['por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
 const ART_IMG={};
-function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg');});}
-function SCC_CLEAR(){try{_scnCache.clear();}catch(e){}}
+function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261107':'');});}
+function SCC_CLEAR(){try{_scnCache.clear();for(const k of _cvc.keys())if(k.startsWith('hbg|'))_cvc.delete(k);}catch(e){}}
 const _sceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){const im=ART_IMG['scene_'+key];if(!im)return _sceneCanvas(key,w,h);
  return cvMemo('img|'+key+'|'+Math.round(w)+'x'+Math.round(h),()=>{const dpr=Math.min(2,window.devicePixelRatio||1),cv=mkCv(Math.round(w*dpr),Math.round(h*dpr)),x=cv.getContext('2d');const s=Math.max(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,(cv.height-im.height*s)/2,im.width*s,im.height*s);return cv;});};
 Object.keys(PORTRAIT).forEach(k=>{const f=PORTRAIT[k];PORTRAIT[k]=function(){const im=ART_IMG['por_'+k];return im?`<img class="porimg ${k}" src="${im.src}" alt="">`:f.apply(this,arguments);};});
@@ -5240,7 +5240,7 @@ function start(data){artLoad();S=data&&data.S?hydrate(data.S):load();pplInit();T
   requestAnimationFrame(t=>{lastT=t;loop(t);});}
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
 function cultMore(){const R=realmIdx();return `${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
@@ -5253,3 +5253,4 @@ function cultMore(){const R=realmIdx();return `${S.injury>Date.now()?`<div class
 </script>
 </body>
 </html>
+
