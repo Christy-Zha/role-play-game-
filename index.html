@@ -636,6 +636,8 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .porimg.por_mo{opacity:.93;filter:drop-shadow(0 0 18px rgba(143,214,181,.45))}
 .bp .porimg{object-fit:cover;object-position:50% 6%;transform:none;width:100%;height:100%}
 .port .porimg{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+.intro{padding:24px 12px;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(6,10,10,.72),rgba(6,10,10,.35) 60%,rgba(6,10,10,0) 80%)}
+.intro p,.intro .yr{text-shadow:0 1px 3px #000,0 0 12px #000;color:#efe6d0}
 
 </style>
 </head>
@@ -3795,9 +3797,9 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['scene_xiulian','por_hero_m','por_hero_f','por_mo'];
+const ART_HAVE=['scene_xiulian','scene_sky','scene_shelter','scene_market','por_hero_m','por_hero_f','por_mo','por_tie','por_he'];
 const ART_IMG={};
-function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();paintAll&&paintAll();};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg');});}
+function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg');});}
 function SCC_CLEAR(){try{_scnCache.clear();}catch(e){}}
 const _sceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){const im=ART_IMG['scene_'+key];if(!im)return _sceneCanvas(key,w,h);
  return cvMemo('img|'+key+'|'+Math.round(w)+'x'+Math.round(h),()=>{const dpr=Math.min(2,window.devicePixelRatio||1),cv=mkCv(Math.round(w*dpr),Math.round(h*dpr)),x=cv.getContext('2d');const s=Math.max(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,(cv.height-im.height*s)/2,im.width*s,im.height*s);return cv;});};
