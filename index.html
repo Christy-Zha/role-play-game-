@@ -673,6 +673,13 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 @keyframes nmShake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 @media (prefers-reduced-motion:reduce){.intro .poem p,.intro .ask,.intro .seg,.intro input,.intro #nmGo,.intro #nmBack{animation:none;opacity:1}}
 
+#realClock{flex-shrink:0;text-align:center;color:var(--mist);border-bottom:1px solid var(--line);padding:4px 8px;font-size:11px;min-height:24px;font-variant-numeric:tabular-nums}
+.novel-banner{margin:14px 0 22px;padding:24px;border:1px solid #a68a58;border-radius:14px;background:linear-gradient(135deg,#203d40,#152322);color:#e9dfc6}
+.novel-banner h2{font-size:30px;letter-spacing:5px;margin:8px 0}.novel-banner>span,.novel-scene>span{font-size:12px;letter-spacing:2px;color:#c9ac72}.novel-banner p{line-height:1.8}.novel-banner .note{color:#c7c7b5}
+.novel-entry{position:absolute;top:36px;left:10px;z-index:5}.novel-entry button{background:#203d40;color:#f4e6c6}
+.novel-scene{background:linear-gradient(150deg,#29494b,#192c30);border-radius:12px;padding:20px;color:#f0e7cf}.novel-scene h3{color:#e8cb91!important}.novel-scene p{line-height:1.9;color:#f0e7cf!important}.novel-place{color:#c8d9ce!important;font-size:13px}
+.novel-map,.novel-bonds{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.novel-map span,.novel-bonds span{border:1px solid #8d805f;border-radius:8px;padding:8px;font-size:12px}.novel-text{font-size:16px;line-height:2;text-align:left}.novel-text p{margin:1em 0}
+
 </style>
 </head>
 <body>
@@ -697,6 +704,7 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 <div id="bt" hidden></div>
 <div id="miniGameOverlay" hidden></div>
 <div id="ov" hidden></div>
+<script src="novels.js"></script>
 <script>
 (function(){
 /* ================= ART：场景、立绘、精灵 ================= */
@@ -2544,15 +2552,16 @@ const avOf=k=>S.aff&&S.aff[k]||0;
 function aff(k,n,quiet){if(!S.aff)S.aff={};if(!BOND[k]||!n)return '';S.aff[k]=Math.max(-100,Math.min(100,(S.aff[k]||0)+n));if(!quiet)toast(BOND[k].n+' 好感 '+(n>0?'+':'')+n);if(S.started)checkStory();dotUpdate();return ' '+BOND[k].n+'好感 '+(n>0?'+':'')+n+'。';}
 function relName(k){const v=avOf(k),B=BOND[k];if(B.dead&&safe(B.dead))return '已故';if(S.partner===k)return '道侣';if((S.sworn||[]).includes(k))return B.child||k==='zero'?'家人':k==='mo'||k==='shen'?'师徒':'结义';
  return v<-20?'嫌隙':v<15?'相识':v<40?'朋友':v<70?'知己':'挚友';}
-/* 好感：按游戏里的日子算「每天」，不是现实的日子 */
-const today=()=>'d'+gameDay();
+/* Social gains use persistent action counts, never wall-clock cooldowns. */
+const today=()=>new Date().toLocaleDateString('sv-SE');
 function bondPerk(k){const v=avOf(k);return {tie:v>=40?'铁叔每天的补给多五成':'',hong:v>=40?'坊市再打九折':'',mo:(S.sworn||[]).includes('mo')?'吐纳速度 +10%':'',shen:(S.sworn||[]).includes('shen')?'小游戏奖励 ×1.5':'',zero:(S.sworn||[]).includes('zero')?'零号战斗中攻击 +20%':''}[k]||(S.partner===k?'双修：吐纳 +20%，与你并肩作战':'');}
-function chatBtn(k){if(!BOND[k]||(BOND[k].dead&&safe(BOND[k].dead)))return [];S.affDay=S.affDay||{};S.giftDay=S.giftDay||{};const out=[];
- if(S.affDay[k]!==today())out.push({t:'闲聊几句',fn:()=>{S.affDay[k]=today();const L=(BOND_CHAT[k]||[])[relTier(k)]||['你们随便聊了几句。'];toast(sub(pick(L)));aff(k,3,true);toast(BOND[k].n+' 好感 +3');save();}});
- if(S.giftDay[k]!==today())out.push({t:'送一份礼物',fn:()=>giftPick(k)});return out;}
+function socialCount(k,kind){S.social=S.social||{};S.social[k]=S.social[k]||{chat:0,gifts:{}};return S.social[k];}
+function chatBtn(k){if(!BOND[k]||(BOND[k].dead&&safe(BOND[k].dead)))return [];
+return [{t:'闲聊几句 · 无冷却',fn:()=>{const c=socialCount(k);const gain=c.chat<5?3:c.chat<15?2:1;c.chat++;const L=(BOND_CHAT[k]||[])[relTier(k)]||['你们随便聊了几句。'];toast(sub(pick(L)));aff(k,gain);save();}},
+{t:'送一份礼物 · 无冷却',fn:()=>giftPick(k)}];}
 const relTier=k=>{const v=avOf(k);return v<15?0:v<50?1:2;};
-function giftPick(k){const B=BOND[k];modal(`<h3>送给${B.n}</h3><p>每天只能送一次（按游戏里的日子算，今天是${dateName()}）。投其所好，好感涨得更多。</p>`,Object.keys(GIFTS).map(g=>({t:GIFTS[g].n+' · '+fmt(gPrice(g))+' 灵石',fn:()=>{const p=gPrice(g);if(S.stones<p){toast('灵石不够','bad');return;}S.stones-=p;S.giftDay[k]=today();const like=B.likes.includes(g);
-  toast(like?B.n+'眼睛一亮：“你怎么知道我喜欢这个？”':B.n+'收下了：“谢谢。”');aff(k,like?10:4,true);toast(B.n+' 好感 +'+(like?10:4));live();save();}})).concat([{t:'算了',cls:'ghost'}]));}
+function giftPick(k){const B=BOND[k];if(!B||(B.dead&&safe(B.dead)))return;
+modal(`<h3>送给${B.n}</h3><p>随时送礼，不按日限次。同类礼物重复赠送收益递减，最低 +1；灵石照常消耗，好感上限 100。聊天也可随时进行，收益由 +3 逐步降至 +1，刷新不会重置。</p>`,Object.keys(GIFTS).map(g=>({t:GIFTS[g].n+' · '+fmt(gPrice(g))+' 灵石',fn:()=>{const p=gPrice(g);if(S.stones<p){toast('灵石不够','bad');return;}const c=socialCount(k),n=c.gifts[g]||0;const gain=Math.max(1,Math.floor((B.likes.includes(g)?10:4)/(1+Math.floor(n/3))));S.stones-=p;c.gifts[g]=n+1;aff(k,gain);live();save();}})).concat([{t:'算了',cls:'ghost'}]));}
 const BOND_CHAT={
  mo:[['老夫困了，你自己练。','少说话，多吐纳。'],['今天的灵气比昨天稠一点。你感觉到了吗？','老夫年轻时，也常坐在树下发呆。'],['……娃娃，有你在，这三百年不算白等。','老夫这辈子，收过一个徒弟。现在算两个。']],
  tie:[['有事说事。','别在站台上跑。'],['站里的灯又修好了两盏，郭师傅的功劳。','今晚的粥稠，多喝一碗。'],['我这把老骨头，能看到你长这么大，值了。','站里的孩子都说，长大了要像你。']],
@@ -4190,7 +4199,7 @@ function pityHTML(){const P=S.pity;return `<p class="note">保底：仙品装备
 /* ================= 时间 · 人物 · 因果 · 弟子 · 道途 · 结局 ================= */
 const CN='零一二三四五六七八九';
 function cnNum(n){n=Math.floor(n);if(n<10)return CN[n];if(n<20)return '十'+(n%10?CN[n%10]:'');if(n<100)return CN[Math.floor(n/10)]+'十'+(n%10?CN[n%10]:'');if(n<1000){const h=Math.floor(n/100),r=n%100;return CN[h]+'百'+(r?(r<10?'零'+CN[r]:(r<20?'一':'')+cnNum(r)):'');}return String(n);}
-const yearName=y=>'灵潮'+cnNum(y==null?S.year:y)+'年';
+const yearName=y=>'历练第'+cnNum(y==null?S.year:y)+'年';
 // Human lifespan progression inspired by 聚宝仙盆; 渡劫/真仙 adapt its different realm chain to this game's single calendar.
 // Infinity is derived, never persisted in saves.
 const LIFE=[100,200,500,1000,2000,5000,10000,100000,100000,1000000,10000000,Infinity,Infinity,Infinity];
@@ -4269,11 +4278,12 @@ function personDied(p){if(!p.known)return;if(p.bg){if(p.st>=21||p.lead)news(p.n+
  if(p.lead){p.lead=0;}}
 
 /* ---------- 时间推进 ---------- */
-/* 游戏历：游戏里 1 天 = 现实 1 秒，一年 365 天 ≈ 现实 6 分钟（在线时）；闭关、渡劫一次过几年，日子也一起过去 */
-const Y_SEC=365,Y_DAYS=365,MON=['正','二','三','四','五','六','七','八','九','十','冬','腊'];
-const gameDay=()=>(S.year||0)*Y_DAYS+Math.floor((S.yAcc||0)/Y_SEC*Y_DAYS);
-function dateName(){const d=Math.floor((S.yAcc||0)/Y_SEC*Y_DAYS),m=Math.min(11,Math.floor(d/30.42)),dd=Math.floor(d-m*30.42)+1;return yearName()+' '+MON[m]+'月'+(dd<=10?'初'+cnNum(dd):cnNum(dd));}
-function timeTick(dt){if(!S.started)return;S.yAcc=(S.yAcc||0)+dt;if(S.yAcc<Y_SEC)return;S.yAcc=0;const L=simYears(1);toast(yearName()+' · 一年过去了','');if(L.length)toast(L[0].slice(0,24));ageCheck();}
+/* Wall clock is display-only. Fictional cultivation years remain independent. */
+const Y_SEC=365*86400,Y_DAYS=365;
+const gameDay=()=>Math.floor(Date.now()/86400000);
+function dateName(){return new Date().toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+let clockSecond=-1;
+function timeTick(){const second=Math.floor(Date.now()/1000);if(second===clockSecond)return;clockSecond=second;const el=$('#realClock');if(el)el.textContent=dateName()+' · 设备当地时间';if(TAB==='world')wHud();}
 function ageCheck(){lifeSync(S);if(S.age>=myLife()&&!S.dying){S.dying=1;S.fateQ.unshift({k:'old'});}else if(S.age<myLife()&&S.age>=myLife()-10&&!S.agewarn){S.agewarn=1;toast('寿元将尽：还剩 '+(myLife()-S.age)+' 年。突破境界或服寿元丹可以延寿','bad');}}
 function fateCheck(){if(!S.started||BT||!OV_FREE()||SC||!S.fateQ.length)return;const sd=S.fateQ.shift();save();fatePlay(sd);}
 
@@ -4317,20 +4327,22 @@ const LEGACY={
 };
 
 /* ---------- 闭关 ---------- */
-function closedHTML(){const left=myLife()-S.age;const opts=[1,5,10,30,100].filter(y=>y<left);
- return `<h2 class="sec">闭关 <small>${yearName()} · 年岁 ${S.age} / 寿元 ${lifeText(myLife())}</small></h2>
- <p class="note">闭关时，世界不会等你。好友会老去，仇人会变强，弟子会自己冲关。出关时会告诉你这些年发生了什么。${S.path==='yin'?'（隐者：闭关所得 ×1.5，岁月流逝减半）':''}</p>
- <details class="note"><summary>各境界寿元上限</summary><p>突破大境界提高寿元上限，年龄不会重置；寿元丹额外延寿。金仙以上不因衰老坐化，仍可能在斗法或天劫中败亡。</p><p>${REALMS.map((n,r)=>n+'：'+lifeText(LIFE[r])).join(' · ')}</p></details>
- <div class="closed">${opts.map(y=>`<button class="btn sm ${y>=30?'red':''}" data-act="closed" data-arg="${y}">${y} 年</button>`).join('')||'<span class="dim">寿元所剩无几，经不起闭关了</span>'}</div>
- ${S.lifeP>0?`<div class="row2"><div class="in"><div class="iname">寿元丹 <span class="lv">持有 ${S.lifeP}</span></div><div class="istat">自己服下延寿三十年，也可以在「江湖·人物」里赠给凡人故交</div></div><button class="btn sm ghost" data-act="eatLife">服用</button></div>`:''}`;}
-function closedGo(y){y=+y;if(BT||y>=myLife()-S.age)return;const ni=nextInfo();const gain=idleRate()*y*120*(S.path==='yin'?1.5:1);const q0=S.qi;addQi(gain,true);const got=S.qi-q0;
- let mind='';if(y>=30&&Math.random()<.22){mind='xinmo';}
- const age0=S.age;S.yearsClosed=1;const L=simYears(y);if(S.path==='yin')S.age=age0+Math.ceil(y/2);S.yearsClosed=0;S.closedY=(S.closedY||0)+y;S.dao.yin+=y>=30?2:y>=10?1:0;
- sfx('bell');save();render();
- const imp=S.news.slice(0,40).filter(n=>n.y>S.year-y&&n.imp).slice(0,8),rest=L.length-imp.length;
- modal(`<h3>出关 · ${yearName()}</h3><p>你闭关 ${y} 年。${got>0?'灵气 +'+fmt(got)+'。':''}${ni.major&&S.qi>=req(S.stage)?'修为已到瓶颈，需要突破。':''}</p>
-  <div class="newsbox">${imp.length?imp.map(n=>`<p><b>${yearName(n.y)}</b> ${esc(sub(n.t))}</p>`).join(''):'<p class="dim">江湖上没什么大事。</p>'}${rest>0?`<p class="dim">……还有 ${rest} 件小事，记在「江湖·传闻」里。</p>`:''}</div>`,
-  [{t:mind?'……心里有什么在动':'出关',cls:mind?'red':'gold',fn:()=>{if(mind)xinmoFight();ageCheck();}}]);}
+const RETREATS=[{id:'week',n:'1周',days:7},{id:'month',n:'1个月',days:30},{id:'quarter',n:'3个月',days:90},{id:'half',n:'半年',days:180},...([1,5,10,30,100].map(y=>({id:String(y),n:y+'年',days:y*365})))];
+function retreatCost(o){return Math.max(1,Math.ceil(zsAt(maxZone(),2)*o.days/7));}
+function closedHTML(){return `<h2 class="sec">闭关 <small>累计修炼 ${Math.round(S.retreatDays||0)} 天</small></h2><p class="note">这是立即结算的修炼模拟：现实不等待、不跳日历；1个月按30天、3个月90天、半年180天计算。消耗灵石，收益受当前境界瓶颈限制。每累计365天推进一轮江湖历练与人物年岁；家族派遣、伤势和玉简温养仍按现实计时。旧存档的历练年岁保留。</p><div class="closed">${RETREATS.filter(o=>o.days/365<myLife()-S.age).map(o=>`<button class="btn sm" data-act="closed" data-arg="${o.id}">${o.n} · ${fmt(retreatCost(o))}灵石</button>`).join('')}</div>${S.lifeP>0?'<button class="btn sm" data-act="eatLife">服寿元丹 · 延寿30年</button>':''}`;}
+function closedGo(id){const o=RETREATS.find(x=>x.id===String(id));if(!o||BT)return;
+if(o.days/365>=myLife()-S.age){toast('剩余寿元不足','bad');return;}
+if(S.qi>=needQ()){toast('已到境界瓶颈，请先突破；未扣灵石');return;}
+const cost=retreatCost(o);if(S.stones<cost){toast('灵石不足','bad');return;}
+modal(`<h3>闭关 ${o.n}</h3><p>消耗 ${fmt(cost)} 灵石，立即结算。现实日期和现实倒计时保持不变。累计修炼满一年会推进人物年岁和江湖事件。</p>`,[{t:'开始闭关',cls:'gold',fn:()=>retreatApply(o.id)},{t:'暂不闭关',cls:'ghost'}]);}
+function retreatApply(id){const o=RETREATS.find(x=>x.id===String(id));if(!o||BT||o.days/365>=myLife()-S.age||S.qi>=needQ())return;
+const cost=retreatCost(o);if(S.stones<cost)return;S.stones-=cost;
+const q0=S.qi;addQi(Math.min(needQ()-S.qi,idleRate()*o.days/365*120*(S.path==='yin'?1.5:1)),true);
+S.retreatDays=(S.retreatDays||0)+o.days;S.retreatRemainder=(S.retreatRemainder||0)+o.days;
+const years=Math.floor(S.retreatRemainder/365);S.retreatRemainder%=365;
+S.yearsClosed=1;const age0=S.age,L=years?simYears(years):[];if(S.path==='yin'&&years)S.age=age0+Math.ceil(years/2);S.yearsClosed=0;
+S.closedY=(S.closedY||0)+o.days/365;S.dao.yin+=o.days>=30*365?2:o.days>=10*365?1:0;ageCheck();save();render();
+modal(`<h3>出关 · ${o.n}</h3><p>灵气 +${fmt(S.qi-q0)} · 消耗 ${fmt(cost)} 灵石。</p><p>${dateName()} · 现实时间未跳转</p><p>历练推进 ${years} 年，未满年的 ${S.retreatRemainder} 天继续累计。</p>${L.slice(0,6).map(t=>'<p>'+esc(sub(t))+'</p>').join('')}`,[{t:'出关',cls:'gold'}]);}
 function xinmoFight(){const st=stats();modal('<h3>心魔</h3><p>闭关太久了。黑暗里，有一个人长着你的脸，坐在你对面。</p><p>“这些年，你真的是在修行吗？”</p>',[{t:'斩心魔',cls:'red',fn:()=>{const e=mkCustom(Math.max(0,maxZone()),{look:S.gender==='f'?'宁玄':'无名剑客',name:'心魔',m:1.4,boss:true});e.atk=st.atk*.9;e.hp=st.hp*1.6;e.max=e.hp;e.def=st.def;e.tint=1;e.noLoot=1;
   startBattle([e],{noFlee:true,bg:'town',onWin:()=>{S.flags.xinmoWin=(S.flags.xinmoWin||0)+1;addQi(req(S.stage)*.5,true);toast('心魔已斩，道心更坚','big');save();},onLose:()=>{S.qi=Math.floor(S.qi*.5);S.injury=Date.now()+15*60*1000;toast('心魔反噬：修为散去一半，重伤十五分钟','bad');save();}});}}]);}
 
@@ -5144,7 +5156,7 @@ R('mowen',{t:'归处',g:'归',bg:'linjiang',gap:3,need:()=>true,hint:'几年之�
 function rwMwDie(t){rwKill(P_('mowen'),'散修莫问坐化，享年'+rwP('mowen').age+'岁。');rwEnd('mowen',t);}
 
 /* ================= 人间篇：结婴之后、飞升之前的人间 =================
-   十二段主线。每段之间至少隔一年（游戏里一年 ≈ 现实六分钟）。走完「人间·别」，天门才肯放你过去。
+   十二段主线。每段之间至少隔一个历练年（通过闭关推进，与现实日期独立）。走完「人间·别」，天门才肯放你过去。
    青石站的老朋友们会老、会死；你在每一段里的选择，最后都会在「别」里回来。 */
 const RJ_IDS=[];
 const rjAlive=k=>{const p=(S.ppl||[]).find(x=>x.fr===k);return p?p.alive:!F('dead_'+k);};
@@ -5757,7 +5769,7 @@ function ceremony(old,r,yrs,L,done){const nw=stats(),el=$('#cer')||(()=>{const d
   <p class="cer-o">天地异象 · ${OMEN_TXT[r]||'天地共鸣'}</p>
   <div class="cer-box"><div class="cjs">${row('攻',old.atk,nw.atk)}${row('防',old.def,nw.def)}${row('血',old.hp,nw.hp)}</div>
   <div class="cer-u">${unlockList(r).map(u=>`<div><b>解锁 · ${u[0]}</b><small>${u[1]}</small></div>`).join('')}<div><b>寿元 · ${lifeText(myLife())}</b><small>当前 ${S.age} 岁</small></div></div>
-  ${yrs?`<div class="cer-y"><b>闭关 ${yrs} 年 · ${yearName()}</b>${imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
+  ${yrs?`<div class="cer-y"><b>突破历练 ${yrs} 年 · ${yearName()}（不改变现实日期）</b>${imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
   <button class="btn gold" id="cerOk">出关</button></div>`;
  CER={t:0,last:performance.now(),r,bolts:[],parts:[],flash:0};const cv=$('#cerCv');
  const fit=()=>{const dpr=Math.min(2,devicePixelRatio||1);cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;CER.dpr=dpr;};fit();
@@ -7529,7 +7541,7 @@ function render(){if(S.started&&!(S.ppl&&S.ppl.length))pplInit();const prev=view
   document.querySelectorAll('.tab').forEach(b=>{b.setAttribute('aria-selected',b.dataset.tab===TAB);});
   $('#saveOpen').setAttribute('aria-pressed',String(TAB==='save'));
   breakSig='';if(TAB==='world')wBind();requestAnimationFrame(()=>{paintAll();});live();}
-function live(){const need=needQ();$('#saveOpen').disabled=!S.started;
+function live(){timeTick();const need=needQ();$('#saveOpen').disabled=!S.started;
   $('#hName').textContent=(S.name||'无名')+(S.rebirth?' · 第'+(S.rebirth+1)+'世':'');$('#hRealm').textContent=stName();
   $('#hStones').textContent=fmt(S.stones);$('#hKarma').textContent=karmaName();$('#hQi').style.width=Math.min(100,S.qi/need*100)+'%';
   if(TAB==='cult'){const el=$('#cQi');if(!el)return;const p=Math.min(1,S.qi/need);el.textContent=fmt(S.qi);$('#cReq').textContent=fmt(need);
@@ -7608,7 +7620,7 @@ let lastT=performance.now(),uiAcc=0,fAcc=0;
 function loop(t){const dt=Math.min(.1,(t-lastT)/1000),big=Math.min(1,(t-lastT)/1000);lastT=t;try{bgmTick(big);}catch(e){}if(S.started){refine(big);S.tox=Math.max(0,(S.tox||0)-big*.12);jTick(big);idleEventTick(big);clanTick(big);omenTick(big);timeTick(big);fAcc+=big;if(fAcc>2.5){fAcc=0;fateCheck();}}
   try{if(BT)btFrame(dt);else if(TAB==='world'&&WD.cx&&WD.M){if(OV_FREE()&&S.started)wUpdate(dt);else WD.t+=dt;wRender();}}catch(e){if(!loop.err){loop.err=1;console.error(e);}}
   uiAcc+=dt;if(uiAcc>.2){uiAcc=0;live();}requestAnimationFrame(loop);}
-function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.started||sec<5)return;jTick(sec);clanTick(sec,1);daily();if(sec<90)return;const yrs=Math.min(10,Math.floor(sec/Y_SEC));let ylines='';if(yrs>0){const L=simYears(yrs);ageCheck();ylines=`<p>世上已过去 <b>${yrs}</b> 年（${yearName()}）。</p>${L.slice(0,3).map(t=>'<p class="note">'+esc(sub(t))+'</p>').join('')}`;}
+function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.started||sec<5)return;jTick(sec);clanTick(sec,1);daily();if(sec<90)return;const ylines='<p>现实时间已同步；离线不加速人物年岁。</p>';
   const capH=8+S.ups.juling,eff=.6+.04*S.ups.juling,t=Math.min(sec,capH*3600),before=stName(),gain=Math.min(S.yao||0,yaoRate()*t*eff);S.yao=(S.yao||0)-gain;S.tox=Math.max(0,(S.tox||0)-t*.12);addQi(gain,true);
   const h=Math.floor(t/3600),m=Math.floor(t%3600/60),ready=S.dt.slots.filter(o=>o.left<=0).length;
   modal(`<h3>闭关归来</h3><p>你闭关了 <b>${h?h+' 小时 ':''}${m} 分</b>${sec>capH*3600?'（上限 '+capH+' 小时）':''}</p><p>${gain>0?'炼化药力，修为 <b>+'+fmt(gain)+'</b>':'腹中没有药力，打坐只是养神。修为要靠历练和丹药。'}</p>${before!==stName()?`<p>境界 ${before} → <b>${stName()}</b></p>`:''}${ylines}${ready?`<p>玉台上有 <b>${ready}</b> 样东西温养好了。</p>`:''}${nextInfo().major&&S.qi>=needQ()?'<p>丹田已满，可以冲关了。</p>':''}`,
@@ -7623,14 +7635,111 @@ function intro(){const ov=$('#ov');ov.hidden=false;ov.className='vn';let g=S.gen
   ov.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{g=b.dataset.g;ov.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));});
   const go=()=>{const v=($('#nmIn').value||'').trim().replace(/[<>&"]/g,'');if(!v){const e=$('#nmErr');e.hidden=false;const i=$('#nmIn');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake');i.focus();return;}S.gender=g;S.name=v;S.flags.v1=1;S.lastDaily=new Date().toDateString();save();playStory('prologue');};
   $('#nmGo').onclick=go;if(back)$('#nmBack').onclick=()=>switchSlot(back.n);$('#nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')go();});}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{lastT=performance.now();offline();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{clockSecond=-1;timeTick();lastT=performance.now();offline();}});
 addEventListener('pagehide',save);setInterval(()=>{if(S.started)save();},5000);
 function start(data){artLoad();S=data&&data.S?hydrate(data.S):load();pplInit();TAB='world';render();dotUpdate();
   if(!S.name||!S.started){if(S.name&&!S.seen.includes('prologue'))playStory('prologue');else intro();}else{offline();daily();xlNotice();checkStory(true);}
   requestAnimationFrame(t=>{lastT=t;loop(t);});}
+/* Novel route intentionally owns its continuity, rather than overwriting legacy branches. */
+const LC_TASKS = [
+ [
+  ['1—3','白箱救援','雾港渡口','沈湄、陈默','旧工牌和调运单将众人引向安置所；陈默承认自己曾在设备不合格时签字。','核对工牌、调运记录与接应位置','将救援与记录一起带回医棚。'],
+  ['4—6','初一的名字','医棚','初一、闻策、宁玄','她自己写下“初一”；离开床边管线仍需冷却匣。治疗与潮阵劳动不能混为一件事。','确认冷却与自主停止的条件','记录初一的选择；帮助与原谅分开处理。'],
+  ['7—9','旧驾驶室','沉水档案与高岸','红鹞、老陆','下潜寻找记录，再查旧驾驶室。红鹞父亲已遇难，他是一位没有开回来的普通司机。','保存记录，陪红鹞核对遗物','确认父亲的结局，保留沉默与陪伴的空间。'],
+  ['10—12','白脊与撤离','三号阀、港口航道','初一、沈湄、宁玄','三号阀回灌的责任不能被维修抵消。初一自愿短测可随时停止；白脊鲛强于主角，须诱离航道。','确认停机绳、分次点亮诱饵与接人结绳','撤离准备完成；下一卷从初一拉停机绳后的改道继续。']
+ ],[
+  ['1—4','停机后的路','排水渠与山坳','初一、萧尘、沈湄','初一拉下停机绳，船改走排水渠。五枚木结只交回四枚时，必须回查接人。','核对木结、人数、集合点和实时水位','找回萧尘；广播只报告实测水位与可走的路。'],
+  ['5—8','箭头背面','高岸、旧泵站','苏绾、周姨','苏绾只熟悉部分旧层。安全门后的通廊已塌，路牌曾为隐藏水井被转向。','检查门底、标识背面，协商公共路线','公开可走的路，周姨家的水井与住处仍留白。'],
+  ['9—10','落星室','河床排水廊、坠星站','陈默、苏绾、萧尘','河床生物跟随热息；铜垫片可卡稳闸钮。信标与水泵共用电路，停泵会影响居民用水。','收住火息，分开电路，轮流摇动电机','保留水泵，获得三次短讯号的发送条件。'],
+  ['11—12','地图留白处','信标与山背检修道','苏绾、红鹞','拓片内外朝向需重核；新检修道仍要逐段实测。雾港回了两短一长。','发水位、发路线、留一次回应窗口','路线注明日期；未经测量的地方继续留白，苏绾保留自己的工作。']
+ ],[
+  ['1—6','分层取水','青石站三处水点','成年阿禾、林舟','本卷已跨到多年后。阿禾有测绘经验；水感只提示方向，不证明水质与深度。','分层取样、复核深度，再限定试水范围','充分准备可避免大面积伤田，但需要延长运水；不强制复演误判。'],
+  ['7—12','把家搬上坡','旧校园、旧隧道','周烈、红鹞、萧尘','安置不只是把人送上坡，还要坡道、炉灶与实际签到。红鹞独立筹备北线运输。','补齐安置点、坡道和实物签到','减少搬迁困难，保留运输与迁居的物资成本。'],
+  ['13—16','水路与备用泵','石场、幼鼋暖窝','阿禾、罗定','幼鼋对热息和水流有反应；旧图不能代替现场观察，备用泵和隐瞒抽水须追查。','观察暖窝与水路，核对备用泵','确定避开主要巢区的侧道，赔付与调水权分别记录。'],
+  ['17—22','河灯','旧闸、上坡新住区','阿禾、红鹞、周烈','第三段开水需要轴套，可以先停水补给。阿禾的成长不因是否有水灵根而消失。','备轴套，分段开水，按信号撤退','水路恢复，坏田与修复继续；阿禾以学徒身份出行，北线带回太一线索。']
+ ],[
+  ['1—5','两道门','验药口、北廊','墨闻山、阿禾','太一铜钱只认验纹机构。回照视角有限、材料会耗尽；两次关门发生在不同时间。','清退路，比对两道门与灰层','区分外山门与分火门；不把局部片段当完整历史。'],
+  ['6—9','名字在绳上','窄廊、分火门两侧','萧尘、墨闻山','无名骗不过热感藤网。二十三与七十一是报数，不是最终死亡统计。','实物清点，交叉核对两侧回照','确认墨闻山明知北廊有伤者仍令落闸；责任不因救过别人而消失。'],
+  ['10—12','断引之前','三槽工位、灰坡南支','萧尘、红鹞','分流梳、冷盐浆、绳机和撤离铃必须测试；继续追证会消耗余量。决定由萧尘本人作出。','完成三槽测试，确认撤离铃与本人意愿','准备增加操作余量；不以另一个活人替代供给。'],
+  ['13—18','断引与下山','炉腹、灰坡','萧尘、谢照临、墨闻山','萧尘扳柄，队友护冷却与救援绳；第二遍铃前治疗目标已经完成。','支援扳柄，依第二遍铃撤离','吞取停止。主动无名失效，旧记忆未恢复；谢照临留隔离半简，墨老失去旧钥权限。']
+ ],[
+  ['1—4','两条生活的路','赤梁、白榆台','周烈、邵平、季遥','白榆台有真实住处，也有搬迁成本。317位常住者中，首批126人离开。','实走东坡与接收点，逐户告知','去留各有安排，首批126人抵达；不替居民决定人生。'],
+  ['5—8','小阵的边界','山腹分流座、北线中继','阿禾、程砚','小试出现陶座热胀故障；其他地区也在承受旧阵网压力，公共支路必须断开。','按阈值停试，查残管与西侧检修井','准备减少扩大损伤；独立小阵只能保护上坪一小圈。'],
+  ['9—12','铁索向东','东缆、兽道','红鹞、邵平','空载修缆后转运88人，再护送59人；清开旧河床给兽群通路。邵平之死在本稿是固定后果。','校索、分批转运，标清兽道与护栏风险','273人撤离、44人留驻；邵平属外来护卫，不能从44人中再次扣除。'],
+  ['13—18','三处断火','西井、上坪、腰桥','林舟、萧尘、周烈','西井先切，上坪须在三息内切；红旗即执行，不再等重复信号。下窑必须舍弃。','演练两息传令，断管、退守、断桥','三地解除旧联结；小阵先撑三夜，随后换取补给。周烈留山，三处测针异常引向北山。']
+ ],[
+  ['1—4','没有风的信','北山旧台、山脚热井','余檀、苏绾、阿禾','求救需即时问答核验；绞车先试沙袋，地面热井与悬台换热器互有关联。','核验信号，试载与分层测水','建立上行与地面导流条件，不能直接承诺连夜全部撤离。'],
+  ['5—8','两张图','缆舱、高空悬台','苏绾、祁望','台上37人加地面来客3人共40人。旧图未记录另一方的生活，试降出现身体不适。','对照两图，小规模试降并分段复压','形成按身体状况编组的下降方案，预留过渡仓。'],
+  ['9—11','不回家的那班','悬台住区、外修面','祁望、余檀','工具、行李与私人纪念物争用载重；外修受护具、风窗和锚点约束。','协商行李，检查锚点，安排四次往返','试降3人、四批各8人，最后还剩5人；返乡愿望不能由总好感代替。'],
+  ['12—16','寄往天外','牵引颈、地面安置点','祁望、红鹞、初一','地面泄荷配合悬台卸载；初一通信有覆盖与休息限制，失联时照预案行动。','装绝缘套、断牵引颈，分段制动最后一舱','40人到地面。返乡设备失去；窄信道只能传文字与小图，回执不等于亲友已收到。']
+ ],[
+  ['1—4','收潮的人','回汀东井、药院','衡渡、陆怀灯','灵灯与灵液失光，阵线与外放法术会被镜牵引；衡渡只有三枚封息珠，初见用掉一枚。','比较油灯与灵石，减负救人并记录封息珠','掌握收取规则；不永久降低玩家的修为境界。'],
+  ['5—9','短测的边界','南渠、药炉阵线','红鹞、林舟','小说把低负载成功外推而遭反吸；游戏允许用可隔离负载测试提前发现风险。','检查裂管与回收纹，拒绝五炉接同一循环','保住部分车辆、工具与劳力，仍需处理灵田去留和药源。'],
+  ['10—11','要拆的田','陶窑、分股窄沟','陆怀灯、苏绾','不同地块积息错时进入使薄页换相；入镜窄沟与排反流宽沟用途不同。','分级试放，移苗，联系外地医棚','获得错相窗口，毁田与替代药物仍需承担，不能用一次同意弹窗抹平。'],
+  ['12—16','归潮','镜腹、西堤、南渠','林舟、衡渡、红鹞','盐印与刻痕可辨错影；另两枚珠用于护舟与逆流，耗尽不刷新。目标是归相钉。','收敛灵息，错时入镜，断钉后接回伤者','本次主收受阻，衡渡活着被拘押；田渠与药源损失保留，十七道岔纹用途尚未全明。']
+ ],[
+  ['1—6','一封新的家信','青石、换风号、伏灯站','苏绾、桑逢、萧尘','兑现休整后再处理新家信。私人细节需要再核验；押送时可提前发现灯号与可疑小艇。','核验家信，调整轮守，拒绝可疑小艇接近','准备可避免赵笙重伤；林舟在战前达到筑基大圆满，尚未金丹。'],
+  ['7—9','远岸的母亲','折星街市、西工坊','闻秋、阿缨、苏绾','闻秋是普通护衣缝制者。母女当面相见才确认重逢，阿缨不是亲情竞争者。','走访工坊，比对拓纹和泊位样板','确认五处航点：折星、伏灯、回汀、石背坡、青杉渡；其余十二处待查。'],
+  ['10—13','谁的赔付','三栈、工坊、南栈泊位','何鹊、孟确、红鹞','车损、药院赔付、押犯和铜签各自记账；预热船帆与下层通路可提前调查。','查分账，标出吊臂黄线与检修梯，通知泊手','准备缩短追击余量；不接受用一笔钱换全部免责。'],
+  ['14—20','两枚铜签','折鳞舟、北山住处','萧尘、何鹊、苏绾','短段运气消耗更高；两枚签只能用于两处特定收井，不能遥控整个地面。','分路登船、保全铜签，缴械并交接看守','孟确与船被扣，两签封存。苏绾自愿留一季；林舟与红鹞合租，结丹资料仍待准备。']
+ ]
+];
+const NOVEL_CHOICES={
+ '2:0':[
+  {n:'先分层取样，再限定试水',result:'复核发现异常后暂停取水，避免大面积伤田；延长运水的成本仍需承担。',fact:'阿禾以实测校正水感',prepared:true},
+  {n:'沿小说路线：先相信水感试水',result:'误判造成田地损失；阿禾参加补种、改土与补偿，不能用后续成功抵消。',fact:'伤田修复未结清',prepared:false}],
+ '3:2':[
+  {n:'保留盐浆，先照顾萧尘',result:'保留冷盐浆与撤离余量；萧尘本人确认后再进入断引准备。',fact:'断引保留准备余量',prepared:true},
+  {n:'沿小说路线：再追查一次末段证据',result:'额外追查消耗操作余量；最后历史仍未看全，不能将回照当作全知答案。',fact:'追证消耗盐浆余量',prepared:false}],
+ '5:2':[
+  {n:'与居民协商生产工具与护具优先',result:'先为护具与生产用具留舱位；有人须舍弃私人纪念物，愿望与损失继续记录。',fact:'下降配载：工具优先',prepared:true},
+  {n:'保留更多私人纪念物，减少工具载荷',result:'纪念物占用部分工具舱位；获救者安置后需要补做更多工具，不改变40人撤离目标。',fact:'下降配载：纪念物优先',prepared:true}],
+ '6:1':[
+  {n:'隔离负载测试，不把五炉接回同一循环',result:'提前识别反吸，保留部分车辆、工具与药炉；仍需解决主收与灵田去留。',fact:'回汀提前识别反吸',prepared:true},
+  {n:'沿小说路线：由短测成功扩大相生循环',result:'傍晚反吸造成工具车损毁、陆怀灯受伤和药炉断火；进入救援，损失留待后续承担。',fact:'回汀工具车损毁、陆怀灯受伤',prepared:false}],
+ '7:0':[
+  {n:'核查灯号、调整轮守，拒绝可疑小艇',result:'提前处置押送风险，赵笙避免此次重伤；既有回汀证物与分账仍可推进调查。',fact:'赵笙避免伏灯重伤',prepared:true},
+  {n:'沿小说路线：未能及时识别灯号',result:'衡渡发出信号，赵笙受伤；必须安排照护与轮守，证物调查仍继续。',fact:'赵笙需留折星治疗',prepared:false}]
+};
+function novelState(){if(!S.novel||S.novel.version!==1)S.novel={version:1,volume:0,step:0,supplies:12,inspected:{},talked:{},stocked:{},log:[],facts:{},bonds:{}};return S.novel;}
+function novelKey(){const n=novelState();return n.volume+':'+n.step;}
+function novelCard(){const n=novelState(),v=window.LC_NOVELS[Math.min(n.volume,7)];return `<div class="novel-banner"><span>原稿改编 · 第三至第十卷</span><h2>灵潮长路</h2><p>雾港的潮水，折星的远岸。探索、协作与每一次留下的后果。</p><p>${n.volume>=8?'八卷主线已完成':esc(v.title)+' · 任务 '+(n.step+1)+'/4'}</p><button class="btn gold" data-act="novel">${n.volume>=8?'查看旅程':'继续小说主线'}</button><p class="note">独立保存小说路线；不覆盖自由江湖人物结局。原稿的多年跨度属于叙事，现实日历始终同步。</p></div>`;}
+function novelOpen(){if(BT||SC)return;const n=novelState();if(n.volume>=8)return novelJournal();const v=window.LC_NOVELS[n.volume],t=LC_TASKS[n.volume][n.step],key=novelKey();
+modal(`<div class="novel-scene"><span>${esc(v.title)} · 原文第${t[0]}章</span><h3>${esc(t[1])}</h3><p class="novel-place">${esc(t[2])}</p><p>${esc(t[4])}</p></div><p>协作人物：${esc(t[3])}</p><div class="novel-map"><span>${n.inspected[key]?'✓':'○'} 现场勘察</span><span>${n.talked[key]?'✓':'○'} 同伴协商</span><span>→ ${esc(t[1])}</span></div><p>补给 ${n.supplies} · 完整准备消耗2，否则消耗4。每项任务可整理一次补给 +3。</p>`,[
+{t:n.inspected[key]?'✓ 查看勘察记录':'探索现场',fn:()=>novelAct('inspect')},
+{t:n.talked[key]?'✓ 查看协作约定':'与同伴协商',fn:()=>novelAct('talk')},
+{t:'执行：'+t[5],cls:'gold',fn:()=>novelAct('resolve')},
+...(!n.stocked[key]?[{t:'整理行装 · 补给 +3',fn:()=>novelAct('stock')}]:[]),
+{t:'逐章阅读原稿',fn:()=>novelReader(n.volume)}, {t:'旅程与人物',fn:novelJournal},{t:'返回江湖',cls:'ghost'}]);}
+function novelAct(action,choiceIndex){const n=novelState();if(n.volume>=8)return;const key=novelKey(),t=LC_TASKS[n.volume][n.step];
+if(action==='inspect'||action==='talk'){n[action==='inspect'?'inspected':'talked'][key]=true;save();modal(`<h3>${action==='inspect'?'现场勘察':'协作约定'} · ${esc(t[2])}</h3><p>${esc(action==='inspect'?t[4]:t[5])}</p><p>下一步：${esc(t[5])}。准备记录已保存；现实中无需等待。</p>`,[{t:'回到任务',fn:novelOpen}]);return;}
+if(action==='stock'){if(!n.stocked[key]){n.stocked[key]=true;n.supplies+=3;save();}novelOpen();return;}
+if(action!=='resolve')return;
+const choices=NOVEL_CHOICES[key];
+if(choices&&choiceIndex===undefined){modal(`<h3>${esc(t[1])} · 行动选择</h3><p>${esc(t[4])}</p><p>选择会写入本存档的后果记录。准备充分通常节省补给，沿小说误判路线会保留相应损失。</p>`,choices.map((c,i)=>({t:c.n,fn:()=>novelAct('resolve',i)})).concat([{t:'返回准备',cls:'ghost',fn:novelOpen}]));return;}
+const choice=choices&&choices[choiceIndex];if(choices&&!choice)return;
+const prepared=!!(n.inspected[key]&&n.talked[key]&&(!choice||choice.prepared)),cost=prepared?2:4;
+let result=choice?choice.result:t[6];
+if(key==='7:3'&&n.facts['7:0']==='赵笙需留折星治疗')result+=' 赵笙留折星治疗，有轮守者照料。';
+if(key==='7:3'&&n.facts['7:0']==='赵笙避免伏灯重伤')result+=' 赵笙沿用押送准备充分的路线，不强制新增同一次重伤。';
+if(n.supplies<cost){modal('<h3>补给不足</h3><p>先探索并协商可降低消耗，或整理本任务的行装。</p>',[{t:'回到准备',fn:novelOpen}]);return;}
+n.supplies-=cost;n.log.push({volume:n.volume+3,step:n.step,title:t[1],result,prepared,cost,choice:choice?choice.n:null,at:Date.now()});
+if(choice)n.facts[key]=choice.fact;
+t[3].split('、').forEach(name=>{n.bonds[name]=(n.bonds[name]||0)+(prepared?2:1);});
+n.step++;if(n.step===4){n.facts['volume'+(n.volume+3)]=result;n.volume++;n.step=0;if(n.volume<8)n.supplies+=10;}
+save();render();modal(`<h3>${esc(t[1])} · 已完成</h3><p>${esc(result)}</p><p>${prepared?'完整准备：保留更多补给，同伴协作 +2':'简略准备：消耗更多补给，同伴协作 +1'}。本次消耗 ${cost}。</p><p>结果与人物去向已写入旅程，不因刷新重置。</p>`,[{t:n.volume>=8?'查看八卷旅程':'继续旅程',cls:'gold',fn:novelOpen},{t:'暂歇',cls:'ghost'}]);}
+function novelJournal(){const n=novelState();modal(`<h3>旅程与人物</h3><p>协作记录独立于自由江湖好感，不用送礼替代责任、赔付或个人意愿。</p><div class="novel-bonds">${Object.entries(n.bonds).map(([name,count])=>'<span>'+esc(name)+' · 协作 '+count+'</span>').join('')||'尚未开始'}</div><h4>各卷原稿</h4>${window.LC_NOVELS.map((v,i)=>`<p>${esc(v.title)} · ${v.chapters.length}章${i>n.volume?' · 主线待解锁':''}</p>`).join('')}<h4>已完成的行动</h4>${n.log.slice().reverse().map(l=>`<details><summary>第${l.volume}卷 · ${esc(l.title)} · ${l.prepared?'完整':'简略'}准备</summary><p>${esc(l.result)}</p>${l.choice?'<p>选择：'+esc(l.choice)+'</p>':''}<p>补给 -${l.cost}</p></details>`).join('')||'<p>在卷宗打开「灵潮长路」开始。</p>'}<p class="note">依据2026-11-08本机已保存小说初稿。原稿之间的绝对年表尚待统一；未增写第十一卷或未查明的十二处航点。</p>`,[
+...(n.volume<8?[{t:'回到当前任务',cls:'gold',fn:novelOpen}]:[]),...window.LC_NOVELS.map((v,i)=>({t:'阅读 · '+v.title,fn:()=>novelReader(i)})),{t:'返回',cls:'ghost'}]);}
+function novelReader(volume,chapter=0){const v=window.LC_NOVELS[volume],c=v.chapters[chapter];
+modal(`<h3>${esc(v.title)}</h3><h4>${esc(c.title)}</h4><p class="note">已保存小说初稿原文 · ${chapter+1}/${v.chapters.length}章；阅读不跳过任务、不发奖励。</p><div class="novel-text">${c.body.split(/\n\s*\n/).map(p=>'<p>'+esc(p)+'</p>').join('')}</div>`,[...(chapter>0?[{t:'上一章',fn:()=>novelReader(volume,chapter-1)}]:[]),...(chapter+1<v.chapters.length?[{t:'下一章',cls:'gold',fn:()=>novelReader(volume,chapter+1)}]:[]),{t:'返回旅程',fn:novelJournal}]);}
+ACT.novel=novelOpen;
+const originalStoryView=VIEWS.story;VIEWS.story=()=>novelCard()+originalStoryView();
+const originalWorldView=VIEWS.world;VIEWS.world=()=>originalWorldView().replace('<div class="wbtns">','<div class="wbtns"><button class="btn sm gold" data-act="novel">小说主线</button>');
+const realClock=document.createElement('div');realClock.id='realClock';realClock.setAttribute('aria-label','现实日期时间');document.querySelector('#view').insertAdjacentElement('beforebegin',realClock);timeTick();
+
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={retreatApply,RETREATS,retreatCost,novelState,novelAct,novelOpen,LC_TASKS,offline,timeTick,giftPick,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
 function cultMore(){const R=realmIdx();return `${daoHTML()}${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
