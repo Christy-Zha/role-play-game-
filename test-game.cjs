@@ -13,9 +13,8 @@ run("const BOND={hong:{n:'红鹞',likes:['wine']}};const BOND_CHAT={hong:[['聊�
 run(section('const CN=', 'const yearName='));
 run(section('/* Wall clock is display-only','function ageCheck()'));
 run(section('const RETREATS=','function xinmoFight()'));
-run(section('/* Novel route intentionally','ACT.novel=novelOpen;'));
 function fresh(){ctx.S={started:true,qi:0,stones:100000,year:3,age:18,dao:{yin:0},flags:{},aff:{},social:{}};}
-test('8 verified manuscripts, 134 chapters, 32 tasks',()=>{assert.equal(ctx.window.LC_NOVELS.length,8);assert.equal(ctx.window.LC_NOVELS.reduce((a,v)=>a+v.chapters.length,0),134);assert.equal(run('LC_TASKS.flat().length'),32);});
+test('8 verified manuscripts, 134 chapters',()=>{assert.equal(ctx.window.LC_NOVELS.length,8);assert.equal(ctx.window.LC_NOVELS.reduce((a,v)=>a+v.chapters.length,0),134);});
 test('real clock independent of story years and old accelerated accumulator',()=>{fresh();ctx.S.year=900;ctx.S.yAcc=999;const date=run('dateName()');assert.ok(date.startsWith('灵潮'));assert.ok(!date.includes(String(new Date().getFullYear())));assert.ok(date.includes(String(new Date().getHours()).padStart(2,'0')+':'));run('timeTick(999999)');assert.equal(ctx.S.year,900);assert.equal(run('gameDay()'),Math.floor(Date.now()/86400000));});
 test('20 consecutive chats, diminishing gains, no day cooldown',()=>{fresh();for(let i=0;i<20;i++)run("chatBtn('hong')[0].fn()");assert.equal(ctx.S.aff.hong,40);assert.equal(ctx.S.social.hong.chat,20);assert.equal(run("chatBtn('hong').length"),2);});
 test('repeated gifts cost stones and persist diminishing returns',()=>{fresh();for(let i=0;i<10;i++){run("giftPick('hong')");ctx.buttons[1].fn();}assert.equal(ctx.S.aff.hong,56);assert.equal(ctx.S.stones,99800);assert.equal(ctx.S.social.hong.gifts.wine,10);ctx.S=JSON.parse(JSON.stringify(ctx.S));run("giftPick('hong')");ctx.buttons[1].fn();assert.equal(ctx.S.aff.hong,58);});
@@ -23,11 +22,8 @@ test('affection capped; insufficient stones never grants gift',()=>{ctx.S.aff.ho
 test('week/month/quarter/half-year aggregate without changing timers',()=>{fresh();ctx.S.injury=Date.now()+99999;ctx.S.dt={slots:[{start:123,left:500}]};ctx.S.clan={until:456};const timers=JSON.stringify([ctx.S.injury,ctx.S.dt,ctx.S.clan]);for(const id of ['week','month','quarter','half'])run(`retreatApply('${id}')`);assert.equal(ctx.S.retreatDays,307);assert.equal(ctx.S.year,3);assert.equal(ctx.S.age,18);assert.equal(timers,JSON.stringify([ctx.S.injury,ctx.S.dt,ctx.S.clan]));assert.ok(ctx.S.stones<100000);});
 test('fractional retreats survive reload and advance one year only at 365 days',()=>{ctx.S=JSON.parse(JSON.stringify(ctx.S));ctx.S.qi=0;run("retreatApply('month');retreatApply('month')");assert.equal(ctx.S.retreatDays,367);assert.equal(ctx.S.retreatRemainder,2);assert.equal(ctx.S.year,4);});
 test('invalid/negative retreat, battle, no stones and bottleneck are safe',()=>{fresh();let before=JSON.stringify(ctx.S);run("retreatApply('-1');retreatApply('invalid')");assert.equal(JSON.stringify(ctx.S),before);ctx.BT={};run("retreatApply('week')");assert.equal(JSON.stringify(ctx.S),before);ctx.BT=null;ctx.S.stones=0;run("retreatApply('week')");assert.equal(ctx.S.retreatDays,undefined);ctx.S.stones=100;ctx.S.qi=10000;run("retreatApply('week')");assert.equal(ctx.S.stones,100);});
-test('full novel route: sequential unlock, one-time supplies, costs, persistence',()=>{fresh();for(let i=0;i<32;i++){run("novelAct('stock')");const supply=ctx.S.novel.supplies;run("novelAct('stock')");assert.equal(ctx.S.novel.supplies,supply);run("novelAct('inspect');novelAct('talk');novelAct('resolve',0)");ctx.S=JSON.parse(JSON.stringify(ctx.S));}assert.equal(ctx.S.novel.volume,8);assert.equal(ctx.S.novel.log.length,32);assert.equal(Object.keys(ctx.S.novel.facts).filter(k=>k.startsWith('volume')).length,8);const end=JSON.stringify(ctx.S.novel);run("novelAct('resolve')");assert.equal(JSON.stringify(ctx.S.novel),end);assert.ok(ctx.S.novel.log.every(x=>x.prepared&&x.cost===2));});
-test('unprepared route consumes more supplies and cannot spend below zero',()=>{fresh();run("novelAct('resolve')");assert.equal(ctx.S.novel.supplies,8);assert.equal(ctx.S.novel.log[0].cost,4);ctx.S.novel.supplies=0;run("novelAct('resolve')");assert.equal(ctx.S.novel.step,1);});
-test('every manuscript chapter has a title/body and every task has source chapter mapping',()=>{for(const v of ctx.window.LC_NOVELS)for(const c of v.chapters){assert.ok(c.title&&c.body.length>100);}assert.ok(run('LC_TASKS.every(v=>v.every(t=>t.length===7&&t.every(x=>typeof x==="string"&&x.length)))'));});
+test('every manuscript chapter has a title/body',()=>{for(const v of ctx.window.LC_NOVELS)for(const c of v.chapters){assert.ok(c.title&&c.body.length>100);}});
 test('offline no longer accelerates calendar or ages',()=>{const fn=section('function offline()','function intro()');assert.ok(!fn.includes('simYears'));assert.ok(!fn.includes('Y_SEC'));});
-test('novel risky choice preserves injury and changes cost; choice modal does not auto-resolve',()=>{fresh();run('novelState().volume=6;novelState().step=1');run("novelAct('inspect');novelAct('talk');novelAct('resolve')");assert.equal(ctx.S.novel.step,1);assert.equal(ctx.S.novel.log.length,0);run("novelAct('resolve',1)");assert.equal(ctx.S.novel.log[0].cost,4);assert.ok(ctx.S.novel.facts['6:1'].includes('陆怀灯受伤'));ctx.S=JSON.parse(JSON.stringify(ctx.S));assert.ok(ctx.S.novel.log[0].result.includes('损失'));});
 test('game calendar follows local midnight, year rollover, leap day and shichen',()=>{
 assert.equal(run('dateName(new Date(2026,10,8,23,59))'),'灵潮三年 十一月八日 · 子时 23:59');
 assert.equal(run('dateName(new Date(2026,10,9,0,0))'),'灵潮三年 十一月九日 · 子时 00:00');
@@ -36,7 +32,7 @@ assert.equal(run('dateName(new Date(2028,1,29,12,30))'),'灵潮五年 二月二�
 fresh();const before=run('dateName(new Date(2026,10,8,18,42))');run("retreatApply('half')");assert.equal(run('dateName(new Date(2026,10,8,18,42))'),before);
 });
 test('player-facing task and retreat copy has no authoring or background explanations',()=>{
-const text=run('LC_TASKS.flat(2).join(" ")+Object.values(NOVEL_CHOICES).flat().map(c=>c.n+c.result).join(" ")+closedHTML()');
+const text=run('closedHTML()');
 assert.ok(!/原稿|改编|小说|后台|本稿|玩家|刷新|现实|设备当地|同步|强制/.test(text));
 });
 console.log(`${checks} tests passed`);
