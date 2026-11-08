@@ -1447,7 +1447,7 @@ const STORY=[
   ['mo','这世上，有人专门在找这种味道。'],
   {fx:{qiPills:2,flags:{dongtian:1}}},
   ['','获得 聚气丹 ×2'],
-  ['','【「玉简」已开启：放入丹药、装备或灵石温养，按现实时间成熟。每次收取都会让灵光外泄。】']
+  ['','【「玉简」已开启：放入丹药、装备或灵石，静候温养成熟。每次收取都会让灵光外泄。】']
  ]},
  {id:'ratking',title:'第四章·鼠王',g:'王',bg:'metro',cond:()=>S.bossDown.includes(0),hint:'击败「鼠王·裂齿」',lines:[
   ['','鼠王倒下的时候，整条隧道都安静了。'],
@@ -3599,7 +3599,7 @@ function clanView(){const c=S.clan;if(!c)return '<p class="empty">还没有家�
  return `<div class="stage clstage"><canvas class="bgc" data-scene="clan"></canvas><div class="clhead"><div class="clseal">${esc(c.name[0])}</div><div><div class="cln">${esc(c.name)}</div><div class="cls">${clLevel()} · 声望 ${c.fame} · 族人 ${act.length}/${clCap()}</div></div></div></div>
   <div class="clharv"><div><b>灵田</b><span id="clStore">${c.bld.tian?fmt(c.store):'未开垦'}</span><button class="btn sm gold" data-act="clHarv" ${c.store>=1?'':'disabled'}>收取</button></div>
    <div><b>丹房</b><span>${c.bld.dan?'疗伤药 '+c.medS:'未修建'}</span><button class="btn sm gold" data-act="clMed" ${c.medS?'':'disabled'}>取药</button></div></div>
-  <h2 class="sec">族人 <small>派去各地历练，按现实时间回来</small></h2>
+  <h2 class="sec">族人 <small>遣往各地历练，静候归来</small></h2>
   <div class="clmem">${act.map(m=>`<div class="clm"><img src="${clSprite(m.k)}" alt=""><div class="in"><div class="iname">${esc(m.name)}<span class="lv">${m.role} · Lv${m.lv}</span></div><div class="istat">资质 ${'★'.repeat(m.apt)}${'☆'.repeat(5-m.apt)}</div>
    <div class="istat" ${m.busy?`data-ct="${m.id}"`:''}>${m.busy?(m.busy.rest?'养伤中':'在「'+ZONES[m.busy.z].n+'」'+CL_TIER[m.busy.t].n)+' · '+fmtT((m.busy.until-Date.now())/1000):'空闲'}</div></div>
    ${m.busy?'':`<button class="btn sm" data-act="clGo" data-arg="${m.id}">派遣</button>`}</div>`).join('')}</div>
@@ -4144,7 +4144,7 @@ function danHTML(){const rk=danRank(),nx=DAN_RANK[rk+1];
  return `<h2 class="sec">丹房 <small>${DAN_RANK[rk].n}${nx?' · 丹道 '+S.dan.xp+'/'+nx.xp:' · 已至绝顶'}</small></h2>
  <div class="mats">${Object.keys(MATS).map(k=>`<span style="--mc:${MATS[k].c}">${MATS[k].n} <b>${S.mats[k]||0}</b></span>`).join('')}</div>
  ${RECIPES.map(r=>{const lock=rk<r.rk,ok=canBrew(r);return `<div class="row2 ${lock?'dim':''}"><div class="in"><div class="iname">${r.n}${lock?`<span class="lv">需${DAN_RANK[r.rk].n}</span>`:''}</div><div class="istat">${r.d} · ${Object.keys(r.need).map(k=>MATS[k].n+'×'+r.need[k]).join(' ')}</div></div><button class="btn sm ${ok?'gold':'ghost'}" data-act="brew" data-arg="${r.k}" ${ok?'':'disabled'}>开炉</button></div>`;}).join('')}
- <p class="note">妖兽身上能剥到材料，首领更多。开炉后看准火候收火：正中「极品」药效翻倍。连续十二炉没出极品，下一炉必出。丹道越高，火候越好掌握。</p>`;}
+ <p class="note">妖兽身上能剥到材料，首领更多。开炉后看准火候收火：正中「极品」药效翻倍。丹道越高，火候越好掌握。</p>`;}
 let BREW=null;
 function brewOpen(k){const r=RECIPES.find(x=>x.k===k);if(!r||!canBrew(r))return;Object.keys(r.need).forEach(m=>S.mats[m]-=r.need[m]);save();const rk=danRank(),pity=(S.pity.dan||0)>=12;
  const zw=.1+rk*.025+(pity?.2:0),zc=.25+Math.random()*.5;BREW={r,zc,zw,t0:performance.now(),sp:.9+r.rk*.25,done:false};
@@ -4194,7 +4194,7 @@ function buildFx(){const A={},add=(k,v)=>A[k]=(A[k]||0)+v;
 
 /* ---------- 保底 ---------- */
 function pityRar(r,boss){const P=S.pity;if(r>=3){P.rar=0;return r;}P.rar=(P.rar||0)+(boss?3:1);if(P.rar>=60){P.rar=0;toast('福缘积满：必出仙品！','big');return 3;}return r;}
-function pityHTML(){const P=S.pity;return `<p class="note">保底：仙品装备 ${Math.min(60,P.rar||0)}/60 · 首领传说 ${P.uniq||0}/8 · 首领宝石 ${P.gem||0}/5 · 丹炉极品 ${P.dan||0}/12</p>`;}
+function pityHTML(){return '';}
 
 /* ================= 时间 · 人物 · 因果 · 弟子 · 道途 · 结局 ================= */
 const CN='零一二三四五六七八九';
@@ -4281,7 +4281,11 @@ function personDied(p){if(!p.known)return;if(p.bg){if(p.st>=21||p.lead)news(p.n+
 /* Wall clock is display-only. Fictional cultivation years remain independent. */
 const Y_SEC=365*86400,Y_DAYS=365;
 const gameDay=()=>Math.floor(Date.now()/86400000);
-function dateName(){return new Date().toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function dateName(now=new Date()){
+ const hour=now.getHours(),branch='子丑寅卯辰巳午未申酉戌亥'[Math.floor((hour+1)/2)%12];
+ const era=now.getFullYear()-2023,year=era>0?'灵潮'+cnNum(era)+'年':'灵潮前'+cnNum(1-era)+'年';
+ return year+' '+cnNum(now.getMonth()+1)+'月'+cnNum(now.getDate())+'日 · '+branch+'时 '+String(hour).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+}
 let clockSecond=-1;
 function timeTick(){const second=Math.floor(Date.now()/1000);if(second===clockSecond)return;clockSecond=second;const el=$('#realClock');if(el)el.textContent=dateName();if(TAB==='world')wHud();}
 function ageCheck(){lifeSync(S);if(S.age>=myLife()&&!S.dying){S.dying=1;S.fateQ.unshift({k:'old'});}else if(S.age<myLife()&&S.age>=myLife()-10&&!S.agewarn){S.agewarn=1;toast('寿元将尽：还剩 '+(myLife()-S.age)+' 年。突破境界或服寿元丹可以延寿','bad');}}
@@ -4332,7 +4336,7 @@ function retreatCost(o){return Math.max(1,Math.ceil(zsAt(maxZone(),2)*o.days/7))
 function closedHTML(){return `<h2 class="sec">闭关 <small>累计修炼 ${Math.round(S.retreatDays||0)} 天</small></h2><p class="note">备足灵石，静心修行。闭关日久，故人也会老去。</p><div class="closed">${RETREATS.filter(o=>o.days/365<myLife()-S.age).map(o=>`<button class="btn sm" data-act="closed" data-arg="${o.id}">${o.n} · ${fmt(retreatCost(o))}灵石</button>`).join('')}</div>${S.lifeP>0?'<button class="btn sm" data-act="eatLife">服寿元丹 · 延寿30年</button>':''}`;}
 function closedGo(id){const o=RETREATS.find(x=>x.id===String(id));if(!o||BT)return;
 if(o.days/365>=myLife()-S.age){toast('剩余寿元不足','bad');return;}
-if(S.qi>=needQ()){toast('已到境界瓶颈，请先突破；未扣灵石');return;}
+if(S.qi>=needQ()){toast('修为已满，先行突破再闭关。');return;}
 const cost=retreatCost(o);if(S.stones<cost){toast('灵石不足','bad');return;}
 modal(`<h3>闭关 ${o.n}</h3><p>此次闭关需备 ${fmt(cost)} 灵石。你准备好了吗？</p>`,[{t:'开始闭关',cls:'gold',fn:()=>retreatApply(o.id)},{t:'暂不闭关',cls:'ghost'}]);}
 function retreatApply(id){const o=RETREATS.find(x=>x.id===String(id));if(!o||BT||o.days/365>=myLife()-S.age||S.qi>=needQ())return;
@@ -4342,7 +4346,7 @@ S.retreatDays=(S.retreatDays||0)+o.days;S.retreatRemainder=(S.retreatRemainder||
 const years=Math.floor(S.retreatRemainder/365);S.retreatRemainder%=365;
 S.yearsClosed=1;const age0=S.age,L=years?simYears(years):[];if(S.path==='yin'&&years)S.age=age0+Math.ceil(years/2);S.yearsClosed=0;
 S.closedY=(S.closedY||0)+o.days/365;S.dao.yin+=o.days>=30*365?2:o.days>=10*365?1:0;ageCheck();save();render();
-modal(`<h3>出关 · ${o.n}</h3><p>灵气 +${fmt(S.qi-q0)} · 消耗 ${fmt(cost)} 灵石。</p><p>此番修行，已记入你的历练。</p>${L.slice(0,6).map(t=>'<p>'+esc(sub(t))+'</p>').join('')}`,[{t:'出关',cls:'gold'}]);}
+modal(`<h3>出关 · ${o.n}</h3><p>灵气 +${fmt(S.qi-q0)} · 消耗 ${fmt(cost)} 灵石。</p><p>静室门开，你收敛气息，重返江湖。</p>${L.slice(0,6).map(t=>'<p>'+esc(sub(t))+'</p>').join('')}`,[{t:'出关',cls:'gold'}]);}
 function xinmoFight(){const st=stats();modal('<h3>心魔</h3><p>闭关太久了。黑暗里，有一个人长着你的脸，坐在你对面。</p><p>“这些年，你真的是在修行吗？”</p>',[{t:'斩心魔',cls:'red',fn:()=>{const e=mkCustom(Math.max(0,maxZone()),{look:S.gender==='f'?'宁玄':'无名剑客',name:'心魔',m:1.4,boss:true});e.atk=st.atk*.9;e.hp=st.hp*1.6;e.max=e.hp;e.def=st.def;e.tint=1;e.noLoot=1;
   startBattle([e],{noFlee:true,bg:'town',onWin:()=>{S.flags.xinmoWin=(S.flags.xinmoWin||0)+1;addQi(req(S.stage)*.5,true);toast('心魔已斩，道心更坚','big');save();},onLose:()=>{S.qi=Math.floor(S.qi*.5);S.injury=Date.now()+15*60*1000;toast('心魔反噬：修为散去一半，重伤十五分钟','bad');save();}});}}]);}
 
@@ -4387,7 +4391,7 @@ function disHTML(){if(!S.clan)return '';if(realmIdx()<1)return `<h2 class="sec">
 const PATHS={zheng:{n:'正道',d:'斩妖除魔。对魔修伤害 +30%，防御 +10%，悬赏奖励 ×1.5',end:'zheng'},mo:{n:'魔道',d:'以杀证道。吸血 +10%，连携伤害 +10%，击败修士吞噬其修为',end:'mo'},
  yin:{n:'隐居',d:'不问世事。闭关所得 ×1.5，岁月流逝减半，闪避 +8%，仇家常寻你不着',end:'yin'},zong:{n:'宗门',d:'开宗立派。弟子修炼 ×1.3，可多收两名弟子，攻击 +5%',end:'zong'}};
 function pathAsk(){if(S.path||realmIdx()<3||BT||!OV_FREE())return;const D=S.dao,top=Object.keys(PATHS).sort((a,b)=>(D[b]||0)-(D[a]||0))[0];
- modal(`<h3>问道</h3><p>元婴初成的那一夜，你听见元婴在问你：「你修的，是什么道？」</p><p class="note">道途决定你的加成，以及最终能走到哪一个结局。选定后，本世不可更改。</p>
+ modal(`<h3>问道</h3><p>元婴初成的那一夜，你听见元婴在问你：「你修的，是什么道？」</p><p class="note">不同道途各有修行所得。道心一经立定，本世不可更改。</p>
   <div class="paths">${Object.keys(PATHS).map(k=>`<div class="pa"><b>${PATHS[k].n}${k===top?' <em>心之所向</em>':''}</b><small>${PATHS[k].d}</small><span>${ENDS[PATHS[k].end].cond}</span></div>`).join('')}</div>`,
   Object.keys(PATHS).map(k=>({t:PATHS[k].n,cls:k===top?'gold':'',fn:()=>{S.path=k;news(S.name+'择'+PATHS[k].n+'而行。',1);sfx('bell');toast('道途：'+PATHS[k].n,'big');save();render();}})));}
 
@@ -4402,7 +4406,7 @@ const ENDS={
 };
 function endsHTML(){const ks=Object.keys(ENDS);return `<h2 class="sec">道果 <small>${S.path?'道途：'+PATHS[S.path].n:'元婴之后择道'} · 已证 ${(S.endings||[]).length}/${ks.length}</small></h2>
  ${ks.map(k=>{const E=ENDS[k],got=(S.endings||[]).includes(k),ok=!got&&safe(E.ok);return `<div class="row2 ${got?'r-chuan':''}"><div class="in"><div class="iname">${got?'✦ ':''}${E.n}</div><div class="istat">${E.cond}</div></div>${ok?`<button class="btn sm gold" data-act="ending" data-arg="${k}">证道</button>`:got?'<span class="curtag">已证</span>':''}</div>`;}).join('')}
- ${F('xfOpen')&&!F('xianfuDone')?`<div class="row2"><div class="in"><div class="iname">太一仙府</div><div class="istat">仙府的门还开着。上次你走到了第 ${S.flags.xfStage||1} 重。</div></div><button class="btn sm gold" data-act="xf">重返仙府</button></div>`:''}<p class="note">证得道果后，可以继续修行，也可以轮回再来。不同道途、不同的选择，会让江湖里每个人的结局都不一样。</p>`;}
+ ${F('xfOpen')&&!F('xianfuDone')?`<div class="row2"><div class="in"><div class="iname">太一仙府</div><div class="istat">仙府的门还开着。上次你走到了第 ${S.flags.xfStage||1} 重。</div></div><button class="btn sm gold" data-act="xf">重返仙府</button></div>`:''}<p class="note">证得道果后，可以继续修行，也可以轮回再来。不同道途、不同的选择，会留下不同的因缘。</p>`;}
 function playEnding(k){const E=ENDS[k];if(!safe(E.ok))return;S.endings=S.endings||[];if(!S.endings.includes(k))S.endings.push(k);S.rebirthBonus=(S.rebirthBonus||0)+1;
  const fr=S.ppl.filter(p=>p.fr&&p.known),foes=S.ppl.filter(p=>p.att<=-40),L=[];
  const head={zheng:['那一年，江湖上再没有人敢在夜里收尸。','幽冥殿的灯熄了，天穹会的旗倒了。人们说起'+S.name+'，会先停一停，再压低声音。'],
@@ -4540,7 +4544,7 @@ function jhBody(){const t=JH.tab;
   ${R.rel==='vassal'?'':`<button class="btn sm ${R.beat>=2?'red':''}" data-ja="sect" data-arg="${k}">${R.beat>=3?'再战宗主':'挑战'+RANKN[Math.min(2,R.beat)]}</button>`}</div>`;}).join('')}`;
  if(t==='rank'){const L=jhList(),idx=L.findIndex(x=>x.me),me=jhRank(),onB=me<=100,tot=JH_POP+L.length;
   const fmtN=n=>n>=10000?(n/10000).toFixed(1).replace(/\.0$/,'')+' 万':String(n);
-  const head=`<p class="note">江湖上的修士数不清，粗算约有 ${fmtN(tot)} 人。江湖榜只记前一百位有名有姓的人物。<br>你${onB?'排在第 <b>'+me+'</b> 位'+(me<=3?'，站在江湖之巅':me<=20?'，已是一方高手':'，总算有人记得你的名字了'):'还没上榜——约排第 <b>'+fmtN(me)+'</b> 位，没人听说过你'}。人会突破，也会老死，名次天天在变。</p>`;
+  const head=`<p class="note">江湖上的修士数不清，粗算约有 ${fmtN(tot)} 人。江湖榜只记前一百位有名有姓的人物。<br>你${onB?'排在第 <b>'+me+'</b> 位'+(me<=3?'，站在江湖之巅':me<=20?'，已是一方高手':'，总算有人记得你的名字了'):'还没上榜——约排第 <b>'+fmtN(me)+'</b> 位，没人听说过你'}。人会突破，也会老死，名次随之更迭。</p>`;
   const rows=L.filter((x,i)=>i<20||(x.me&&onB)).map(x=>{const i=L.indexOf(x);return `<div class="row2 rk ${x.me?'me':''}"><div class="no">${x.me?me:i+1}</div><div class="in"><div class="iname">${esc(x.n)}<span class="lv">${realmOf(x.st)}</span></div><div class="istat">${x.me?'你':x.sect?SECTS[x.sect].n+(x.p.lead?SECTS[x.sect].lt:''):x.p.fr?'青石站':'散修'}${x.p&&!x.me&&!x.p.bg?' · '+attName(x.p):''}</div></div>${x.p&&!x.me&&!x.p.bg?`<button class="btn sm ghost" data-ja="talk" data-arg="${x.p.id}">拜会</button>`:''}</div>`;}).join('');
   return head+`<h3 class="sub">江湖榜 · 前二十</h3>`+rows+(onB?'':`<div class="row2 rk me"><div class="no">—</div><div class="in"><div class="iname">${esc(S.name)}<span class="lv">${realmOf(S.stage)}</span></div><div class="istat">榜外 · 约第 ${fmtN(me)} 位</div></div></div>`);}
  if(t==='ppl')return pplHTML();
@@ -5156,7 +5160,7 @@ R('mowen',{t:'归处',g:'归',bg:'linjiang',gap:3,need:()=>true,hint:'几年之�
 function rwMwDie(t){rwKill(P_('mowen'),'散修莫问坐化，享年'+rwP('mowen').age+'岁。');rwEnd('mowen',t);}
 
 /* ================= 人间篇：结婴之后、飞升之前的人间 =================
-   十二段主线。每段之间至少隔一个历练年（通过闭关推进，与现实日期独立）。走完「人间·别」，天门才肯放你过去。
+   人间尚有未了的牵挂。闭关历练后，再去探望故人；走完「人间·别」，天门才肯放你过去。
    青石站的老朋友们会老、会死；你在每一段里的选择，最后都会在「别」里回来。 */
 const RJ_IDS=[];
 const rjAlive=k=>{const p=(S.ppl||[]).find(x=>x.fr===k);return p?p.alive:!F('dead_'+k);};
@@ -5458,7 +5462,7 @@ function dbAfter(opp,win,rn){const C=S.db.cur,me=myTeam(),A=C.alive,next=[];cons
 /* ---------- 江湖 · 宗门 页 ---------- */
 function smHTML(){let h='';const D0=dbInit();
  if(smOn()){const k=S.sm.k,D=SECTS[k],q=smNextReq(),T=smTasks();
-  h+=`<div class="banner zong"><div class="t">${D.n} · ${smTitle()}<small>贡献 ${S.sm.gx}（累计 ${S.sm.tot}）· ${S.sm.post?SM_POST[S.sm.post].n:'未任职'} · 每年俸禄与贡献自动到账</small></div></div>`;
+  h+=`<div class="banner zong"><div class="t">${D.n} · ${smTitle()}<small>贡献 ${S.sm.gx}（累计 ${S.sm.tot}）· ${S.sm.post?SM_POST[S.sm.post].n:'未任职'} · 每年领取俸禄与贡献</small></div></div>`;
   h+=`<h3 class="sub">宗门任务 <small>${yearName()} · 每年三件</small></h3>`+T.map(t=>`<div class="row2 ${t.done?'dim':''}"><div class="in"><div class="iname">${t.n}<span class="lv">贡献 ${Math.round(t.gx*(1+.15*S.sm.rank))} · 感悟 8</span></div><div class="istat">${esc(t.d)}</div></div><div class="ibtn">${t.done?'<span class="dim">已完成</span>':`<button class="btn sm gold" data-ja="smTask" data-arg="${t.i}">去做</button>`}</div></div>`).join('');
   h+=q?`<div class="row2"><div class="in"><div class="iname">晋升 · ${q.r>=5?D.lt:SM_RANK[q.r]}</div><div class="istat">累计贡献 ${S.sm.tot}/${q.tot} · 境界 ${STAGES[q.st].name}${q.r===2?' · 需通过长老考核':q.r===5?' · 需在宗主之争中击败现任'+D.lt:''}</div></div><div class="ibtn"><button class="btn sm ${S.sm.tot>=q.tot&&S.stage>=q.st?'gold':'ghost'}" data-ja="smUp">${q.r===2?'考核':q.r===5?'争位':'晋升'}</button></div></div>`:'';
   if(S.sm.rank>=3)h+=`<h3 class="sub">任职</h3>`+Object.keys(SM_POST).map(p=>`<div class="row2 ${S.sm.post===p?'friend':''}"><div class="in"><div class="iname">${SM_POST[p].n}</div><div class="istat">${SM_POST[p].d}</div></div><div class="ibtn">${S.sm.post===p?'<span>在任</span>':`<button class="btn sm" data-ja="smPost" data-arg="${p}">就任</button>`}</div></div>`).join('');
@@ -7653,53 +7657,53 @@ const LC_TASKS = [
   ['9—10','落星室','河床排水廊、坠星站','陈默、苏绾、萧尘','河床生物跟随热息；铜垫片可卡稳闸钮。信标与水泵共用电路，停泵会影响居民用水。','收住火息，分开电路，轮流摇动电机','保留水泵，获得三次短讯号的发送条件。'],
   ['11—12','地图留白处','信标与山背检修道','苏绾、红鹞','拓片内外朝向需重核；新检修道仍要逐段实测。雾港回了两短一长。','发水位、发路线、留一次回应窗口','路线注明日期；未经测量的地方继续留白，苏绾保留自己的工作。']
  ],[
-  ['1—6','分层取水','青石站三处水点','成年阿禾、林舟','本卷已跨到多年后。阿禾有测绘经验；水感只提示方向，不证明水质与深度。','分层取样、复核深度，再限定试水范围','复核发现了水路异常，众人暂停取水，保住了大片田地，却还得多运些日子的水。'],
+  ['1—6','分层取水','青石站三处水点','成年阿禾、林舟','多年后重返青石，阿禾已经积累了测绘经验；水感只提示方向，不证明水质与深度。','分层取样、复核深度，再限定试水范围','复核发现了水路异常，众人暂停取水，保住了大片田地，却还得多运些日子的水。'],
   ['7—12','把家搬上坡','旧校园、旧隧道','周烈、红鹞、萧尘','安置不只是把人送上坡，还要坡道、炉灶与实际签到。红鹞独立筹备北线运输。','补齐安置点、坡道和实物签到','减少搬迁困难，保留运输与迁居的物资成本。'],
   ['13—16','水路与备用泵','石场、幼鼋暖窝','阿禾、罗定','幼鼋对热息和水流有反应；旧图不能代替现场观察，备用泵和隐瞒抽水须追查。','观察暖窝与水路，核对备用泵','确定避开主要巢区的侧道，赔付与调水权分别记录。'],
-  ['17—22','河灯','旧闸、上坡新住区','阿禾、红鹞、周烈','第三段开水需要轴套，可以先停水补给。阿禾的成长不因是否有水灵根而消失。','备轴套，分段开水，按信号撤退','水路恢复，坏田与修复继续；阿禾以学徒身份出行，北线带回太一线索。']
+  ['17—22','河灯','旧闸、上坡新住区','阿禾、红鹞、周烈','第三段开水需要轴套，可以先停水补给。阿禾带着测绘图，逐处核对水路。','备轴套，分段开水，按信号撤退','水路恢复，坏田与修复继续；阿禾以学徒身份出行，北线带回太一线索。']
  ],[
-  ['1—5','两道门','验药口、北廊','墨闻山、阿禾','太一铜钱只认验纹机构。回照视角有限、材料会耗尽；两次关门发生在不同时间。','清退路，比对两道门与灰层','区分外山门与分火门；不把局部片段当完整历史。'],
-  ['6—9','名字在绳上','窄廊、分火门两侧','萧尘、墨闻山','无名骗不过热感藤网。二十三与七十一是报数，不是最终死亡统计。','实物清点，交叉核对两侧回照','确认墨闻山明知北廊有伤者仍令落闸；责任不因救过别人而消失。'],
-  ['10—12','断引之前','三槽工位、灰坡南支','萧尘、红鹞','分流梳、冷盐浆、绳机和撤离铃必须测试；继续追证会消耗余量。决定由萧尘本人作出。','完成三槽测试，确认撤离铃与本人意愿','准备增加操作余量；不以另一个活人替代供给。'],
+  ['1—5','两道门','验药口、北廊','墨闻山、阿禾','太一铜钱只认验纹机构。回照视角有限、材料会耗尽；两次关门发生在不同时间。','清退路，比对两道门与灰层','两道门的往事渐渐分明，灰釉之外仍有看不见的过去。'],
+  ['6—9','名字在绳上','窄廊、分火门两侧','萧尘、墨闻山','无名骗不过热感藤网。二十三与七十一是报数，不是最终死亡统计。','实物清点，交叉核对两侧回照','墨闻山承认自己明知北廊还有伤者，却仍下令落闸。'],
+  ['10—12','断引之前','三槽工位、灰坡南支','萧尘、红鹞','分流梳、冷盐浆、绳机和撤离铃必须测试；继续追证会消耗余量。决定由萧尘本人作出。','完成三槽测试，确认撤离铃与本人意愿','盐浆与绳机均已备妥，萧尘亲自确认断引，不再让旁人承受吞取。'],
   ['13—18','断引与下山','炉腹、灰坡','萧尘、谢照临、墨闻山','萧尘扳柄，队友护冷却与救援绳；第二遍铃前治疗目标已经完成。','支援扳柄，依第二遍铃撤离','吞取停止。主动无名失效，旧记忆未恢复；谢照临留隔离半简，墨老失去旧钥权限。']
  ],[
   ['1—4','两条生活的路','赤梁、白榆台','周烈、邵平、季遥','白榆台有真实住处，也有搬迁成本。317位常住者中，首批126人离开。','实走东坡与接收点，逐户告知','去留各有安排，首批126人抵达；不替居民决定人生。'],
-  ['5—8','小阵的边界','山腹分流座、北线中继','阿禾、程砚','小试出现陶座热胀故障；其他地区也在承受旧阵网压力，公共支路必须断开。','按阈值停试，查残管与西侧检修井','准备减少扩大损伤；独立小阵只能保护上坪一小圈。'],
+  ['5—8','小阵的边界','山腹分流座、北线中继','阿禾、程砚','小试出现陶座热胀故障；其他地区也在承受旧阵网压力，公共支路必须断开。','按阈值停试，查残管与西侧检修井','众人及时停下试验。小阵护住了上坪的一小圈，远处房屋仍在寒风里。'],
   ['9—12','铁索向东','东缆、兽道','红鹞、邵平','空载修缆后转运88人，再护送59人；清开旧河床给兽群通路。邵平仍守在受损的护栏旁。','校索、分批转运，标清兽道与护栏风险','273人撤离、44人留驻。来援的邵平倒在护栏旁，再也没能回家。'],
   ['13—18','三处断火','西井、上坪、腰桥','林舟、萧尘、周烈','西井先切，上坪须在三息内切；红旗即执行，不再等重复信号。下窑必须舍弃。','演练两息传令，断管、退守、断桥','三地解除旧联结；小阵先撑三夜，随后换取补给。周烈留山，三处测针异常引向北山。']
  ],[
-  ['1—4','没有风的信','北山旧台、山脚热井','余檀、苏绾、阿禾','求救需即时问答核验；绞车先试沙袋，地面热井与悬台换热器互有关联。','核验信号，试载与分层测水','建立上行与地面导流条件，不能直接承诺连夜全部撤离。'],
+  ['1—4','没有风的信','北山旧台、山脚热井','余檀、苏绾、阿禾','求救需即时问答核验；绞车先试沙袋，地面热井与悬台换热器互有关联。','核验信号，试载与分层测水','建立上行与地面导流条件，连夜撤完所有人仍难以保证。'],
   ['5—8','两张图','缆舱、高空悬台','苏绾、祁望','台上37人加地面来客3人共40人。旧图未记录另一方的生活，试降出现身体不适。','对照两图，小规模试降并分段复压','形成按身体状况编组的下降方案，预留过渡仓。'],
-  ['9—11','不回家的那班','悬台住区、外修面','祁望、余檀','工具、行李与私人纪念物争用载重；外修受护具、风窗和锚点约束。','协商行李，检查锚点，安排四次往返','试降3人、四批各8人，最后还剩5人；返乡愿望不能由总好感代替。'],
-  ['12—16','寄往天外','牵引颈、地面安置点','祁望、红鹞、初一','地面泄荷配合悬台卸载；初一通信有覆盖与休息限制，失联时照预案行动。','装绝缘套、断牵引颈，分段制动最后一舱','40人到地面。返乡设备失去；窄信道只能传文字与小图，回执不等于亲友已收到。']
+  ['9—11','不回家的那班','悬台住区、外修面','祁望、余檀','工具、行李与私人纪念物争用载重；外修受护具、风窗和锚点约束。','协商行李，检查锚点，安排四次往返','试降3人、四批各8人，最后还剩5人；每个人都说出了自己的去留心愿。'],
+  ['12—16','寄往天外','牵引颈、地面安置点','祁望、红鹞、初一','地面泄荷配合悬台卸载；初一通信有覆盖与休息限制，失联时照预案行动。','装绝缘套、断牵引颈，分段制动最后一舱','四十人平安抵达地面，返乡设备却已毁去；窄信道只能传文字与小图，回执不等于亲友已收到。']
  ],[
   ['1—4','收潮的人','回汀东井、药院','衡渡、陆怀灯','灵灯与灵液失光，阵线与外放法术会被镜牵引；衡渡只有三枚封息珠，初见用掉一枚。','比较油灯与灵石，减负救人并记录封息珠','镜中的牵引循着外放灵息而来。收住术法、隔开阵线，便能减轻损耗。'],
   ['5—9','短测的边界','南渠、药炉阵线','红鹞、林舟','短暂试水虽然顺利，傍晚抽收时会怎样仍未可知。隔开田炉，逐段试验，或许能看出隐患。','检查裂管与回收纹，拒绝五炉接同一循环','保住部分车辆、工具与劳力，仍需处理灵田去留和药源。'],
   ['10—11','要拆的田','陶窑、分股窄沟','陆怀灯、苏绾','不同地块积息错时进入使薄页换相；入镜窄沟与排反流宽沟用途不同。','分级试放，移苗，联系外地医棚','获得错相窗口，毁田与替代药物仍需承担，不能用一次同意弹窗抹平。'],
-  ['12—16','归潮','镜腹、西堤、南渠','林舟、衡渡、红鹞','盐印与刻痕可辨错影；另两枚珠用于护舟与逆流，耗尽不刷新。目标是归相钉。','收敛灵息，错时入镜，断钉后接回伤者','本次主收受阻，衡渡活着被拘押；田渠与药源损失保留，十七道岔纹用途尚未全明。']
+  ['12—16','归潮','镜腹、西堤、南渠','林舟、衡渡、红鹞','盐印与刻痕可辨错影；另两枚珠用于护舟与逆流，用尽便再无护膜可依。目标是归相钉。','收敛灵息，错时入镜，断钉后接回伤者','收潮镜破碎，衡渡被活着押回；田渠和药源的损失仍需弥补，十七道岔纹用途尚未全明。']
  ],[
   ['1—6','一封新的家信','青石、换风号、伏灯站','苏绾、桑逢、萧尘','兑现休整后再处理新家信。私人细节需要再核验；押送时可提前发现灯号与可疑小艇。','核验家信，调整轮守，拒绝可疑小艇接近','赵笙的安危系于这次押送。冬季的休养与炼化让林舟达到筑基大圆满，金丹仍在前路。'],
   ['7—9','远岸的母亲','折星街市、西工坊','闻秋、阿缨、苏绾','闻秋是普通护衣缝制者。母女当面相见才确认重逢，阿缨不是亲情竞争者。','走访工坊，比对拓纹和泊位样板','确认五处航点：折星、伏灯、回汀、石背坡、青杉渡；其余十二处待查。'],
-  ['10—13','谁的赔付','三栈、工坊、南栈泊位','何鹊、孟确、红鹞','车损、药院赔付、押犯和铜签各自记账；预热船帆与下层通路可提前调查。','查分账，标出吊臂黄线与检修梯，通知泊手','准备缩短追击余量；不接受用一笔钱换全部免责。'],
+  ['10—13','谁的赔付','三栈、工坊、南栈泊位','何鹊、孟确、红鹞','车损、药院赔付、押犯和铜签各自记账；预热船帆与下层通路可提前调查。','查分账，标出吊臂黄线与检修梯，通知泊手','泊手提前守住了通路。赔付分项记账，问讯仍要继续。'],
   ['14—20','两枚铜签','折鳞舟、北山住处','萧尘、何鹊、苏绾','短段运气消耗更高；两枚签只能用于两处特定收井，不能遥控整个地面。','分路登船、保全铜签，缴械并交接看守','孟确与船被扣，两签封存。苏绾自愿留一季；林舟与红鹞合租，结丹资料仍待准备。']
  ]
 ];
 const NOVEL_CHOICES={
  '2:0':[
   {n:'先分层取样，再限定试水',result:'复核发现异常后暂停取水，避免大面积伤田；延长运水的成本仍需承担。',fact:'阿禾以实测校正水感',prepared:true},
-  {n:'先相信水感试水',result:'误判造成田地损失；阿禾参加补种、改土与补偿，不能用后续成功抵消。',fact:'伤田修复未结清',prepared:false}],
+  {n:'先相信水感试水',result:'误判造成田地损失；阿禾参加补种、改土与补偿，这些损失仍需逐一弥补。',fact:'伤田修复未结清',prepared:false}],
  '3:2':[
   {n:'保留盐浆，先照顾萧尘',result:'保留冷盐浆与撤离余量；萧尘本人确认后再进入断引准备。',fact:'断引保留准备余量',prepared:true},
-  {n:'再追查一次末段证据',result:'额外追查消耗操作余量；最后历史仍未看全，不能将回照当作全知答案。',fact:'追证消耗盐浆余量',prepared:false}],
+  {n:'再追查一次末段证据',result:'额外追查消耗操作余量；最后历史仍未看全，残缺的回照仍有许多未明之处。',fact:'追证消耗盐浆余量',prepared:false}],
  '5:2':[
   {n:'与居民协商生产工具与护具优先',result:'先为护具与生产用具留舱位；有人须舍弃私人纪念物，愿望与损失继续记录。',fact:'下降配载：工具优先',prepared:true},
-  {n:'保留更多私人纪念物，减少工具载荷',result:'纪念物占用部分工具舱位；获救者安置后需要补做更多工具，不改变40人撤离目标。',fact:'下降配载：纪念物优先',prepared:true}],
+  {n:'保留更多私人纪念物，减少工具载荷',result:'纪念物占用部分工具舱位；获救者安置后需要补做更多工具，四十人的撤离安排仍须逐一落实。',fact:'下降配载：纪念物优先',prepared:true}],
  '6:1':[
   {n:'隔离负载测试，不把五炉接回同一循环',result:'提前识别反吸，保留部分车辆、工具与药炉；仍需解决主收与灵田去留。',fact:'回汀提前识别反吸',prepared:true},
   {n:'由短测成功扩大相生循环',result:'傍晚反吸造成工具车损毁、陆怀灯受伤和药炉断火；进入救援，损失留待后续承担。',fact:'回汀工具车损毁、陆怀灯受伤',prepared:false}],
  '7:0':[
   {n:'核查灯号、调整轮守，拒绝可疑小艇',result:'提前处置押送风险，赵笙避免此次重伤；既有回汀证物与分账仍可推进调查。',fact:'赵笙避免伏灯重伤',prepared:true},
-  {n:'未能及时识别灯号',result:'衡渡发出信号，赵笙受伤；必须安排照护与轮守，证物调查仍继续。',fact:'赵笙需留折星治疗',prepared:false}]
+  {n:'未能及时识别灯号',result:'衡渡发出信号，赵笙受伤；必须安排照护与轮守，留下的账据仍指向折星。',fact:'赵笙需留折星治疗',prepared:false}]
 };
 function novelState(){if(!S.novel||S.novel.version!==1)S.novel={version:1,volume:0,step:0,supplies:12,inspected:{},talked:{},stocked:{},log:[],facts:{},bonds:{}};return S.novel;}
 function novelKey(){const n=novelState();return n.volume+':'+n.step;}
@@ -7728,14 +7732,16 @@ if(choice)n.facts[key]=choice.fact;
 t[3].split('、').forEach(name=>{n.bonds[name]=(n.bonds[name]||0)+(prepared?2:1);});
 n.step++;if(n.step===4){n.facts['volume'+(n.volume+3)]=result;n.volume++;n.step=0;if(n.volume<8)n.supplies+=10;}
 save();render();modal(`<h3>${esc(t[1])} · 已完成</h3><p>${esc(result)}</p><p>${prepared?'完整准备：保留更多补给，同伴协作 +2':'简略准备：消耗更多补给，同伴协作 +1'}。本次消耗 ${cost}。</p><p>这一程的人与事，都留在了旅程中。</p>`,[{t:n.volume>=8?'查看八卷旅程':'继续旅程',cls:'gold',fn:novelOpen},{t:'暂歇',cls:'ghost'}]);}
-function novelJournal(){const n=novelState();modal(`<h3>旅程与人物</h3><div class="novel-bonds">${Object.entries(n.bonds).map(([name,count])=>'<span>'+esc(name)+' · 协作 '+count+'</span>').join('')||'尚未开始'}</div><h4>旅途篇章</h4>${window.LC_NOVELS.map((v,i)=>`<p>${esc(v.title)} · ${v.chapters.length}章${i>n.volume?' · 主线待解锁':''}</p>`).join('')}<h4>已完成的行动</h4>${n.log.slice().reverse().map(l=>`<details><summary>第${l.volume}卷 · ${esc(l.title)} · ${l.prepared?'完整':'简略'}准备</summary><p>${esc(l.result)}</p>${l.choice?'<p>选择：'+esc(l.choice)+'</p>':''}<p>补给 -${l.cost}</p></details>`).join('')||'<p>在卷宗打开「灵潮长路」开始。</p>'}`,[
+const JOURNEY_COPY_FIXES={"放入丹药、装备或灵石温养，按现实时间成熟。": "放入丹药、装备或灵石，静候温养成熟。", "派去各地历练，按现实时间回来": "遣往各地历练，静候归来", "连续十二炉没出极品，下一炉必出。": "", "十二段主线。每段之间至少隔一个历练年（通过闭关推进，与现实日期独立）。走完「人间·别」，天门才肯放你过去。": "人间尚有未了的牵挂。闭关历练后，再去探望故人；走完「人间·别」，天门才肯放你过去。", "每年俸禄与贡献自动到账": "每年领取俸禄与贡献", "道途决定你的加成，以及最终能走到哪一个结局。选定后，本世不可更改。": "不同道途各有修行所得。道心一经立定，本世不可更改。", "道途、不同的选择，会让江湖里每个人的结局都不一样。": "道途、不同的选择，会留下不同的因缘。", "名次天天在变": "名次随之更迭", "已到境界瓶颈，请先突破；未扣灵石": "修为已满，先行突破再闭关。", "此番修行，已记入你的历练。": "静室门开，你收敛气息，重返江湖。", "阿禾的成长不因是否有水灵根而消失。": "阿禾带着测绘图，逐处核对水路。", "区分外山门与分火门；不把局部片段当完整历史。": "两道门的往事渐渐分明，灰釉之外仍有看不见的过去。", "确认墨闻山明知北廊有伤者仍令落闸；责任不因救过别人而消失。": "墨闻山承认自己明知北廊还有伤者，却仍下令落闸。", "准备增加操作余量；不以另一个活人替代供给。": "盐浆与绳机均已备妥，萧尘亲自确认断引，不再让旁人承受吞取。", "准备减少扩大损伤；独立小阵只能保护上坪一小圈。": "众人及时停下试验。小阵护住了上坪的一小圈，远处房屋仍在寒风里。", "；另两枚珠用于护舟与逆流，耗尽不刷新。": "；另两枚珠用于护舟与逆流，用尽便再无护膜可依。", "返乡愿望不能由总好感代替。": "每个人都说出了自己的去留心愿。", "不能直接承诺连夜全部撤离。": "连夜撤完所有人仍难以保证。", "不永久降低玩家的修为境界。": "离开牵引范围后，灵息逐渐平复。", "不改变40人撤离目标。": "四十人的撤离安排仍须逐一落实。", "不能用后续成功抵消。": "这些损失仍需逐一弥补。", "不能将回照当作全知答案。": "残缺的回照仍有许多未明之处。", "证物调查仍继续。": "留下的账据仍指向折星。", "准备缩短追击余量；不接受用一笔钱换全部免责。": "泊手提前守住了通路。赔付分项记账，问讯仍要继续。"};
+function journeyCopy(text){for(const [oldText,newText] of Object.entries(JOURNEY_COPY_FIXES))text=String(text).split(oldText).join(newText);return text;}
+function novelJournal(){const n=novelState();modal(`<h3>旅程与人物</h3><div class="novel-bonds">${Object.entries(n.bonds).map(([name,count])=>'<span>'+esc(name)+' · 协作 '+count+'</span>').join('')||'尚未开始'}</div><h4>旅途篇章</h4>${window.LC_NOVELS.map((v,i)=>`<p>${esc(v.title)} · ${v.chapters.length}章${i>n.volume?' · 主线待解锁':''}</p>`).join('')}<h4>已完成的行动</h4>${n.log.slice().reverse().map(l=>`<details><summary>第${l.volume}卷 · ${esc(l.title)} · ${l.prepared?'完整':'简略'}准备</summary><p>${esc(journeyCopy(l.result))}</p>${l.choice?'<p>选择：'+esc(l.choice)+'</p>':''}<p>补给 -${l.cost}</p></details>`).join('')||'<p>在卷宗打开「灵潮长路」开始。</p>'}`,[
 ...(n.volume<8?[{t:'回到当前任务',cls:'gold',fn:novelOpen}]:[]),...window.LC_NOVELS.map((v,i)=>({t:'阅读 · '+v.title,fn:()=>novelReader(i)})),{t:'返回',cls:'ghost'}]);}
 function novelReader(volume,chapter=0){const v=window.LC_NOVELS[volume],c=v.chapters[chapter];
 modal(`<h3>${esc(v.title)}</h3><h4>${esc(c.title)}</h4><p class="note">第 ${chapter+1}/${v.chapters.length} 章</p><div class="novel-text">${c.body.split(/\n\s*\n/).map(p=>'<p>'+esc(p)+'</p>').join('')}</div>`,[...(chapter>0?[{t:'上一章',fn:()=>novelReader(volume,chapter-1)}]:[]),...(chapter+1<v.chapters.length?[{t:'下一章',cls:'gold',fn:()=>novelReader(volume,chapter+1)}]:[]),{t:'返回旅程',fn:novelJournal}]);}
 ACT.novel=novelOpen;
 const originalStoryView=VIEWS.story;VIEWS.story=()=>novelCard()+originalStoryView();
 const originalWorldView=VIEWS.world;VIEWS.world=()=>originalWorldView().replace('<div class="wbtns">','<div class="wbtns"><button class="btn sm gold" data-act="novel">主线剧情</button>');
-const realClock=document.createElement('div');realClock.id='realClock';realClock.setAttribute('aria-label','现实日期时间');document.querySelector('#view').insertAdjacentElement('beforebegin',realClock);timeTick();
+const realClock=document.createElement('div');realClock.id='realClock';realClock.setAttribute('aria-label','灵潮历');document.querySelector('#view').insertAdjacentElement('beforebegin',realClock);timeTick();
 
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

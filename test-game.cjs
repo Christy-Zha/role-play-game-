@@ -10,12 +10,13 @@ run(fs.readFileSync(__dirname+'/novels.js','utf8'));
 run(section('const GIFTS=','function relName('));
 run(section('/* Social gains','const BOND_CHAT='));
 run("const BOND={hong:{n:'红鹞',likes:['wine']}};const BOND_CHAT={hong:[['聊聊'],['聊聊'],['聊聊']]};");
+run(section('const CN=', 'const yearName='));
 run(section('/* Wall clock is display-only','function ageCheck()'));
 run(section('const RETREATS=','function xinmoFight()'));
 run(section('/* Novel route intentionally','ACT.novel=novelOpen;'));
 function fresh(){ctx.S={started:true,qi:0,stones:100000,year:3,age:18,dao:{yin:0},flags:{},aff:{},social:{}};}
 test('8 verified manuscripts, 134 chapters, 32 tasks',()=>{assert.equal(ctx.window.LC_NOVELS.length,8);assert.equal(ctx.window.LC_NOVELS.reduce((a,v)=>a+v.chapters.length,0),134);assert.equal(run('LC_TASKS.flat().length'),32);});
-test('real clock independent of story years and old accelerated accumulator',()=>{fresh();ctx.S.year=900;ctx.S.yAcc=999;const date=run('dateName()');assert.ok(date.includes(String(new Date().getFullYear())));run('timeTick(999999)');assert.equal(ctx.S.year,900);assert.equal(run('gameDay()'),Math.floor(Date.now()/86400000));});
+test('real clock independent of story years and old accelerated accumulator',()=>{fresh();ctx.S.year=900;ctx.S.yAcc=999;const date=run('dateName()');assert.ok(date.startsWith('灵潮'));assert.ok(!date.includes(String(new Date().getFullYear())));assert.ok(date.includes(String(new Date().getHours()).padStart(2,'0')+':'));run('timeTick(999999)');assert.equal(ctx.S.year,900);assert.equal(run('gameDay()'),Math.floor(Date.now()/86400000));});
 test('20 consecutive chats, diminishing gains, no day cooldown',()=>{fresh();for(let i=0;i<20;i++)run("chatBtn('hong')[0].fn()");assert.equal(ctx.S.aff.hong,40);assert.equal(ctx.S.social.hong.chat,20);assert.equal(run("chatBtn('hong').length"),2);});
 test('repeated gifts cost stones and persist diminishing returns',()=>{fresh();for(let i=0;i<10;i++){run("giftPick('hong')");ctx.buttons[1].fn();}assert.equal(ctx.S.aff.hong,56);assert.equal(ctx.S.stones,99800);assert.equal(ctx.S.social.hong.gifts.wine,10);ctx.S=JSON.parse(JSON.stringify(ctx.S));run("giftPick('hong')");ctx.buttons[1].fn();assert.equal(ctx.S.aff.hong,58);});
 test('affection capped; insufficient stones never grants gift',()=>{ctx.S.aff.hong=99;run("chatBtn('hong')[0].fn()");assert.equal(ctx.S.aff.hong,100);ctx.S.stones=0;run("giftPick('hong')");ctx.buttons[1].fn();assert.equal(ctx.S.social.hong.gifts.wine,11);});
@@ -27,4 +28,15 @@ test('unprepared route consumes more supplies and cannot spend below zero',()=>{
 test('every manuscript chapter has a title/body and every task has source chapter mapping',()=>{for(const v of ctx.window.LC_NOVELS)for(const c of v.chapters){assert.ok(c.title&&c.body.length>100);}assert.ok(run('LC_TASKS.every(v=>v.every(t=>t.length===7&&t.every(x=>typeof x==="string"&&x.length)))'));});
 test('offline no longer accelerates calendar or ages',()=>{const fn=section('function offline()','function intro()');assert.ok(!fn.includes('simYears'));assert.ok(!fn.includes('Y_SEC'));});
 test('novel risky choice preserves injury and changes cost; choice modal does not auto-resolve',()=>{fresh();run('novelState().volume=6;novelState().step=1');run("novelAct('inspect');novelAct('talk');novelAct('resolve')");assert.equal(ctx.S.novel.step,1);assert.equal(ctx.S.novel.log.length,0);run("novelAct('resolve',1)");assert.equal(ctx.S.novel.log[0].cost,4);assert.ok(ctx.S.novel.facts['6:1'].includes('陆怀灯受伤'));ctx.S=JSON.parse(JSON.stringify(ctx.S));assert.ok(ctx.S.novel.log[0].result.includes('损失'));});
+test('game calendar follows local midnight, year rollover, leap day and shichen',()=>{
+assert.equal(run('dateName(new Date(2026,10,8,23,59))'),'灵潮三年 十一月八日 · 子时 23:59');
+assert.equal(run('dateName(new Date(2026,10,9,0,0))'),'灵潮三年 十一月九日 · 子时 00:00');
+assert.equal(run('dateName(new Date(2027,0,1,1,0))'),'灵潮四年 一月一日 · 丑时 01:00');
+assert.equal(run('dateName(new Date(2028,1,29,12,30))'),'灵潮五年 二月二十九日 · 午时 12:30');
+fresh();const before=run('dateName(new Date(2026,10,8,18,42))');run("retreatApply('half')");assert.equal(run('dateName(new Date(2026,10,8,18,42))'),before);
+});
+test('player-facing task and retreat copy has no authoring or background explanations',()=>{
+const text=run('LC_TASKS.flat(2).join(" ")+Object.values(NOVEL_CHOICES).flat().map(c=>c.n+c.result).join(" ")+closedHTML()');
+assert.ok(!/原稿|改编|小说|后台|本稿|玩家|刷新|现实|设备当地|同步|强制/.test(text));
+});
 console.log(`${checks} tests passed`);
