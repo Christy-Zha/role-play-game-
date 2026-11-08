@@ -3865,9 +3865,9 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['por_lie','por_yun','por_lin','por_mowen','por_chiyang','por_shuiyue','por_huagu','por_shi','por_yan','por_gu','por_liu','por_luo','por_ying','por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
+const ART_HAVE=['por_xiao','por_sx','por_tq','por_mu','boss_shuwang','boss_baizu','boss_huaiyao','boss_haiyan','boss_zero','boss_duoxian','boss_lingchao','boss_shouguan','boss_jing','boss_tianjiang','boss_muzhe','boss_jieyun','por_lie','por_yun','por_lin','por_mowen','por_chiyang','por_shuiyue','por_huagu','por_shi','por_yan','por_gu','por_liu','por_luo','por_ying','por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
 const ART_IMG={};
-function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261107':'');});}
+function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.match(/^(por|boss)_/)?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261107':'');});}
 function SCC_CLEAR(){try{_scnCache.clear();for(const k of _cvc.keys())if(k.startsWith('hbg|'))_cvc.delete(k);}catch(e){}}
 const _sceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){const im=ART_IMG['scene_'+key];if(!im)return _sceneCanvas(key,w,h);
  return cvMemo('img|'+key+'|'+Math.round(w)+'x'+Math.round(h),()=>{const dpr=Math.min(2,window.devicePixelRatio||1),cv=mkCv(Math.round(w*dpr),Math.round(h*dpr)),x=cv.getContext('2d');const s=Math.max(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,(cv.height-im.height*s)/2,im.width*s,im.height*s);return cv;});};
@@ -4672,7 +4672,7 @@ Object.keys(NPCS).forEach(k=>{const u=NPCS[k].unlock;NPCS[k].unlock=()=>!F('dead
    人物之间互有牵连：赤阳的一句话能救烈无咎；林小苗的九转金丹能救阿萤；阿萤活下来，云漪的师父才能出冥池。 */
 const RW={};let RW_F=null;
 /* 人物地图形象 → 立绘文件名（art/por_xxx.webp） */
-const CH_POR={p_lie:'lie',p_chiyang:'chiyang',p_yun:'yun',p_shuiyue:'shuiyue',p_lin:'lin',p_huagu:'huagu',p_shi:'shi',p_yan:'yan',p_gu:'gu',p_mo:'mowen'};
+const CH_POR={p_xiao:'xiao',p_lie:'lie',p_chiyang:'chiyang',p_yun:'yun',p_shuiyue:'shuiyue',p_lin:'lin',p_huagu:'huagu',p_shi:'shi',p_yan:'yan',p_gu:'gu',p_mo:'mowen'};
 const rwP=id=>P_(id)||{att:0,st:0,alive:false};
 function R(pid,o){const L=RW[pid]=RW[pid]||[];const id='rw_'+pid+L.length;
  const ch={id,rw:pid,title:SPK[pid]+'·'+o.t,g:o.g,bg:o.bg||'market',hint:o.hint||'',need:o.need||(()=>true),gap:o.gap||0,cond:()=>false,lines:o.lines,
@@ -5548,6 +5548,15 @@ function bgmToggle(){BGM.on=!BGM.on;try{localStorage.setItem('lc_bgm',BGM.on?'1'
 
 /* 战斗里的提示卡：比顶部那一行字能多说几句 */
 function btTip(html,ms){const st=$('#btStage');if(!st)return;let el=$('#btTip');if(!el){el=document.createElement('div');el.id='btTip';el.className='bt-tip';st.appendChild(el);}el.innerHTML=html;el.classList.remove('off');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.add('off'),ms||4000);}
+
+/* ---------- 首领插画：战斗里用画好的首领替换程序画的小图 ---------- */
+const BOSS_ART=['shuwang','baizu','huaiyao','haiyan','zero','duoxian','lingchao','shouguan','jing','tianjiang','muzhe'];
+const BOSS_LOOK_ART={'堕仙残躯':'duoxian'};
+function bossArtKey(a){if(a.side!=='e')return null;if(a.jie)return 'jieyun';if(a.boss&&!a.elite&&a.z!=null&&!a.special&&BOSS_ART[a.z])return BOSS_ART[a.z];return BOSS_LOOK_ART[a.look]||null;}
+const _baP=btPortrait;btPortrait=function(a){const k=bossArtKey(a),im=k&&ART_IMG['boss_'+k];if(!im)return _baP.apply(this,arguments);
+ const asp=im.width/im.height;const h=Math.max(40,Math.round(Math.min(BT.H*(a.jie?.45:.62),BT.W*.6/asp))),w=Math.round(h*asp);
+ return cvMemo('boss-art|'+k+'|'+w+'x'+h,()=>{const cv=mkCv(w*2,h*2),x=cv.getContext('2d');cv.ww=w;cv.hh=h;x.translate(cv.width,0);x.scale(-1,1);x.drawImage(im,0,0,cv.width,cv.height);x.setTransform(1,0,0,1,0,0);
+  x.globalCompositeOperation='destination-in';const g=x.createLinearGradient(0,cv.height*.9,0,cv.height);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,cv.width,cv.height);return cv;});};
 
 /* ================= 宿敌 · 萧尘：拿走另外半块玉简的人 =================
    他永远比你快半步。他那半块玉里住着堕仙残存的意志，一步步推着他走。
