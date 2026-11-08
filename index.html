@@ -7490,7 +7490,7 @@ const SAVE_TITLES={world:'江湖',cult:'修炼',jade:'玉简',bag:'行囊',clan:
 let SAVE_BACK={tab:'world',scroll:0};
 function journalFold(key,title,count,html){return `<details class="journal-fold" data-fold="${key}" ${JOURNAL_OPEN.has(key)?'open':''}><summary><span>${title}</span><small>${count}</small></summary><div class="journal-fold-body">${html}</div></details>`;}
 function chapterHTML(ch){const seen=S.seen.includes(ch.id),pend=S.pending.includes(ch.id),cls=(pend?'new':seen?'seen':'lock')+(ch.side?' side':'');
- return `<div class="ch ${cls}"><div class="th"><canvas data-scene="${ch.bg}"></canvas><span>${pend||seen?ch.g:''}</span></div><div><div class="ct">${pend||seen?ch.title:ch.hid?'隐秘·？？？':(ch.side?'行路·？？？':'？？？')}</div><div class="ch-h">${pend?'新的篇章':seen?'已读':ch.hid?'只有特定的机缘才能触发':'开启条件：'+(ch.hint||'继续探索江湖')}</div></div>
+ return `<div class="ch ${cls}"><div class="th"><canvas data-scene="${ch.bg}"></canvas><span>${pend||seen?ch.g:''}</span></div><div><div class="ct">${pend||seen?ch.title:ch.hid?'隐秘·？？？':(ch.side?'支线·？？？':'主线·？？？')}</div><div class="ch-h">${pend?(ch.side?'支线剧情':'主线剧情'):seen?(ch.side?'支线 · 已读':'主线 · 已读'):ch.hid?'只有特定的机缘才能触发':'开启条件：'+(ch.hint||'继续探索江湖')}</div></div>
  ${pend?`<button class="btn sm gold" data-act="play" data-arg="${ch.id}">观看</button>`:seen?`<button class="btn sm ghost" data-act="play" data-arg="${ch.id}">重温</button>`:''}</div>`;}
 VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).sort((a,b)=>(qSt(b.id)==='ready')-(qSt(a.id)==='ready'));const done=QUESTS.filter(q=>qDone(q.id)).length;
  const fresh=STORY.filter(ch=>S.pending.includes(ch.id)),read=STORY.filter(ch=>S.seen.includes(ch.id)&&!S.pending.includes(ch.id)),locked=STORY.filter(ch=>!ch.rw&&!S.seen.includes(ch.id)&&!S.pending.includes(ch.id));
@@ -7503,7 +7503,7 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).
   ${act.length?act.map(q=>{const st=qSt(q.id);return `<div class="qcard ${st==='ready'?'ready':''}"><div class="in"><div class="iname">${q.title}<span class="lv">${NPCS[q.npc].name}</span></div><div class="istat">${q.desc}</div><div class="istat qp">${qProgText(q)}</div></div>
     ${st==='ready'?`<button class="btn sm gold" data-act="goTalk" data-arg="${q.npc}">交付</button>`:qZone(q)>=0?`<button class="btn sm ghost" data-act="goz" data-arg="${qZone(q)}" ${zoneUnlocked(qZone(q))?'':'disabled'}>前往</button>`:q.obj.type==='fight'?`<button class="btn sm red" data-act="home">回站</button>`:q.obj.type==='game'?`<button class="btn sm gold" data-act="qgame" data-arg="${q.id}">挑战</button>`:''}</div>`;}).join(''):'<p class="empty">在青石站走走，和大家聊聊。头上有「!」的人有事相托，「?」的人在等你回话。</p>'}
  <h2 class="sec">新的篇章 <small>${fresh.length?'待看 '+fresh.length+' 段':'暂无新剧情'}</small></h2>
- ${fresh.length?fresh.map(chapterHTML).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
+ ${fresh.length?['主线剧情','支线剧情'].map((label,i)=>{const chapters=fresh.filter(ch=>!!ch.side===!!i);return chapters.length?'<h3 class="sub">'+label+'</h3>'+chapters.map(chapterHTML).join(''):'';}).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
  ${journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
  ${journalFold('rw','江湖人物志',rwSum(),rwHTML())}
  ${journalFold('cg','画卷',(S.cgSeen||[]).length+'/'+Object.keys(CG).length,cgHTML())}
@@ -7646,14 +7646,14 @@ const LC_TASKS = [
   ['1—3','白箱救援','雾港渡口','沈湄、陈默','旧工牌和调运单将众人引向安置所；陈默承认自己曾在设备不合格时签字。','核对工牌、调运记录与接应位置','将救援与记录一起带回医棚。'],
   ['4—6','初一的名字','医棚','初一、闻策、宁玄','她自己写下“初一”；离开床边管线仍需冷却匣。治疗与潮阵劳动不能混为一件事。','确认冷却与自主停止的条件','记录初一的选择；帮助与原谅分开处理。'],
   ['7—9','旧驾驶室','沉水档案与高岸','红鹞、老陆','下潜寻找记录，再查旧驾驶室。红鹞父亲已遇难，他是一位没有开回来的普通司机。','保存记录，陪红鹞核对遗物','确认父亲的结局，保留沉默与陪伴的空间。'],
-  ['10—12','白脊与撤离','三号阀、港口航道','初一、沈湄、宁玄','三号阀回灌的责任不能被维修抵消。初一自愿短测可随时停止；白脊鲛强于主角，须诱离航道。','确认停机绳、分次点亮诱饵与接人结绳','撤离准备完成；下一卷从初一拉停机绳后的改道继续。']
+  ['10—12','白脊与撤离','三号阀、港口航道','初一、沈湄、宁玄','三号阀回灌的责任不能被维修抵消。初一自愿短测可随时停止；白脊鲛远强于林舟，须诱离航道。','确认停机绳、分次点亮诱饵与接人结绳','撤离准备就绪，停机绳交到初一手中，船队随时准备改道。']
  ],[
   ['1—4','停机后的路','排水渠与山坳','初一、萧尘、沈湄','初一拉下停机绳，船改走排水渠。五枚木结只交回四枚时，必须回查接人。','核对木结、人数、集合点和实时水位','找回萧尘；广播只报告实测水位与可走的路。'],
   ['5—8','箭头背面','高岸、旧泵站','苏绾、周姨','苏绾只熟悉部分旧层。安全门后的通廊已塌，路牌曾为隐藏水井被转向。','检查门底、标识背面，协商公共路线','公开可走的路，周姨家的水井与住处仍留白。'],
   ['9—10','落星室','河床排水廊、坠星站','陈默、苏绾、萧尘','河床生物跟随热息；铜垫片可卡稳闸钮。信标与水泵共用电路，停泵会影响居民用水。','收住火息，分开电路，轮流摇动电机','保留水泵，获得三次短讯号的发送条件。'],
   ['11—12','地图留白处','信标与山背检修道','苏绾、红鹞','拓片内外朝向需重核；新检修道仍要逐段实测。雾港回了两短一长。','发水位、发路线、留一次回应窗口','路线注明日期；未经测量的地方继续留白，苏绾保留自己的工作。']
  ],[
-  ['1—6','分层取水','青石站三处水点','成年阿禾、林舟','本卷已跨到多年后。阿禾有测绘经验；水感只提示方向，不证明水质与深度。','分层取样、复核深度，再限定试水范围','充分准备可避免大面积伤田，但需要延长运水；不强制复演误判。'],
+  ['1—6','分层取水','青石站三处水点','成年阿禾、林舟','本卷已跨到多年后。阿禾有测绘经验；水感只提示方向，不证明水质与深度。','分层取样、复核深度，再限定试水范围','复核发现了水路异常，众人暂停取水，保住了大片田地，却还得多运些日子的水。'],
   ['7—12','把家搬上坡','旧校园、旧隧道','周烈、红鹞、萧尘','安置不只是把人送上坡，还要坡道、炉灶与实际签到。红鹞独立筹备北线运输。','补齐安置点、坡道和实物签到','减少搬迁困难，保留运输与迁居的物资成本。'],
   ['13—16','水路与备用泵','石场、幼鼋暖窝','阿禾、罗定','幼鼋对热息和水流有反应；旧图不能代替现场观察，备用泵和隐瞒抽水须追查。','观察暖窝与水路，核对备用泵','确定避开主要巢区的侧道，赔付与调水权分别记录。'],
   ['17—22','河灯','旧闸、上坡新住区','阿禾、红鹞、周烈','第三段开水需要轴套，可以先停水补给。阿禾的成长不因是否有水灵根而消失。','备轴套，分段开水，按信号撤退','水路恢复，坏田与修复继续；阿禾以学徒身份出行，北线带回太一线索。']
@@ -7665,7 +7665,7 @@ const LC_TASKS = [
  ],[
   ['1—4','两条生活的路','赤梁、白榆台','周烈、邵平、季遥','白榆台有真实住处，也有搬迁成本。317位常住者中，首批126人离开。','实走东坡与接收点，逐户告知','去留各有安排，首批126人抵达；不替居民决定人生。'],
   ['5—8','小阵的边界','山腹分流座、北线中继','阿禾、程砚','小试出现陶座热胀故障；其他地区也在承受旧阵网压力，公共支路必须断开。','按阈值停试，查残管与西侧检修井','准备减少扩大损伤；独立小阵只能保护上坪一小圈。'],
-  ['9—12','铁索向东','东缆、兽道','红鹞、邵平','空载修缆后转运88人，再护送59人；清开旧河床给兽群通路。邵平之死在本稿是固定后果。','校索、分批转运，标清兽道与护栏风险','273人撤离、44人留驻；邵平属外来护卫，不能从44人中再次扣除。'],
+  ['9—12','铁索向东','东缆、兽道','红鹞、邵平','空载修缆后转运88人，再护送59人；清开旧河床给兽群通路。邵平仍守在受损的护栏旁。','校索、分批转运，标清兽道与护栏风险','273人撤离、44人留驻。来援的邵平倒在护栏旁，再也没能回家。'],
   ['13—18','三处断火','西井、上坪、腰桥','林舟、萧尘、周烈','西井先切，上坪须在三息内切；红旗即执行，不再等重复信号。下窑必须舍弃。','演练两息传令，断管、退守、断桥','三地解除旧联结；小阵先撑三夜，随后换取补给。周烈留山，三处测针异常引向北山。']
  ],[
   ['1—4','没有风的信','北山旧台、山脚热井','余檀、苏绾、阿禾','求救需即时问答核验；绞车先试沙袋，地面热井与悬台换热器互有关联。','核验信号，试载与分层测水','建立上行与地面导流条件，不能直接承诺连夜全部撤离。'],
@@ -7673,12 +7673,12 @@ const LC_TASKS = [
   ['9—11','不回家的那班','悬台住区、外修面','祁望、余檀','工具、行李与私人纪念物争用载重；外修受护具、风窗和锚点约束。','协商行李，检查锚点，安排四次往返','试降3人、四批各8人，最后还剩5人；返乡愿望不能由总好感代替。'],
   ['12—16','寄往天外','牵引颈、地面安置点','祁望、红鹞、初一','地面泄荷配合悬台卸载；初一通信有覆盖与休息限制，失联时照预案行动。','装绝缘套、断牵引颈，分段制动最后一舱','40人到地面。返乡设备失去；窄信道只能传文字与小图，回执不等于亲友已收到。']
  ],[
-  ['1—4','收潮的人','回汀东井、药院','衡渡、陆怀灯','灵灯与灵液失光，阵线与外放法术会被镜牵引；衡渡只有三枚封息珠，初见用掉一枚。','比较油灯与灵石，减负救人并记录封息珠','掌握收取规则；不永久降低玩家的修为境界。'],
-  ['5—9','短测的边界','南渠、药炉阵线','红鹞、林舟','小说把低负载成功外推而遭反吸；游戏允许用可隔离负载测试提前发现风险。','检查裂管与回收纹，拒绝五炉接同一循环','保住部分车辆、工具与劳力，仍需处理灵田去留和药源。'],
+  ['1—4','收潮的人','回汀东井、药院','衡渡、陆怀灯','灵灯与灵液失光，阵线与外放法术会被镜牵引；衡渡只有三枚封息珠，初见用掉一枚。','比较油灯与灵石，减负救人并记录封息珠','镜中的牵引循着外放灵息而来。收住术法、隔开阵线，便能减轻损耗。'],
+  ['5—9','短测的边界','南渠、药炉阵线','红鹞、林舟','短暂试水虽然顺利，傍晚抽收时会怎样仍未可知。隔开田炉，逐段试验，或许能看出隐患。','检查裂管与回收纹，拒绝五炉接同一循环','保住部分车辆、工具与劳力，仍需处理灵田去留和药源。'],
   ['10—11','要拆的田','陶窑、分股窄沟','陆怀灯、苏绾','不同地块积息错时进入使薄页换相；入镜窄沟与排反流宽沟用途不同。','分级试放，移苗，联系外地医棚','获得错相窗口，毁田与替代药物仍需承担，不能用一次同意弹窗抹平。'],
   ['12—16','归潮','镜腹、西堤、南渠','林舟、衡渡、红鹞','盐印与刻痕可辨错影；另两枚珠用于护舟与逆流，耗尽不刷新。目标是归相钉。','收敛灵息，错时入镜，断钉后接回伤者','本次主收受阻，衡渡活着被拘押；田渠与药源损失保留，十七道岔纹用途尚未全明。']
  ],[
-  ['1—6','一封新的家信','青石、换风号、伏灯站','苏绾、桑逢、萧尘','兑现休整后再处理新家信。私人细节需要再核验；押送时可提前发现灯号与可疑小艇。','核验家信，调整轮守，拒绝可疑小艇接近','准备可避免赵笙重伤；林舟在战前达到筑基大圆满，尚未金丹。'],
+  ['1—6','一封新的家信','青石、换风号、伏灯站','苏绾、桑逢、萧尘','兑现休整后再处理新家信。私人细节需要再核验；押送时可提前发现灯号与可疑小艇。','核验家信，调整轮守，拒绝可疑小艇接近','赵笙的安危系于这次押送。冬季的休养与炼化让林舟达到筑基大圆满，金丹仍在前路。'],
   ['7—9','远岸的母亲','折星街市、西工坊','闻秋、阿缨、苏绾','闻秋是普通护衣缝制者。母女当面相见才确认重逢，阿缨不是亲情竞争者。','走访工坊，比对拓纹和泊位样板','确认五处航点：折星、伏灯、回汀、石背坡、青杉渡；其余十二处待查。'],
   ['10—13','谁的赔付','三栈、工坊、南栈泊位','何鹊、孟确、红鹞','车损、药院赔付、押犯和铜签各自记账；预热船帆与下层通路可提前调查。','查分账，标出吊臂黄线与检修梯，通知泊手','准备缩短追击余量；不接受用一笔钱换全部免责。'],
   ['14—20','两枚铜签','折鳞舟、北山住处','萧尘、何鹊、苏绾','短段运气消耗更高；两枚签只能用于两处特定收井，不能遥控整个地面。','分路登船、保全铜签，缴械并交接看守','孟确与船被扣，两签封存。苏绾自愿留一季；林舟与红鹞合租，结丹资料仍待准备。']
@@ -7703,14 +7703,14 @@ const NOVEL_CHOICES={
 };
 function novelState(){if(!S.novel||S.novel.version!==1)S.novel={version:1,volume:0,step:0,supplies:12,inspected:{},talked:{},stocked:{},log:[],facts:{},bonds:{}};return S.novel;}
 function novelKey(){const n=novelState();return n.volume+':'+n.step;}
-function novelCard(){const n=novelState(),v=window.LC_NOVELS[Math.min(n.volume,7)];return `<div class="novel-banner"><span>第三至第十卷</span><h2>灵潮长路</h2><p>雾港的潮水，折星的远岸。探索、协作与每一次留下的后果。</p><p>${n.volume>=8?'八卷主线已完成':esc(v.title)+' · 任务 '+(n.step+1)+'/4'}</p><button class="btn gold" data-act="novel">${n.volume>=8?'查看旅程':'继续小说主线'}</button></div>`;}
+function novelCard(){const n=novelState(),v=window.LC_NOVELS[Math.min(n.volume,7)];return `<div class="novel-banner"><span>主线剧情 · 第三至第十卷</span><h2>灵潮长路</h2><p>雾港的潮水，折星的远岸。探索、协作与每一次留下的后果。</p><p>${n.volume>=8?'八卷主线已完成':esc(v.title)+' · 任务 '+(n.step+1)+'/4'}</p><button class="btn gold" data-act="novel">${n.volume>=8?'查看旅程':'继续旅程'}</button></div>`;}
 function novelOpen(){if(BT||SC)return;const n=novelState();if(n.volume>=8)return novelJournal();const v=window.LC_NOVELS[n.volume],t=LC_TASKS[n.volume][n.step],key=novelKey();
 modal(`<div class="novel-scene"><span>${esc(v.title)} · 第${t[0]}章</span><h3>${esc(t[1])}</h3><p class="novel-place">${esc(t[2])}</p><p>${esc(t[4])}</p></div><p>协作人物：${esc(t[3])}</p><div class="novel-map"><span>${n.inspected[key]?'✓':'○'} 现场勘察</span><span>${n.talked[key]?'✓':'○'} 同伴协商</span><span>→ ${esc(t[1])}</span></div><p>补给 ${n.supplies} · 完整准备消耗2，否则消耗4。每项任务可整理一次补给 +3。</p>`,[
 {t:n.inspected[key]?'✓ 查看勘察记录':'探索现场',fn:()=>novelAct('inspect')},
 {t:n.talked[key]?'✓ 查看协作约定':'与同伴协商',fn:()=>novelAct('talk')},
 {t:'执行：'+t[5],cls:'gold',fn:()=>novelAct('resolve')},
 ...(!n.stocked[key]?[{t:'整理行装 · 补给 +3',fn:()=>novelAct('stock')}]:[]),
-{t:'逐章阅读原稿',fn:()=>novelReader(n.volume)}, {t:'旅程与人物',fn:novelJournal},{t:'返回江湖',cls:'ghost'}]);}
+{t:'翻阅篇章',fn:()=>novelReader(n.volume)}, {t:'旅程与人物',fn:novelJournal},{t:'返回江湖',cls:'ghost'}]);}
 function novelAct(action,choiceIndex){const n=novelState();if(n.volume>=8)return;const key=novelKey(),t=LC_TASKS[n.volume][n.step];
 if(action==='inspect'||action==='talk'){n[action==='inspect'?'inspected':'talked'][key]=true;save();modal(`<h3>${action==='inspect'?'现场勘察':'协作约定'} · ${esc(t[2])}</h3><p>${esc(action==='inspect'?t[4]:t[5])}</p><p>下一步：${esc(t[5])}。</p>`,[{t:'回到任务',fn:novelOpen}]);return;}
 if(action==='stock'){if(!n.stocked[key]){n.stocked[key]=true;n.supplies+=3;save();}novelOpen();return;}
@@ -7721,20 +7721,20 @@ const choice=choices&&choices[choiceIndex];if(choices&&!choice)return;
 const prepared=!!(n.inspected[key]&&n.talked[key]&&(!choice||choice.prepared)),cost=prepared?2:4;
 let result=choice?choice.result:t[6];
 if(key==='7:3'&&n.facts['7:0']==='赵笙需留折星治疗')result+=' 赵笙留折星治疗，有轮守者照料。';
-if(key==='7:3'&&n.facts['7:0']==='赵笙避免伏灯重伤')result+=' 赵笙沿用押送准备充分的路线，不强制新增同一次重伤。';
+if(key==='7:3'&&n.facts['7:0']==='赵笙避免伏灯重伤')result+=' 赵笙平安度过伏灯一役，继续参与轮守。';
 if(n.supplies<cost){modal('<h3>补给不足</h3><p>先探索并协商可降低消耗，或整理本任务的行装。</p>',[{t:'回到准备',fn:novelOpen}]);return;}
 n.supplies-=cost;n.log.push({volume:n.volume+3,step:n.step,title:t[1],result,prepared,cost,choice:choice?choice.n:null,at:Date.now()});
 if(choice)n.facts[key]=choice.fact;
 t[3].split('、').forEach(name=>{n.bonds[name]=(n.bonds[name]||0)+(prepared?2:1);});
 n.step++;if(n.step===4){n.facts['volume'+(n.volume+3)]=result;n.volume++;n.step=0;if(n.volume<8)n.supplies+=10;}
 save();render();modal(`<h3>${esc(t[1])} · 已完成</h3><p>${esc(result)}</p><p>${prepared?'完整准备：保留更多补给，同伴协作 +2':'简略准备：消耗更多补给，同伴协作 +1'}。本次消耗 ${cost}。</p><p>这一程的人与事，都留在了旅程中。</p>`,[{t:n.volume>=8?'查看八卷旅程':'继续旅程',cls:'gold',fn:novelOpen},{t:'暂歇',cls:'ghost'}]);}
-function novelJournal(){const n=novelState();modal(`<h3>旅程与人物</h3><div class="novel-bonds">${Object.entries(n.bonds).map(([name,count])=>'<span>'+esc(name)+' · 协作 '+count+'</span>').join('')||'尚未开始'}</div><h4>各卷原稿</h4>${window.LC_NOVELS.map((v,i)=>`<p>${esc(v.title)} · ${v.chapters.length}章${i>n.volume?' · 主线待解锁':''}</p>`).join('')}<h4>已完成的行动</h4>${n.log.slice().reverse().map(l=>`<details><summary>第${l.volume}卷 · ${esc(l.title)} · ${l.prepared?'完整':'简略'}准备</summary><p>${esc(l.result)}</p>${l.choice?'<p>选择：'+esc(l.choice)+'</p>':''}<p>补给 -${l.cost}</p></details>`).join('')||'<p>在卷宗打开「灵潮长路」开始。</p>'}`,[
+function novelJournal(){const n=novelState();modal(`<h3>旅程与人物</h3><div class="novel-bonds">${Object.entries(n.bonds).map(([name,count])=>'<span>'+esc(name)+' · 协作 '+count+'</span>').join('')||'尚未开始'}</div><h4>旅途篇章</h4>${window.LC_NOVELS.map((v,i)=>`<p>${esc(v.title)} · ${v.chapters.length}章${i>n.volume?' · 主线待解锁':''}</p>`).join('')}<h4>已完成的行动</h4>${n.log.slice().reverse().map(l=>`<details><summary>第${l.volume}卷 · ${esc(l.title)} · ${l.prepared?'完整':'简略'}准备</summary><p>${esc(l.result)}</p>${l.choice?'<p>选择：'+esc(l.choice)+'</p>':''}<p>补给 -${l.cost}</p></details>`).join('')||'<p>在卷宗打开「灵潮长路」开始。</p>'}`,[
 ...(n.volume<8?[{t:'回到当前任务',cls:'gold',fn:novelOpen}]:[]),...window.LC_NOVELS.map((v,i)=>({t:'阅读 · '+v.title,fn:()=>novelReader(i)})),{t:'返回',cls:'ghost'}]);}
 function novelReader(volume,chapter=0){const v=window.LC_NOVELS[volume],c=v.chapters[chapter];
 modal(`<h3>${esc(v.title)}</h3><h4>${esc(c.title)}</h4><p class="note">第 ${chapter+1}/${v.chapters.length} 章</p><div class="novel-text">${c.body.split(/\n\s*\n/).map(p=>'<p>'+esc(p)+'</p>').join('')}</div>`,[...(chapter>0?[{t:'上一章',fn:()=>novelReader(volume,chapter-1)}]:[]),...(chapter+1<v.chapters.length?[{t:'下一章',cls:'gold',fn:()=>novelReader(volume,chapter+1)}]:[]),{t:'返回旅程',fn:novelJournal}]);}
 ACT.novel=novelOpen;
 const originalStoryView=VIEWS.story;VIEWS.story=()=>novelCard()+originalStoryView();
-const originalWorldView=VIEWS.world;VIEWS.world=()=>originalWorldView().replace('<div class="wbtns">','<div class="wbtns"><button class="btn sm gold" data-act="novel">小说主线</button>');
+const originalWorldView=VIEWS.world;VIEWS.world=()=>originalWorldView().replace('<div class="wbtns">','<div class="wbtns"><button class="btn sm gold" data-act="novel">主线剧情</button>');
 const realClock=document.createElement('div');realClock.id='realClock';realClock.setAttribute('aria-label','现实日期时间');document.querySelector('#view').insertAdjacentElement('beforebegin',realClock);timeTick();
 
 window.claude?.hot?.snapshot?.(()=>({S}));
