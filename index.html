@@ -3273,6 +3273,10 @@ function btClose(){const el=$('#bt');el.hidden=true;el.innerHTML='';BT=null;dotU
 /* ---------- 绘制 ---------- */
 function btBg(k,W,H){const K=BT.k;return cvMemo('hbg|'+k+'|'+Math.round(W)+'x'+Math.round(H)+'|'+K,()=>{const D=BTB[k]||BTB.town,cv=mkCv(Math.round(W*K),Math.round(H*K)),x=cv.getContext('2d');cv.ww=W;cv.hh=H;x.scale(K,K);
  const hz=Math.round(H*.4),key=k==='town'?'shelter':(ZONE_SCN[k]||'abyss'),z=K/BT.dpr;
+ const IMG=ART_IMG['scene_'+key];if(IMG){const sc=sceneCanvas(key,W*z,H*z);x.drawImage(sc,0,0,W,H);x.save();x.beginPath();x.rect(0,hz,W,H-hz);x.clip();x.globalAlpha=.22;
+  for(let r=-24;r<24;r++)for(let c=-24;c<24;c++){const sx=W/2+(c-r)*16,sy=hz+(c+r)*8;if(sx<-20||sx>W+20||sy<hz-10||sy>H+10)continue;x.drawImage(tileCv(D.fl,((c*7+r*13)%4+4)%4),sx-16.2,sy-8.1,32.4,16.2);}x.restore();
+  let g=x.createLinearGradient(0,hz*.85,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');x.fillStyle=g;x.fillRect(0,hz*.85,W,H);
+  g=x.createRadialGradient(W/2,H*.62,Math.min(W,H)*.3,W/2,H*.62,Math.max(W,H)*.78);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.45)');x.fillStyle=g;x.fillRect(0,0,W,H);return cv;}
  try{const sc=sceneCanvas(key,W*z,hz*1.25*z);x.drawImage(sc,0,0,W,hz*1.25);}catch(e){x.fillStyle=D.sky[1];x.fillRect(0,0,W,hz);}
  x.save();x.beginPath();x.rect(0,hz,W,H-hz);x.clip();x.fillStyle=pSh((TL[D.fl]||TL.tile).c[0],-.35);x.fillRect(0,hz,W,H-hz);
  for(let r=-24;r<24;r++)for(let c=-24;c<24;c++){const sx=W/2+(c-r)*16,sy=hz+(c+r)*8;if(sx<-20||sx>W+20||sy<hz-10||sy>H+10)continue;x.drawImage(tileCv(D.fl,((c*7+r*13)%4+4)%4),sx-16.2,sy-8.1,32.4,16.2);}x.restore();
@@ -3797,7 +3801,7 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['scene_xiulian','scene_sky','scene_shelter','scene_market','por_hero_m','por_hero_f','por_mo','por_tie','por_he'];
+const ART_HAVE=['scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
 const ART_IMG={};
 function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg');});}
 function SCC_CLEAR(){try{_scnCache.clear();}catch(e){}}
