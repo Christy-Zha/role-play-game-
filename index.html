@@ -3330,7 +3330,7 @@ function btClose(){const el=$('#bt');el.hidden=true;el.innerHTML='';BT=null;dotU
 
 /* ---------- 绘制 ---------- */
 function btBg(k,W,H){const K=BT.k;return cvMemo('hbg|'+k+'|'+Math.round(W)+'x'+Math.round(H)+'|'+K,()=>{const D=BTB[k]||BTB.town,cv=mkCv(Math.round(W*K),Math.round(H*K)),x=cv.getContext('2d');cv.ww=W;cv.hh=H;x.scale(K,K);
- const hz=Math.round(H*.4),key=k==='town'?'shelter':(ZONE_SCN[k]||'abyss'),z=K/BT.dpr;
+ const hz=Math.round(H*.4),key=k==='town'?'shelter':(ZONE_SCN[k]||(ART_IMG['scene_'+k]?k:'abyss')),z=K/BT.dpr;
  const IMG=ART_IMG['scene_'+key];if(IMG){const sc=sceneCanvas(key,W*z,H*z);x.drawImage(sc,0,0,W,H);x.save();x.beginPath();x.rect(0,hz,W,H-hz);x.clip();x.globalAlpha=.22;
   for(let r=-24;r<24;r++)for(let c=-24;c<24;c++){const sx=W/2+(c-r)*16,sy=hz+(c+r)*8;if(sx<-20||sx>W+20||sy<hz-10||sy>H+10)continue;x.drawImage(tileCv(D.fl,((c*7+r*13)%4+4)%4),sx-16.2,sy-8.1,32.4,16.2);}x.restore();
   let g=x.createLinearGradient(0,hz*.85,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');x.fillStyle=g;x.fillRect(0,hz*.85,W,H);
@@ -3883,9 +3883,9 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['ico_shouyuan','ico_pojing','ico_juqi','ico_zhuji','ico_jiuzhuan','ico_huanhun','ico_fu_lei','ico_fu_huo','ico_fu_hu','por_xiao','por_sx','por_tq','por_mu','boss_shuwang','boss_baizu','boss_huaiyao','boss_haiyan','boss_zero','boss_duoxian','boss_lingchao','boss_shouguan','boss_jing','boss_tianjiang','boss_muzhe','boss_jieyun','por_lie','por_yun','por_lin','por_mowen','por_chiyang','por_shuiyue','por_huagu','por_shi','por_yan','por_gu','por_liu','por_luo','por_ying','por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning'];
+const ART_HAVE=['ico_shouyuan','ico_pojing','ico_juqi','ico_zhuji','ico_jiuzhuan','ico_huanhun','ico_fu_lei','ico_fu_huo','ico_fu_hu','por_xiao','por_sx','por_tq','por_mu','boss_shuwang','boss_baizu','boss_huaiyao','boss_haiyan','boss_zero','boss_duoxian','boss_lingchao','boss_shouguan','boss_jing','boss_tianjiang','boss_muzhe','boss_jieyun','por_lie','por_yun','por_lin','por_mowen','por_chiyang','por_shuiyue','por_huagu','por_shi','por_yan','por_gu','por_liu','por_luo','por_ying','por_cm','por_shen','por_qian','por_man','por_gui','scene_xianshan','scene_tianting','scene_core','scene_abyss','scene_starsea','scene_guixu','scene_clan','scene_xianfu','scene_dongtian','scene_leijie','scene_xiulian','scene_sky','scene_shelter','scene_market','scene_metro','scene_overpass','scene_forest','scene_port','scene_lab','scene_pit','por_hero_m','por_hero_f','por_mo','por_tie','por_he','por_hong','por_zero','por_zhou','por_su','por_ning','scene_leitai','scene_chixiao','scene_xuanshui','scene_baicao','scene_youming','scene_city','scene_huatian','scene_linjiang','scene_auction','scene_shanmen'];
 const ART_IMG={};
-function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.match(/^(por|boss|ico)_/)?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261107':'');});}
+function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();try{paintAll();const v=document.getElementById('vbg');if(v&&v.dataset.key)paintTo(v,v.dataset.key);}catch(e){}};im.src='art/'+k+(k.match(/^(por|boss|ico)_/)?'.webp':'.jpg')+(k.startsWith('scene_')?'?v=scenes-20261108':'');});}
 function SCC_CLEAR(){try{_scnCache.clear();for(const k of _cvc.keys())if(k.startsWith('hbg|'))_cvc.delete(k);}catch(e){}}
 const _sceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){const im=ART_IMG['scene_'+key];if(!im)return _sceneCanvas(key,w,h);
  return cvMemo('img|'+key+'|'+Math.round(w)+'x'+Math.round(h),()=>{const dpr=Math.min(2,window.devicePixelRatio||1),cv=mkCv(Math.round(w*dpr),Math.round(h*dpr)),x=cv.getContext('2d');const s=Math.max(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,(cv.height-im.height*s)/2,im.width*s,im.height*s);return cv;});};
@@ -4417,6 +4417,7 @@ const SECTS={
  youming:{n:'幽冥殿',el:'bing',st:24,mech:'summon',book:'youming',form:'jiugong',align:'魔',d:'不惧霜冻，每三回合招来鬼仆——速战速决。',ally:{ls:.05},lt:'殿主'},
  tianqiong:{n:'天穹会',el:'lei',st:29,mech:'shuijing',book:'tianqiong',form:'wuxing',align:'魔',d:'会首两重真身，水镜护体——雷破镜，五行轮转压之。',ally:{critA:.05},lt:'会首'}
 };
+function sectBg(k){return ['baicao','chixiao','xuanshui','youming'].includes(k)?k:'shanmen';}
 const SECT_ORD=['tiegu','baicao','chixiao','xuanshui','youming','tianqiong'];
 const SECT_LOOK={tiegu:['铁骨帮众','铁骨长老'],baicao:['百草弟子','百草长老'],chixiao:['赤霄弟子','赤霄长老'],xuanshui:['玄水弟子','玄水长老'],youming:['幽冥鬼卒','幽冥护法'],tianqiong:['天穹追兵','天穹长老']};
 const RANKN=['弟子','长老','宗主'];
@@ -4430,7 +4431,7 @@ function sectFoe(k,rank){const D=SECTS[k],lead=sectLead(k);const st=rank===2&&le
  e.atkSt={huo:['burn',1],bing:['chill',1],shui:['wet',2],lei:['shock',1]}[D.el]||null;return e;}
 function sectFight(k){const R=S.sects[k]||(S.sects[k]={beat:0,rel:null});if(R.rel==='vassal'||R.rel==='gone'){toast('这个宗门已经不在了','bad');return;}const rank=Math.min(2,R.beat);
  const foes=[sectFoe(k,rank)];if(rank===2)foes.push(sectFoe(k,1));if(rank===0)foes.push(sectFoe(k,0));jhClose();
- startBattle(foes,{bg:'market',noFlee:rank===2,onWin:()=>sectWin(k,rank),onLose:()=>{S.injury=Date.now()+5*60*1000;toast(SECTS[k].n+'：「回去再练几年吧。」（轻伤五分钟）','bad');save();}});}
+ startBattle(foes,{bg:sectBg(k),noFlee:rank===2,onWin:()=>sectWin(k,rank),onLose:()=>{S.injury=Date.now()+5*60*1000;toast(SECTS[k].n+'：「回去再练几年吧。」（轻伤五分钟）','bad');save();}});}
 function sectWin(k,rank){const D=SECTS[k],R=S.sects[k];const first=R.beat<=rank;if(first){R.beat=rank+1;wuAdd(6);}S.fame+=[3,8,25][rank];let L=[];
  if(first&&rank===0)L.push(gS(zsAt(zOfStage(D.st),8)),gMat('he',3));
  if(first&&rank===1){L.push(learnForm(D.form)||gS(zsAt(zOfStage(D.st),12)));}
@@ -4742,7 +4743,7 @@ function rwHTML(){return '<p class="note">江湖上每个有名有姓的人，�
   return `<div class="row2 ppl ${p.alive?'':'dim'} ${nx?'friend':''}"><img class="mini" src="${clSprite(p.ch&&CH[p.ch]?p.ch:'tie')}" alt=""><div class="in"><div class="iname">${esc(p.n)}<span class="lv">${'●'.repeat(done)}${'○'.repeat(L.length-done)}</span></div><div class="istat">${esc(st)}</div></div><div class="ibtn">${nx?`<button class="btn sm gold" data-act="rwTalk" data-arg="${pid}">叙话</button>`:''}</div></div>`;}).join('');}
 
 /* ================= 烈无咎 · 赤霄之剑 ================= */
-R('lie',{t:'赤霄之剑',g:'剑',bg:'market',need:()=>S.stage>=9,hint:'筑基之后，坊市里会有人找上你',lines:[
+R('lie',{t:'赤霄之剑',g:'剑',bg:'chixiao',need:()=>S.stage>=9,hint:'筑基之后，坊市里会有人找上你',lines:[
  ['','坊市的人群忽然分开了一条路。'],['lie','你就是{name}？'],
  ['','来人一身赤衣，背上的剑比他的人还傲。赤霄宗年轻一辈第一人，烈无咎。'],
  ['lie','江湖榜上，有人说你是这几年冒出来最快的一个。'],['lie','我不信。拔剑。'],
@@ -4752,7 +4753,7 @@ R('lie',{t:'赤霄之剑',g:'剑',bg:'market',need:()=>S.stage>=9,hint:'筑基�
     lose:()=>{S.flags.rw_lie='lose';rwAtt('lie',-5);return '他的剑停在你喉前一寸。\n“果然，传言都是假的。”\n他收剑入鞘，连头都没回。';}}),r:[['lie','好。']]},
   {t:'「我不跟你打。」',fx:()=>{S.flags.rw_lie='no';rwAtt('lie',-10);},r:[['lie','……胆小鬼。'],['','他把剑插回鞘里，转身走了。围观的人笑了几声，又散了。'],['','你注意到，他走出很远之后，回头看了你一眼。']]}])]});
 
-R('lie',{t:'焚心',g:'焚',bg:'market',gap:2,need:()=>S.stage>=13,hint:'结丹之后',lines:[
+R('lie',{t:'焚心',g:'焚',bg:'chixiao',gap:2,need:()=>S.stage>=13,hint:'结丹之后',lines:[
  ['','这几年，江湖上关于烈无咎的传闻越来越怪。有人说他闭了死关，有人说他在赤霄宗的禁地里，一待就是半年。'],
  ['','你在落雁湖边见到他的时候，他瘦得几乎脱了相，眼睛却亮得吓人。'],
  ['lie',()=>S.flags.rw_lie==='win'?'你又往前走了一大截。我追了几年，还是没追上。':S.flags.rw_lie==='lose'?'你倒是长进了。可惜，还不够。':'你当年不肯拔剑。现在呢？'],
@@ -4770,7 +4771,7 @@ R('lie',{t:'焚心',g:'焚',bg:'market',gap:2,need:()=>S.stage>=13,hint:'结丹�
 function rwLieForbid(){const p=P_('lie');if(!p)return;S.flags.rw_lieF=1;p.tal=Math.min(1,p.tal+.25);p.st=Math.min(LAST,p.st+2);p.lifeB=(p.lifeB||0)-Math.round(pLife(p)*.55);rwAtt('lie',-15);p.goal='用焚心剑胜过你';news('烈无咎修成赤霄禁术「焚心剑」。赤阳真人当夜闭门不出。',1);}
 function rwLieTrust(){const p=P_('lie');if(!p)return;S.flags.rw_lieT=1;rwAtt('lie',20);p.goal='站在榜首——用自己的剑';}
 
-R('lie',{t:'落雁湖',g:'榜',bg:'market',gap:2,need:()=>S.stage>=17,hint:'元婴之后',lines:[
+R('lie',{t:'落雁湖',g:'榜',bg:'leitai',gap:2,need:()=>S.stage>=17,hint:'元婴之后',lines:[
  ['',()=>F('rw_lieF')?'烈无咎下了战书。落雁湖，生死不论。':'烈无咎托人送来一封信，只有一行字：「落雁湖，切磋。」'],
  ['',()=>F('rw_lieF')?'他站在湖心，焚心剑意把湖水烧得发烫。他才三十出头，头发已经白了一半。':'他站在湖心。比起当年，他的剑静了很多。'],
  ['lie',()=>F('rw_lieF')?'我只剩十几年了。够了。今天之后，江湖榜上我在你上面。':'这些年我想明白了——我要赢的，从来不是你。是那个怕输的自己。'],
@@ -4842,7 +4843,7 @@ R('yun',{t:'寻人启事',g:'寻',bg:'market',need:()=>S.stage>=9,hint:'筑基�
   {t:'「我帮你留意。」',fx:()=>{S.flags.rw_yun=1;rwAtt('yun',15);},r:[['yun','……谢谢。'],['','她把一张启事折好，塞进你手里。背面画着一枚水滴形的玉令。'],['yun','这是玄水门长老的令牌。如果你见到它——无论在谁身上——告诉我。']]},
   {t:'「这么多年了，你该放下了。」',fx:()=>{rwAtt('yun',-5);},r:[['yun','门主也这么说。'],['','她把启事贴好，抹平，转身走了。'],['','第二天你路过告示墙，那张启事上又多了一张新的。']]}])]});
 
-R('yun',{t:'玄水令',g:'令',bg:'market',gap:1,need:()=>S.stage>=13,hint:'结丹之后',lines:[
+R('yun',{t:'玄水令',g:'令',bg:'xuanshui',gap:1,need:()=>S.stage>=13,hint:'结丹之后',lines:[
  ['','你在废城里斩了一个幽冥殿的鬼卒。它的腰上挂着一枚水滴形的玉令。'],
  ['',()=>F('rw_yun')?'你想起了那张寻人启事。':'你觉得眼熟——是坊市告示墙上那张寻人启事背面画的东西。'],
  ['yun','这是……师父的令牌。'],['','云漪握着玉令的手在抖。'],['yun','在幽冥殿的人身上？她被幽冥殿抓了？这么多年？'],['yun','我现在就去。'],
@@ -4856,7 +4857,7 @@ R('yun',{t:'玄水令',g:'令',bg:'market',gap:1,need:()=>S.stage>=13,hint:'结�
     ['shuiyue','我不许你找，是怕你知道了，会觉得是自己害了她。'],['','云漪站在原地，一句话都说不出来。']]}])]});
 function rwYunCold(){const p=P_('yun');if(p&&!F('rw_yunC')){S.flags.rw_yunC=1;p.lifeB=(p.lifeB||0)+(p.age+14-pLife(p));}}
 
-R('yun',{t:'冥池',g:'池',bg:'pit',gap:1,need:()=>F('rw_luoFree')||S.stage>=21,hint:'化神之后——或者先解开阎九娘的心结（她的寒毒等不了太久）',lines:[
+R('yun',{t:'冥池',g:'池',bg:'youming',gap:1,need:()=>F('rw_luoFree')||S.stage>=21,hint:'化神之后——或者先解开阎九娘的心结（她的寒毒等不了太久）',lines:[
  rwIf(()=>F('rw_luoFree'),[
   ['','阎九娘守了约定。冥池的门开了。'],['','一个白发的女人被人扶着走出来。她的眼睛已经看不太清了，却一下子认出了站在门口的人。'],
   ['luo','……漪儿？'],['yun','师父。'],['','云漪跪了下去。'],['luo','长这么高了。……寒毒呢？'],
@@ -4888,7 +4889,7 @@ R('yan',{t:'收尸人',g:'冥',bg:'shelter',need:()=>S.stage>=13,hint:'结丹之
   {t:'卖给她一颗寿元丹',need:()=>S.lifeP>0,fx:()=>{S.lifeP--;rwAtt('yan',15);S.stones+=zsAt(maxZone(),45);},r:[['yan','好。'],['','她扔给你一袋灵石，比市价多了一倍。'],['yan','以后有，都卖给我。']]},
   {t:'「魔修收尸，能有什么好事？」',fx:()=>{rwAtt('yan',-10);},r:[['yan','对。没什么好事。'],['','黑伞下的人笑了一下。车轮碾过碎石，走远了。']]}])]});
 
-R('yan',{t:'阿萤',g:'萤',bg:'forest',gap:1,need:()=>S.stage>=13,hint:'过些时候',lines:[
+R('yan',{t:'阿萤',g:'萤',bg:'huatian',gap:1,need:()=>S.stage>=13,hint:'过些时候',lines:[
  ['','幽冥殿后山，有一片和这座魔窟格格不入的花田。'],['','一个白发的老太太蹲在田里拔草。她看见你，笑着招手。'],
  ['ying','你是来找九娘的吧？她出门了。进来喝碗水？'],['','屋里很干净。墙上挂着一张小女孩的画像。'],
  ['ying','那是我小时候。九娘画的。'],['ying','我是她女儿。没有灵根，是个凡人。今年……六十三了吧。'],
@@ -4899,7 +4900,7 @@ R('yan',{t:'阿萤',g:'萤',bg:'forest',gap:1,need:()=>S.stage>=13,hint:'过些�
   {t:'「我帮你找延寿的法子。」',fx:()=>{rwAtt('yan',20);S.flags.rw_yanH=1;},r:[['yan','你？'],['yan','我找了四十年。丹药、换寿、夺舍、玄水门的「镜中寿」……能试的都试了。'],['yan','……你要是真找得到，幽冥殿欠你一条命。']]},
   {t:'「堂堂幽冥殿主，原来有这么一个软肋。」',fx:()=>{rwAtt('yan',-50);S.stones+=zsAt(maxZone(),30);S.flags.rw_yanT=1;kar(-1);seedAdd('revenge','yan',S.year+8,{why:'你拿我女儿要挟我的那天，就该想到今天。'});},r:[['','你开了个价。她给了。'],['','她给的时候，一个字都没有说。'],['','你知道，这件事没有完。']]}])]});
 
-R('yan',{t:'寿',g:'寿',bg:'forest',gap:2,need:()=>S.stage>=17,hint:'元婴之后',lines:[
+R('yan',{t:'寿',g:'寿',bg:'huatian',gap:2,need:()=>S.stage>=17,hint:'元婴之后',lines:[
  ['','阎九娘派人来请你。来的鬼卒说，殿主的女儿快不行了。'],['','花田荒了。阿萤躺在床上，比上一次见时又小了一圈。'],['ying','你来啦。'],
  ['yan',()=>F('rw_yanT')?'……你也配来？是她非要见你。':'她一直说，想再见你一面。'],
  ['yan',()=>F('rw_luoFree')||F('rw_luoDead')?'':'我抓了一个玄水门的人，关了很多年，逼她给我想办法。还是没用。'],['yan','凡人的寿元，就像漏了底的碗。补不上的。'],
@@ -4921,7 +4922,7 @@ R('lin',{t:'采药的小丫头',g:'草',bg:'forest',need:()=>S.stage>=3,hint:'�
     lose:()=>{rwAtt('lin',10);return '你们俩一起被藤妖追出了三里地。\n跑到安全的地方，她喘着气笑：“你人真好。就是……有点弱。”'+gMat('cao',1);}})},
   {t:'扔块石头引开它们',fx:()=>{rwAtt('lin',8);},r:[['','藤妖朝着石头的方向爬走了。'],['lin','聪明！我叫林小苗，百草谷的。我师父总说我笨，你别学她。']]}])]});
 
-R('lin',{t:'第七炉',g:'炉',bg:'forest',gap:2,need:()=>S.stage>=9,hint:'筑基之后',lines:[
+R('lin',{t:'第七炉',g:'炉',bg:'baicao',gap:2,need:()=>S.stage>=9,hint:'筑基之后',lines:[
  ['','百草谷的人说，林小苗这个月已经炸了第七炉。'],['','你找到她的时候，她蹲在炸黑的丹炉前面，脸上全是灰。'],
  ['lin','……你来啦。'],['lin','师父说我天赋太差。说我这辈子能炼出三品丹，就算祖宗保佑。'],
  ['lin','我想炼九转金丹。百草谷开山祖师炼过一炉，之后三百年，没人成过。'],['lin','……很好笑吧。'],
@@ -4930,7 +4931,7 @@ R('lin',{t:'第七炉',g:'炉',bg:'forest',gap:2,need:()=>S.stage>=9,hint:'筑�
   {t:'送她一批灵草（3 株）',need:()=>(S.mats.cao||0)>=3,fx:()=>{S.mats.cao-=3;rwAtt('lin',15);S.flags.rw_linH=1;},r:[['lin','这么多！我……我会还你的！炼出来的第一炉，给你！']]},
   {t:'「也许你该换条路走。」',fx:()=>{rwAtt('lin',-10);S.flags.rw_linQ=1;P_('lin').goal='让师父看得起我';},r:[['lin','……你也这么觉得啊。'],['','她把丹炉擦干净，收进了柜子里。'],['','那天之后，百草谷的人说，林小苗再也没进过丹房。']]}])]});
 
-R('lin',{t:'九转',g:'丹',bg:'forest',gap:3,need:()=>S.stage>=13,hint:'结丹之后',lines:[
+R('lin',{t:'九转',g:'丹',bg:'baicao',gap:3,need:()=>S.stage>=13,hint:'结丹之后',lines:[
  rwIf(()=>F('rw_linQ'),[
   ['','你很久没有听到林小苗的消息。'],['','后来有人说，百草谷山门口多了一个守山的女弟子，剑练得不错，就是从来不笑。'],
   ['','你去看过一次。她认出了你，点了点头，没有说话。'],['','她的腰上，还挂着那只小小的药篓。'],
@@ -4949,7 +4950,7 @@ function rwLinFail(){const p=P_('lin');if(!p)return;p.tal=Math.max(.2,p.tal-.1);
 
 /* ================= 花姑 · 传灯 ================= */
 const rwLiu=()=>S.flags.rw_liu&&P_(S.flags.rw_liu);
-R('huagu',{t:'谷主的考题',g:'谷',bg:'forest',need:()=>S.stage>=9||!!(S.sects.baicao&&S.sects.baicao.beat>=1),hint:'筑基之后，百草谷会请你去',lines:[
+R('huagu',{t:'谷主的考题',g:'谷',bg:'baicao',need:()=>S.stage>=9||!!(S.sects.baicao&&S.sects.baicao.beat>=1),hint:'筑基之后，百草谷会请你去',lines:[
  ['','百草谷的谷主是个爱笑的老太太。'],['huagu',()=>F('rw_lin')?'你就是救过小苗的那个人？那丫头回来念叨了半个月。':'你就是最近江湖上冒出来的那个？'],
  ['huagu','老婆子活了一百五十年，就剩一桩心事——找个传人。'],
  ['huagu','谷里有两个孩子。一个叫柳含烟，天资是我这辈子见过最好的，心却冷。一个叫林小苗，笨，可是肯下死功夫。'],
@@ -4961,7 +4962,7 @@ R('huagu',{t:'谷主的考题',g:'谷',bg:'forest',need:()=>S.stage>=9||!!(S.sec
  ['huagu','罢了。考题没有对错，我只是想看看你是什么样的人。'],
  {fn:()=>{if(!rwLiu()){const p=mkPerson({n:'柳含烟',sect:'baicao',st:14,age:31,tal:.75,att:0,goal:'接任谷主',ch:'p_gen3'});S.flags.rw_liu=p.id;}toast(gMat('cao',2).trim());}}]});
 
-R('huagu',{t:'两个徒弟',g:'徒',bg:'forest',gap:2,need:()=>S.stage>=13,hint:'结丹之后',lines:[
+R('huagu',{t:'两个徒弟',g:'徒',bg:'baicao',gap:2,need:()=>S.stage>=13,hint:'结丹之后',lines:[
  ['','花姑请你喝茶。这一次，她没笑。'],
  ['huagu',()=>F('rw_jzOk')?'小苗那丫头，居然把九转金丹炼出来了。老婆子活了一百五十年，没见过这么倔的孩子。':F('rw_linQ')?'小苗不炼丹了。是我把话说重了。':'含烟上个月炼成了五品丹。小苗……还在炸炉子。'],
  ['huagu','我得定下来了。我老了，眼也花了。你替我选一个吧。'],['','门外，柳含烟端着药盘，停了一下脚步。'],
@@ -4970,7 +4971,7 @@ R('huagu',{t:'两个徒弟',g:'徒',bg:'forest',gap:2,need:()=>S.stage>=13,hint:
   {t:'「林小苗。百草谷要的是心。」',need:()=>rwP('lin').alive,fx:()=>{S.flags.rw_heir='lin';rwAtt('lin',20);const l=rwLiu();if(l)l.att-=40;},r:[['huagu','……我也是这么想的。只是需要有人替我说出来。'],['','门外的药盘，轻轻响了一声。']]},
   {t:'「阿禾。她是我看着长大的。」',need:()=>{const h=P_('he');return h&&h.alive&&h.sect==='baicao';},fx:()=>{S.flags.rw_heir='he';const l=rwLiu();if(l)l.att-=30;},r:[['huagu','那孩子啊……确实是我这辈子见过最肯吃苦的。好。'],['','门外的药盘，轻轻响了一声。']]}])]});
 
-R('huagu',{t:'传灯',g:'灯',bg:'forest',gap:2,need:()=>S.stage>=13,hint:'再过两年',lines:[
+R('huagu',{t:'传灯',g:'灯',bg:'baicao',gap:2,need:()=>S.stage>=13,hint:'再过两年',lines:[
  rwIf(()=>S.flags.rw_heir==='liu'||!S.flags.rw_heir,[
   ['','花姑传位给柳含烟的第二年，病倒了。'],['','百草谷的人说是寿元到了。可她才一百五十出头，金丹修士少说能活五百年。'],
   ['','你去看她的时候，屋里有一股很淡的甜味。'],['huagu','……甘草。'],['','她握着你的手，笑了一下，没有再说话。'],
@@ -5024,7 +5025,7 @@ R('shi',{t:'结丹',g:'丹',bg:'market',gap:2,need:()=>true,hint:'两年之后�
   {fn:()=>{rwKill(P_('shi'),'铁骨帮帮主石铁山冲击金丹失败，坐化于关中。');const k=mkPerson({n:'石小虎',sect:'tiegu',st:9,age:22,tal:.55,att:30,goal:'把铁骨帮撑下去',ch:'p_gen4'});rwSetLead('tiegu',k);rwEnd('shi','他没能结丹。他把刀留给了你。');toast(gItemNamed('w',3,'铁山刀',maxZone()).trim(),'big');}}])]});
 
 /* ================= 水月仙子 · 水镜 ================= */
-R('shuiyue',{t:'水镜',g:'镜',bg:'xianshan',need:()=>S.stage>=17||!!(S.sects.xuanshui&&S.sects.xuanshui.beat>=1),hint:'元婴之后',lines:[
+R('shuiyue',{t:'水镜',g:'镜',bg:'xuanshui',need:()=>S.stage>=17||!!(S.sects.xuanshui&&S.sects.xuanshui.beat>=1),hint:'元婴之后',lines:[
  ['','玄水门的大殿里没有灯。正中一面水镜悬在半空，映着月亮。'],['shuiyue','你来了。'],
  ['','水月仙子背对着你。她的头发是白的，声音却像少女。'],
  ['shuiyue','这面镜子，能照见人心里最怕的东西。三百年来，看过它的人，有一半疯了。'],['shuiyue','你要看吗？'],
@@ -5034,7 +5035,7 @@ R('shuiyue',{t:'水镜',g:'镜',bg:'xianshan',need:()=>S.stage>=17||!!(S.sects.x
     ['','你退了一步。镜面平静下来。'],['shuiyue','你没有疯。很好。看过了，才知道该往哪边走。']]},
   {t:'不看',fx:()=>{rwAtt('shuiyue',5);},r:[['shuiyue','聪明人。也是胆小的人。'],['shuiyue','……这两样，在江湖上都能活得长。']]}])]});
 
-R('shuiyue',{t:'镜中人',g:'忆',bg:'xianshan',gap:2,need:()=>S.stage>=21&&S.seen.includes('fallen'),hint:'化神之后，且已知晓堕仙往事',lines:[
+R('shuiyue',{t:'镜中人',g:'忆',bg:'xuanshui',gap:2,need:()=>S.stage>=21&&S.seen.includes('fallen'),hint:'化神之后，且已知晓堕仙往事',lines:[
  ['','水月仙子的信只有一句：「把你怀里的玉简，带来。」'],
  ['shuiyue','三百年了。我听得出他的声音。'],['shuiyue','墨师兄。你还要躲多久？'],['mo','……小师妹。'],
  ['','大殿里很久没有声音。'],
@@ -5110,7 +5111,7 @@ R('mowen',{t:'卖图的老人',g:'图',bg:'market',need:()=>S.stage>=3,hint:'修
   {t:'「等我能去港口了，带你去。」',fx:()=>{rwAtt('mowen',20);S.flags.rw_mwP=1;},r:[['mowen','……'],['mowen','后生，你可别骗老头子。我等不了太久的。']]},
   {t:'听他讲讲临江镇',fx:()=>{rwAtt('mowen',12);},r:[['','他讲了一下午。讲镇上的米糕，讲钟楼每天敲几下，讲他娘在江边洗衣服的样子。'],['','你走的时候，天已经黑了。他还坐在摊子后面，看着那张不卖的图。']]}])]});
 
-R('mowen',{t:'临江镇',g:'钟',bg:'port',gap:1,need:()=>maxZone()>=3,hint:'能去沉没港口之后',lines:[
+R('mowen',{t:'临江镇',g:'钟',bg:'linjiang',gap:1,need:()=>maxZone()>=3,hint:'能去沉没港口之后',lines:[
  ['mowen',()=>F('rw_mwP')?'你还记得！你真的还记得！':'后生……听说你能去港口了？'],['mowen','带我去吧。就看一眼。'],
  rwC([
   {t:'带他去',fx:()=>rwFight({title:'雾海',bg:3,many:[{look:'雾鲨',name:'雾鲨',z:3,m:1.1,beast:1},{look:'溺魂',name:'溺魂',z:3,m:1.1,beast:1}],
@@ -5120,7 +5121,7 @@ R('mowen',{t:'临江镇',g:'钟',bg:'port',gap:1,need:()=>maxZone()>=3,hint:'能
     ['','你一个人穿过雾海，找到了那座钟楼，在船上画了一整天。'],
     ['','你把画交给他。他捧着看了很久，用袖子擦了一遍又一遍——画上没有灰，他擦的是自己的眼睛。'],['mowen','钟楼……还在啊。']]}])]});
 
-R('mowen',{t:'归处',g:'归',bg:'port',gap:3,need:()=>true,hint:'几年之后',lines:[
+R('mowen',{t:'归处',g:'归',bg:'linjiang',gap:3,need:()=>true,hint:'几年之后',lines:[
  ['','莫问托人带信，说他快走了。'],['','他躺在坊市后面那间漏雨的屋子里，瘦得只剩一把骨头。'],
  ['mowen',()=>F('rw_mwSee')||F('rw_mwDraw')?'后生，这辈子最后一件心事，是你替我了的。':'后生……临江镇，我还是没能回去。'],
  ['mowen','我这一辈子，攒下的就是这些图。最底下那张……是我在废城里捡的，看不懂。也许你看得懂。'],
@@ -5143,7 +5144,7 @@ function RJ(o){const prev=RJ_IDS[RJ_IDS.length-1];const id=o.id||'rj'+(RJ_IDS.le
   after:()=>{S.flags.rjY=S.year;S.flags.rjN=(S.flags.rjN||0)+1;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
 const rjR=()=>realmIdx();
 
-RJ({t:'青石城',g:'城',bg:'shelter',need:()=>rjR()>=3&&S.seen.includes('jindan'),hint:'结成元婴',lines:[
+RJ({t:'青石城',g:'城',bg:'city',need:()=>rjR()>=3&&S.seen.includes('jindan'),hint:'结成元婴',lines:[
  ['','结婴之后，你回了一趟青石站。'],
  ['','站已经不是站了。地铁口外盖起了一圈矮房子，又一圈，再一圈。有人在一块废铁上刷了三个字：青石城。'],
  ['tie',()=>rjAlive('tie')?'回来啦。城里如今住了两万多人，凡人居多。修士也来，来了就不想走——这里有你的名字镇着。':''],
@@ -5155,7 +5156,7 @@ RJ({t:'青石城',g:'城',bg:'shelter',need:()=>rjR()>=3&&S.seen.includes('jinda
   {t:'「城主让凡人自己选。我只管妖兽。」',fx:()=>{S.flags.rjCity='council';kar(1);S.rep.station+=1;},r:[['','第二个月，青石城选出了第一位城主——一个开面馆的女人。'],['','她上任第一天，把城门的岗哨从修士换成了凡人。']]},
   {t:'「我不常在，别等我。」',fx:()=>{S.flags.rjCity='away';},r:[['','没有人勉强你。'],['','后来青石城换了三任城主，都是修士。凡人在城里，越来越像客人。']]}])]});
 
-RJ({t:'灵税',g:'税',bg:'shelter',need:()=>rjR()>=3,hint:'一年之后',lines:[
+RJ({t:'灵税',g:'税',bg:'city',need:()=>rjR()>=3,hint:'一年之后',lines:[
  ['','天穹会的执事进了青石城。'],['','他们要收「灵税」：每户每年一块灵石。交不起的，拿家里有灵根的孩子抵。'],
  ['','一个男人跪在城门口，怀里搂着一个八九岁的女孩。女孩手里还攥着半个馒头。'],
  ['tq','规矩是会主定的。灵气是天下人的，修行的种子，也该归天下。'],
@@ -5179,7 +5180,7 @@ RJ({t:'老站台',g:'站',bg:'metro',need:()=>rjR()>=4,hint:'修成化神',lines
  [['','铁叔走了很多年了。'],['','站台上还挂着他那块写「今日补给」的小黑板。每天早上，都有人去写上新的数字。'],
   ['','你在黑板前站了很久，拿起粉笔，在角落里写了一行小字：「叔，城还在。」'],{fn:()=>{S.flags.rjTie='grave';}}])]});
 
-RJ({t:'灵疫',g:'疫',bg:'shelter',need:()=>rjR()>=4,hint:'一年之后',lines:[
+RJ({t:'灵疫',g:'疫',bg:'city',need:()=>rjR()>=4,hint:'一年之后',lines:[
  ['','城南起了怪病。人身上长出青色的斑，三天就能把一个壮汉耗干。'],
  ['he','是灵疫。灵气太浓的地方，凡人的身子受不住。'],['he','我能配药，可要妖林深处的「青冥草」，很多很多。'],
  ['he','还有一个法子……把城南封起来。病不会再传，可里面的人……'],
@@ -5190,7 +5191,7 @@ RJ({t:'灵疫',g:'疫',bg:'shelter',need:()=>rjR()>=4,hint:'一年之后',lines:
   {t:'以自身灵力替病人驱毒（耗去六成灵气）',fx:()=>{gQi(-.6);S.flags.rjPlague='cure';aff('he',10,true);kar(1);},r:[['','你在城南坐了七天七夜，一个一个地替病人拔出体内的灵毒。'],['','第七天，最后一个病人退了烧。你站起来的时候，差点没站稳。']]},
   {t:'封城',fx:()=>{S.flags.rjPlague='seal';kar(-1);aff('he',-15,true);},r:[['','病止住了。城南的哭声，持续了半个月。'],['','阿禾再也没有跟你提过这件事。']]}])]});
 
-RJ({t:'哥哥',g:'满',bg:'shelter',need:()=>rjR()>=5,hint:'修成炼虚',lines:[
+RJ({t:'哥哥',g:'满',bg:'city',need:()=>rjR()>=5,hint:'修成炼虚',lines:[
  rwIf(()=>rjAlive('man'),[
   ['','小满回来了。她已经是个大姑娘了，背着一把旧刀。'],['man','我找到哥哥了。'],
   ['man','他在天穹会。当年被收走的灵童。他现在是执事——来收灵税的那种。'],
@@ -5221,7 +5222,7 @@ RJ({t:'喜酒',g:'喜',bg:'market',need:()=>rjR()>=6,hint:'修成合体',lines:[
  [['','钱三的女儿出嫁，给你送来一张请帖。'],['','请帖背面是钱三生前写的一句话，字歪歪扭扭：「到时候，替我喝一杯。」'],
   ['','你去了。坐在主桌，替他喝了那一杯。'],{fn:()=>{S.flags.rjQian='proxy';}}])]});
 
-RJ({t:'最后一局',g:'棋',bg:'shelter',need:()=>rjR()>=6,hint:'一年之后',lines:[
+RJ({t:'最后一局',g:'棋',bg:'city',need:()=>rjR()>=6,hint:'一年之后',lines:[
  rwIf(()=>rjAlive('shen'),[
   ['','沈老躺在床上，棋盘摆在被子上。'],['shen','来。最后一局。'],['shen','我下了一辈子棋，就想输一回给真正的高手。别让我。'],
   {game:{k:'gomoku',lv:3,title:'与沈老的最后一局',winFx:{aff:{shen:10}},loseFx:{aff:{shen:5}},
@@ -5242,7 +5243,7 @@ RJ({t:'会主',g:'玄',bg:'sky',need:()=>rjR()>=7,hint:'修成大乘',lines:[
   {t:'「青石城会管。我的家族会管。」',need:()=>S.flags.rjCity==='lord'||!!S.clan,fx:()=>{S.flags.rjNing='city';},r:[['ning','换一个修士来管凡人。和我有什么不同？'],['','你答不上来。']]},
   {t:'「你来管——但灵税减半，灵童要自愿。」',fx:()=>{S.flags.rjNing='deal';S.rep.tq+=2;news('天穹会宣布：灵税减半，灵童入会须本人自愿。',1);},r:[['ning','……你在跟我谈条件？'],['ning','好。我答应你。'],['','后来你才知道，那一年，天穹会里有一半的长老反对他。']]}])]});
 
-RJ({t:'武馆',g:'武',bg:'shelter',need:()=>rjR()>=7,hint:'一年之后',lines:[
+RJ({t:'武馆',g:'武',bg:'city',need:()=>rjR()>=7,hint:'一年之后',lines:[
  ['','青石城东头开了一间武馆。教的不是仙法，是凡人的拳脚。'],
  ['zhou',()=>F('zhouSaved')&&!F('dead_zhou')?'看什么看？进来，教一堂课。':''],
  ['',()=>F('zhouSaved')&&!F('dead_zhou')?'馆主是周烈。他说，没灵根的人也得学会怎么不被人欺负。':'馆主是个独臂的老兵，说当年在妖林里，是你救过他一命。'],
@@ -5260,7 +5261,7 @@ RJ({t:'雷云',g:'雷',bg:'leijie',need:()=>rjR()>=8,hint:'踏入渡劫',lines:[
   {t:'挨家挨户地走一遍',fx:()=>{S.flags.rjVisit=1;['tie','he','man','hong','qian'].forEach(k=>{if(rjAlive(k))aff(k,5,true);});},r:[['','你在青石城住了一个月。'],['','每天去一户人家吃饭。有的人还记得你小时候的样子，有的人只知道你是城主、是仙人。'],['','你都坐下来，吃完了那碗饭。']]},
   {t:'「不必了。早晚要走。」',fx:()=>{S.flags.rjVisit=0;},r:[['mo','……也好。'],['mo','只是有些话，过了这一次，就没有机会说了。']]}])]});
 
-RJ({id:'rj_end',t:'别',g:'别',bg:'shelter',need:()=>rjR()>=8&&S.seen.includes('finale'),hint:'踏入渡劫，并走完主线终章',lines:[
+RJ({id:'rj_end',t:'别',g:'别',bg:'city',need:()=>rjR()>=8&&S.seen.includes('finale'),hint:'踏入渡劫，并走完主线终章',lines:[
  {fn:()=>cgShow('bie')},['','飞升前的最后一夜，青石城没有人睡觉。'],
  ['',()=>S.flags.rjCity==='council'?'面馆的城主在广场上摆了一百张桌子。她说，今晚全城吃她的面。':S.flags.rjCity==='lord'?'城主府前挂满了灯。你是城主，也是今晚要走的人。':'城里的人听说你要走了，自己凑钱摆了酒。'],
  ['tie',()=>rjAlive('tie')?'走吧。……记得回来。站台我给你留着。':''],
@@ -5345,8 +5346,8 @@ function smLeave(){if(!smOn())return;const k=S.sm.k,D=SECTS[k];modal(`<h3>叛出
 function smNextReq(){const r=S.sm.rank+1;if(r>5)return null;return {r,tot:SM_TOT[r],st:smSt(S.sm.k,r)};}
 function smPromote(){if(!smOn())return;const q=smNextReq();if(!q)return;if(S.sm.tot<q.tot){toast('累计贡献不足：'+S.sm.tot+'/'+q.tot,'bad');return;}if(S.stage<q.st){toast('境界不足：需 '+STAGES[q.st].name,'bad');return;}
  const k=S.sm.k,D=SECTS[k];
- if(q.r===2){jhClose();startBattle([sectFoe(k,1)],{bg:'market',onWin:()=>{smRankUp(2,'真传考核，你接下了长老三十招，最后一招逼退了他。');},onLose:()=>{toast('考核未过。长老说：「再练练。」','bad');save();}});return;}
- if(q.r===5){const lead=sectLead(k);jhClose();startBattle([sectFoe(k,2),sectFoe(k,1)],{bg:'market',noFlee:true,onWin:()=>{if(lead){lead.lead=0;lead.att=Math.max(-100,lead.att-30);lead.goal=lead.att<=-40?'夺回宗主之位':'辅佐新宗主';if(lead.att<=-40)seedAdd('revenge',lead.id,S.year+8+Math.floor(Math.random()*8),{why:D.n+'的宗主之位，是我的。'});}S.ppl.forEach(p=>{if(p.sect===k)p.lead=0;});smRankUp(5,(lead?lead.n:'老'+D.lt)+'放下了兵刃。满门弟子，向你行礼。');news(S.name+'成为'+D.n+D.lt+'。',1);},onLose:()=>{S.sm.gx=Math.floor(S.sm.gx*.7);toast('宗主之争落败，贡献折损三成','bad');save();}});return;}
+ if(q.r===2){jhClose();startBattle([sectFoe(k,1)],{bg:sectBg(k),onWin:()=>{smRankUp(2,'真传考核，你接下了长老三十招，最后一招逼退了他。');},onLose:()=>{toast('考核未过。长老说：「再练练。」','bad');save();}});return;}
+ if(q.r===5){const lead=sectLead(k);jhClose();startBattle([sectFoe(k,2),sectFoe(k,1)],{bg:sectBg(k),noFlee:true,onWin:()=>{if(lead){lead.lead=0;lead.att=Math.max(-100,lead.att-30);lead.goal=lead.att<=-40?'夺回宗主之位':'辅佐新宗主';if(lead.att<=-40)seedAdd('revenge',lead.id,S.year+8+Math.floor(Math.random()*8),{why:D.n+'的宗主之位，是我的。'});}S.ppl.forEach(p=>{if(p.sect===k)p.lead=0;});smRankUp(5,(lead?lead.n:'老'+D.lt)+'放下了兵刃。满门弟子，向你行礼。');news(S.name+'成为'+D.n+D.lt+'。',1);},onLose:()=>{S.sm.gx=Math.floor(S.sm.gx*.7);toast('宗主之争落败，贡献折损三成','bad');save();}});return;}
  smRankUp(q.r,'执事堂贴出了告示。');}
 function smRankUp(r,txt){S.sm.rank=r;wuAdd(10,1);sfx('win');save();setTimeout(()=>modal(`<h3>${SECTS[S.sm.k].n} · ${r>=5?SECTS[S.sm.k].lt:SM_RANK[r]}</h3><p>${esc(txt)}</p><p class="note">${r===3?'你可以在宗门里任职了。':r===4?'长老可以在宗主之争里挑战宗主。':r>=5?'你是一宗之主了：本门加成三倍，俸禄三倍，大比由你领队。':'俸禄与本门加成都提高了。'} 感悟 +10。</p>`,[{t:'好',cls:'gold',fn:()=>jhOpen('sect')}]),300);}
 function smPost(p){if(!smOn()||S.sm.rank<3){toast('执事以上才能任职','bad');return;}S.sm.post=p;toast('就任 '+SM_POST[p].n,'big');save();jhRender();}
@@ -5421,7 +5422,7 @@ function dbMyMatch(){const C=S.db&&S.db.cur;if(!C||C.done)return null;const A=C.
 function dbFight(){const opp=dbMyMatch();if(!opp||BT)return;const c=dbChamp(opp),C=S.db.cur,rn=['八强','四强','决赛'][C.round];
  const D=SECTS[opp]||DB_EXTRA[opp],look=c.pid&&LOOK[c.n]?c.n:SECTS[opp]?SECT_LOOK[opp][1]:DB_EXTRA[opp].look;
  const e=mkCustom(zOfStage(c.st),{look,name:teamName(opp)+' · '+c.n,st:c.st,m:1.7,boss:true});e.human=1;e.noLoot=1;e.el=D.el;if(SECTS[opp]&&C.round>=1)e.mech=SECTS[opp].mech;jhClose();
- startBattle([e],{bg:'market',noFlee:true,onWin:()=>{wuAdd(10,1);dbAfter(opp,true,rn);},onLose:()=>dbAfter(opp,false,rn)});}
+ startBattle([e],{bg:'leitai',noFlee:true,onWin:()=>{wuAdd(10,1);dbAfter(opp,true,rn);},onLose:()=>dbAfter(opp,false,rn)});}
 function dbAfter(opp,win,rn){const C=S.db.cur,me=myTeam(),A=C.alive,next=[];const names=['八强','四强','决赛'];
  for(let i=0;i<A.length;i+=2){const a=A[i],b=A[i+1];let w;if(a===me||b===me)w=win?me:opp;else w=dbPow(a)>=dbPow(b)?a:b;const l=w===a?b:a;C.place[l]=[4,3,2][C.round];next.push(w);C.log.push(names[C.round]+'：'+teamName(w)+' 胜 '+teamName(l));}
  const c=dbChamp(opp);if(c.pid){const p=P_(c.pid);if(p)p.att+=win?-3:4;}
@@ -5635,7 +5636,7 @@ RV({t:'慢了半步',g:'步',bg:'overpass',need:()=>S.visited.includes(1)||S.sta
   {t:'「那就追。」',fx:()=>{S.qiPills+=2;S.flags.xiao2='chase';},r:[['','你把那行字看了三遍，转身下了高架。'],['','（获得聚气丹 ×2。从今天起，你修炼的时候会想起这行字。）']]},
   {t:'「快，不一定是好事。」',fx:()=>{kar(1);S.flags.xiao2='calm';},r:[['mo','……说得对。走得快的人，常常走错路。'],['mo','老夫当年，就是走得太快了。']]}])]});
 
-RV({t:'拍卖行',g:'拍',bg:'market',need:()=>S.stage>=9,hint:'筑基之后',lines:[
+RV({t:'拍卖行',g:'拍',bg:'auction',need:()=>S.stage>=9,hint:'筑基之后',lines:[
  ['','坊市拍卖行。今天压轴的东西，是一截发黑的骨头。'],['','拍卖师说，那是三百年前一位仙人的剑骨。从天坑底下挖出来的。'],
  ['','你怀里的玉简发烫。你抬头，看见对面包厢里的萧尘——他的玉也在发光。'],
  ['xiao','这个，我要了。'],
@@ -5655,7 +5656,7 @@ RV({t:'灵童',g:'童',bg:'sky',need:()=>S.stage>=13,hint:'结成金丹',lines:[
   {t:'「打开灵源？那是让天下人去死。」',fx:()=>{S.flags.xiao4='fight';xFight({m:1.5,boss:1,title:'灵童',win:()=>{rwAtt(XIAO,-5);xDown(3);return '你赢了。\n萧尘半跪在地上，玉简里的声音在尖叫。\n“……你懂什么。你那一半，从来没跟你说过实话。”';},lose:()=>{return '他赢了。\n他没有拿你的玉。\n“你看，你还是慢半步。”';}});},r:[['xiao','那就打一场。']]}]),
  {fn:()=>{const p=xP();if(p){p.sect='tianqiong';p.goal='替堕仙打开灵源';}}}]});
 
-RV({t:'落雁湖',g:'湖',bg:'xianshan',need:()=>S.stage>=17||!!(S.db&&S.db.hist&&S.db.hist.length),hint:'元婴之后，或打过一届宗门大比',lines:[
+RV({t:'落雁湖',g:'湖',bg:'leitai',need:()=>S.stage>=17||!!(S.db&&S.db.hist&&S.db.hist.length),hint:'元婴之后，或打过一届宗门大比',lines:[
  ['',()=>S.flags.xiaoDb==='win'?'大比的擂台上，你赢了萧尘。那是他第一次输给你。':S.flags.xiaoDb==='lose'?'大比的擂台上，萧尘赢了你。他没有笑。':'落雁湖边，你又遇见了萧尘。'],
  ['xiao',()=>S.flags.xiaoDb==='win'?'……原来输是这个感觉。':S.flags.xiaoDb==='lose'?'我赢了。可它不满意。它说我应该杀了你。':'你最近，追得很紧。'],
  ['xiao','你知道吗，它每天夜里都在跟我说话。越来越响。'],['xiao','有时候我分不清，那些念头是它的，还是我的。'],
