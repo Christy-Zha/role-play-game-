@@ -648,6 +648,19 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .bt-cmd .li .ico{width:24px;height:24px;margin:-4px 4px -4px 0}
 .modal .ico{width:26px;height:26px}
 
+.cg-ov{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .45s;cursor:pointer}
+.cg-ov.on{opacity:1}
+.cg-ov img{width:100%;height:100%;object-fit:cover;animation:cgzoom 9s ease-out forwards}
+@keyframes cgzoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+.cg-cap{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);text-align:center;color:#f6e8c4;font-size:20px;letter-spacing:.3em;text-shadow:0 2px 8px #000,0 0 2px #000}
+.cg-cap small{display:block;margin-top:6px;font-size:12px;letter-spacing:.1em;opacity:.7}
+.cg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cg-th{position:relative;aspect-ratio:9/16;border-radius:6px;overflow:hidden;border:1px solid rgba(216,180,104,.35);background:rgba(0,0,0,.25);padding:0;max-width:100%}
+.cg-th img{width:100%;height:100%;object-fit:cover;display:block}
+.cg-th span{position:absolute;left:0;right:0;bottom:0;padding:4px;font-size:12px;color:#f6e8c4;background:linear-gradient(transparent,rgba(0,0,0,.75))}
+.cg-th.lock{display:flex;align-items:center;justify-content:center}
+.cg-th.lock span{position:static;background:none;opacity:.5}
+
 </style>
 </head>
 <body>
@@ -1337,10 +1350,11 @@ const SPK={mo:'墨老',tie:'铁叔',he:'阿禾',hong:'红姐',zero:'零号',zhou
 const F=k=>!!(S.flags&&S.flags[k]);
 const STORY=[
  {id:'prologue',title:'序章·灵潮',g:'潮',bg:'leijie',cond:()=>true,hint:'',lines:[
+  {fn:()=>cgShow('dujie')},
   ['','很多年以后，你站在九霄雷劫之下。'],
   ['','第九道雷落下来之前，你回头看了一眼人间——那座叫「青石」的城，灯火还亮着。'],
   ['','你想起了一切开始的那一天。想起那块只有一半的玉。想起那个永远比你快半步的人。'],
-  {bg:'sky'},
+  {bg:'sky'},{fn:()=>cgShow('lingchao')},
   ['','二〇四九年七月，天空裂开了一道口子。'],
   ['','裂缝里流出来的光，后来被叫作“灵潮”。沉睡了三千年的灵气，一夜之间灌回了人间。'],
   ['','城市塌了。草木疯长成林，野兽长出獠牙和鳞甲，开始吃人。'],
@@ -2055,7 +2069,7 @@ stIns('finale',{id:'tianmen',title:'插曲·天门',g:'门',bg:'core',cond:()=>S
  ['','【第二卷「天外天」：修至渡劫后，在「修炼」页点「飞升 · 破天门」。】']
 ]});
 
-stIns('z7',{id:'feisheng',title:'第二卷·飞升',g:'升',bg:'starsea',cond:()=>F('feisheng'),hint:'破开天门',lines:[
+stIns('z7',{id:'feisheng',title:'第二卷·飞升',g:'升',bg:'starsea',cond:()=>F('feisheng'),hint:'破开天门',lines:[{fn:()=>cgShow('feisheng')},
  ['','天门在你身后合上了。'],
  ['','没有仙宫，没有云海。只有星海——碎掉的星辰，漂在没有边的黑里。'],
  ['','你低头。你的世界在脚下，小得像一颗灰扑扑的豆子。一根发光的管子从它身上伸出来，扎进更深的黑暗。'],
@@ -5247,7 +5261,7 @@ RJ({t:'雷云',g:'雷',bg:'leijie',need:()=>rjR()>=8,hint:'踏入渡劫',lines:[
   {t:'「不必了。早晚要走。」',fx:()=>{S.flags.rjVisit=0;},r:[['mo','……也好。'],['mo','只是有些话，过了这一次，就没有机会说了。']]}])]});
 
 RJ({id:'rj_end',t:'别',g:'别',bg:'shelter',need:()=>rjR()>=8&&S.seen.includes('finale'),hint:'踏入渡劫，并走完主线终章',lines:[
- ['','飞升前的最后一夜，青石城没有人睡觉。'],
+ {fn:()=>cgShow('bie')},['','飞升前的最后一夜，青石城没有人睡觉。'],
  ['',()=>S.flags.rjCity==='council'?'面馆的城主在广场上摆了一百张桌子。她说，今晚全城吃她的面。':S.flags.rjCity==='lord'?'城主府前挂满了灯。你是城主，也是今晚要走的人。':'城里的人听说你要走了，自己凑钱摆了酒。'],
  ['tie',()=>rjAlive('tie')?'走吧。……记得回来。站台我给你留着。':''],
  ['',()=>!rjAlive('tie')?'站台的小黑板上，有人写了一行字：「城主一路走好」。是铁叔的字体——有人学了很多年。':''],
@@ -5567,6 +5581,13 @@ function ico(k){const im=ART_IMG['ico_'+k];return im?`<img class="ico" src="${im
 function danHTML(){const L=[['shouyuan','寿元丹',S.lifeP||0,'延寿三十年；可自服，也可赠人','<button class="btn sm" data-act="eatLife">服用</button>'],['zhuji','筑基丹',S.zjDan||0,'可赠凡人生出灵根，或给弟子冲关',''],['jiuzhuan','九转金丹',(S.jzDan||0)+(F('rw_jz')?1:0),'续寿极多，可赠人',''],['huanhun','还魂丹',S.hhDan||0,'起死回生，只能给已故之人','']].filter(x=>x[2]>0);
  if(!L.length)return '';return `<h2 class="sec">丹药匣 <button class="btn sm gold" data-act="gift">赠丹</button></h2>`+L.map(x=>`<div class="row2"><div class="in"><div class="iname">${ico(x[0])}${x[1]} <span class="lv">持有 ${x[2]}</span></div><div class="istat">${x[3]}</div></div><div class="ibtn">${x[4]}</div></div>`).join('');}
 
+/* ---------- 剧情大图：关键时刻整屏显示，点一下继续；卷宗里可以回看 ---------- */
+const CG={dujie:'九霄雷劫',lingchao:'灵潮之夜',xiaochen:'心魔',yujian:'玉简合一',bie:'人间·别',feisheng:'飞升'};
+function cgShow(k){if(!CG[k])return;S.cgSeen=S.cgSeen||[];if(!S.cgSeen.includes(k))S.cgSeen.push(k);const im=new Image();im.onload=()=>{let el=$('#cgOv');if(el)el.remove();el=document.createElement('div');el.id='cgOv';el.className='cg-ov';
+ el.innerHTML=`<img src="${im.src}" alt=""><div class="cg-cap">${CG[k]}<small>点击继续</small></div>`;document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('on'));sfx('bell');
+ setTimeout(()=>{el.onclick=()=>{el.classList.remove('on');setTimeout(()=>el.remove(),450);};},500);};im.src='art/cg_'+k+'.jpg';}
+function cgHTML(){const L=Object.keys(CG);const got=S.cgSeen||[];return `<p class="note">剧情里见过的画面，会收在这里。</p><div class="cg-grid">${L.map(k=>got.includes(k)?`<button class="cg-th" data-act="cgView" data-arg="${k}"><img loading="lazy" src="art/cg_${k}.jpg" alt=""><span>${CG[k]}</span></button>`:`<div class="cg-th lock"><span>？？？</span></div>`).join('')}</div>`;}
+
 /* ================= 宿敌 · 萧尘：拿走另外半块玉简的人 =================
    他永远比你快半步。他那半块玉里住着堕仙残存的意志，一步步推着他走。
    七段主线：另一半 → 慢了半步 → 拍卖行 → 灵童 → 落雁湖 → 心魔 → 拼合。你打赢他、帮他、还是放他坠落，结局都不一样。 */
@@ -5643,7 +5664,7 @@ RV({t:'落雁湖',g:'湖',bg:'xianshan',need:()=>S.stage>=17||!!(S.db&&S.db.hist
   {t:'「把那半块扔了。」',fx:()=>{rwAtt(XIAO,-5);},r:[['xiao','扔了？'],['xiao','扔了它，我就什么都不是了。我就是东郊那个……谁都不记得的人。'],['','他走了。']]}])]});
 
 RV({t:'心魔',g:'魔',bg:'pit',need:()=>S.stage>=21&&S.seen.includes('fallen'),hint:'化神之后，且已知晓堕仙往事',lines:[
- ['','半夜，有人撞开了你的门。'],['','是萧尘。他满身是血，一只眼睛已经变成了暗红色。'],
+ {fn:()=>cgShow('xiaochen')},['','半夜，有人撞开了你的门。'],['','是萧尘。他满身是血，一只眼睛已经变成了暗红色。'],
  ['sx','……墨师弟……把你那一半……给我……'],['xiao','别……别听它的……'],['xiao','救我。或者……杀了我。'],
  rwC([
   {t:'「把你那半块给我。」',need:()=>F('xiaoTrust')||rwP(XIAO).att>=20,fx:()=>{S.flags.xiaoFree=1;const p=xP();if(p){p.st=Math.max(0,p.st-5);p.goal='做回自己';p.att=Math.min(100,p.att+40);p.sect=null;}news('萧尘交出了他的半块玉简，修为大跌。',1);},r:[
@@ -5659,12 +5680,12 @@ RV({t:'拼合',g:'合',bg:'core',dead:1,need:()=>S.seen.includes('finale'),hint:
   ['','灵源的入口，站着一个人。'],['','他穿着萧尘的白袍，长着萧尘的脸。可说话的，是三百年前的那个人。'],
   ['sx','师弟。把另一半给我。这一次，我们把门开到底。'],['mo','……师兄。你已经死了。'],
   rwC([{t:'拔剑',fx:()=>rwFight({title:'拼合',bg:6,noFlee:1,many:[{pid:XIAO,look:'堕仙残躯',name:'堕仙·萧尘',m:2.1,boss:1,el:'huo',p2:1,n2:'堕仙真身'}],
-    win:()=>{S.flags.jadeWhole=1;S.flags.xiaoEnd='freed';const p=xP();if(p){p.alive=false;p.dy=S.year;}news('萧尘死于灵源入口。两半玉简，合为一块。',1);return '最后一剑落下的时候，红光从他身上褪了下去。\n萧尘睁开眼睛——是他自己的眼睛。\n“……这次，是你快了半步。”\n他把半块玉放进你手里，没有再说话。\n两块玉合在一起，亮了很久很久。\n（玉简合一：攻击 +10%，生命 +10%，暴击 +3%）';},
+    win:()=>{cgShow('yujian');S.flags.jadeWhole=1;S.flags.xiaoEnd='freed';const p=xP();if(p){p.alive=false;p.dy=S.year;}news('萧尘死于灵源入口。两半玉简，合为一块。',1);return '最后一剑落下的时候，红光从他身上褪了下去。\n萧尘睁开眼睛——是他自己的眼睛。\n“……这次，是你快了半步。”\n他把半块玉放进你手里，没有再说话。\n两块玉合在一起，亮了很久很久。\n（玉简合一：攻击 +10%，生命 +10%，暴击 +3%）';},
     lose:()=>{S.flags.xiaoEnd='lost';return '你倒下了。\n他没有拿走你的玉。\n“还差一点。”那个声音说，“下一次，你会自己交给我的。”';}})}])],
  [['','灵源前，萧尘在等你。'],['xiao',()=>F('xiaoFree')?'我没了修为，可我还是来了。门口总得有个人帮你看着。':'我说过，我们迟早有一个人要拿走另一半。'],
   ['xiao',()=>F('xiaoFree')?'玉在你那儿。拼上吧。':'——不过，拿走它的人，不一定要是赢的那个。'],
   {fn:()=>{S.flags.jadeWhole=1;S.flags.xiaoEnd=F('xiaoFree')?'free':'ally';const p=xP();if(p){p.att=100;p.goal='守着灵源的门';}news('两半玉简合为一块。萧尘站在你身边。',1);}},
-  ['','两块玉合在一起。'],['mo','……师兄。'],['sx','……师弟。这一次，关上它吧。'],
+  {fn:()=>cgShow('yujian')},['','两块玉合在一起。'],['mo','……师兄。'],['sx','……师弟。这一次，关上它吧。'],
   ['','玉简亮了很久很久。墨老和那个声音，第一次没有吵架。'],
   ['xiao','走吧。这一次，我们一起。'],['','（玉简合一：攻击 +10%，生命 +10%，暴击 +3%）']])]});
 
@@ -6185,6 +6206,7 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).
  ${fresh.length?fresh.map(chapterHTML).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
  ${journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
  ${journalFold('rw','江湖人物志',rwSum(),rwHTML())}
+ ${journalFold('cg','画卷',(S.cgSeen||[]).length+'/'+Object.keys(CG).length,cgHTML())}
  ${journalFold('yinguo','因果簿',(S.seeds||[]).filter(x=>!x.fired).length+' 颗种子在路上',yinguoHTML())}
  ${journalFold('relations','缘分与声望','人物与势力',relations)}
  ${journalFold('read','已读篇章',read.length+' 段',read.map(chapterHTML).join('')||'<p class="empty">还没有读完的篇章。</p>')}
@@ -6232,7 +6254,7 @@ function live(){const need=req(S.stage);$('#saveOpen').disabled=!S.started;
 
 /* ---------- 交互 ---------- */
 const ACT={
- saveBack:()=>closeSaves(),gift:()=>giftOpen(),daoPick:()=>daoPick(),bgm:()=>bgmToggle(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
+ saveBack:()=>closeSaves(),cgView:a=>cgShow(a),gift:()=>giftOpen(),daoPick:()=>daoPick(),bgm:()=>bgmToggle(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
  brew:a=>brewOpen(a),natal:a=>natalForge(a),natalUp:()=>natalUp(),closed:a=>closedGo(a),eatLife:()=>{if(S.lifeP>0){S.lifeP--;S.lifeB=(S.lifeB||0)+30;S.dying=0;S.agewarn=0;toast('寿元 +30 年','big');save();render();}},
  teach:a=>{const [i,h]=a.split('|');disTeach(i,h);},disTake:a=>disRecruit(+a),ending:a=>playEnding(a),goals:()=>goalsOpen(),fly:()=>flyToggle(),soul:()=>soulOut(),void:()=>voidStep(),jh:()=>jhOpen(),root:()=>openRootTest(),form:a=>{if(S.forms.includes(a)){S.form=a;toast('阵法：'+FORMS[a].n);save();render();}},sfx:()=>sfxMute(),path:()=>pathAsk(),zong:()=>zongFound(),xf:()=>playEvent('xf'+(S.flags.xfStage||1),{}),
  break:()=>breakthrough(),
