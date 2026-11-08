@@ -640,6 +640,10 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .intro{padding:24px 12px;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(6,10,10,.72),rgba(6,10,10,.35) 60%,rgba(6,10,10,0) 80%)}
 .intro p,.intro .yr{text-shadow:0 1px 3px #000,0 0 12px #000;color:#efe6d0}
 
+.bt-tip{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 100px);transform:translateX(-50%);width:min(92%,420px);background:rgba(16,11,7,.9);border:1px solid rgba(216,180,104,.55);border-radius:6px;padding:8px 12px;color:#f6e8c4;font-size:13px;line-height:1.55;text-align:center;pointer-events:none;transition:opacity .4s;z-index:3}
+.bt-tip span{color:#cdbb92;font-size:12.5px}
+.bt-tip.off{opacity:0}
+
 </style>
 </head>
 <body>
@@ -3201,6 +3205,7 @@ function btTargets(){const fs=BT.foes.filter(f=>f.alive);if(fs.length===1){btExe
 function btExec(t){const p=BT.pend;BT.pend=null;if(!p)return;p.t=t;btDo(BT.cur,p);}
 function btAI(a){const fs=BT.foes.filter(f=>f.alive),ps=BT.party.filter(p=>p.alive);const weak=fs.reduce((m,f)=>f.hp<m.hp?f:m,fs[0]);
  if(a.key==='hero'){const sk=k=>SKILLS.find(s=>s.k===k&&skOk(s)&&a.mp>=s.mp);const boss=fs.find(f=>f.boss);
+  {const cf=fs.find(f=>f.chg&&f.weak);if(cf){const ws=SKILLS.find(s=>s.el===cf.weak&&skOk(s)&&a.mp>=skCost(s)&&(s.ty==='one'||s.ty==='all'));if(ws)return {type:'sk',sk:ws,t:cf};if(cf.weak==='lei'&&S.fu.lei>0)return {type:'fu',k:'lei'};if(cf.weak==='huo'&&S.fu.huo>0)return {type:'fu',k:'huo'};}}
   if(fs.some(f=>f.chg)&&!a.mw&&!(a.buf>0)&&!(a.sh>a.max*.2)){if(sk('mingwang'))return {type:'sk',sk:sk('mingwang')};return {type:'def'};}
   if(boss&&a.mp>=a.mmax*.6&&sk('feixian'))return {type:'sk',sk:sk('feixian'),t:boss};if(a.hp<a.max*.45&&!a.mw&&sk('mingwang'))return {type:'sk',sk:sk('mingwang')};
   if(ps.some(p=>p.hp<p.max*.4)&&sk('huichun'))return {type:'sk',sk:sk('huichun')};if(a.hp<a.max*.3&&S.meds>0)return {type:'it',k:'meds'};
@@ -3214,7 +3219,7 @@ function btAI(a){const fs=BT.foes.filter(f=>f.alive),ps=BT.party.filter(p=>p.ali
  return {type:'atk',t:pick(fs)};}
 function btFoeAI(a){const ps=BT.party.filter(p=>p.alive);if(a.jie)return {type:'jie'};a.cnt=(a.cnt||0)+1;
  if(a.boss&&!a.enr&&a.hp<a.max*.3){a.enr=1;a.atk*=1.3;btPop(a,'狂暴','st burn');btMsg(a.n+'狂暴了！攻击大增');}
- if(a.boss&&a.chg&&ps.length){a.chg=0;return {type:'eheavy',t:ps.find(p=>p.key==='hero')||ps[0]};}
+ if(a.boss&&a.chg&&ps.length){a.chg=0;if(a.mech==='tide')return {type:'etide'};return {type:'eheavy',t:ps.find(p=>p.key==='hero')||ps[0]};}
  if(a.boss&&a.cnt%3===0&&ps.length)return {type:'eall'};
  if(a.boss&&a.cnt%4===2&&ps.length)return {type:'echarge'};
  const t=Math.random()<.55?ps[0]:pick(ps);return {type:'eatk',t};}
@@ -3244,8 +3249,9 @@ async function btDo(a,act){if(!BT)return;BT.phase='anim';BT.pend=null;btSetCmd('
  else if(act.type==='jie'){await jieStrike(a);}
  else if(act.type==='flee'){btMsg(a.name+' 想要脱身……');await bwait(400);if(Math.random()<(realmIdx()>=5?1:.6)){await Promise.all(BT.party.map(p=>tween(p,{ox:40,oy:20,alpha:0},300)));btEnd('flee');return;}btMsg('没能逃掉！');await bwait(350);}
  else if(act.type==='eatk'){const t=act.t;btMsg(a.n+' 扑了过来');await btLunge(a,t);BT.fx.push({k:'claw',x:t.bx,y:t.by-btSpr(t).hh*.55,t0:BT.t,dur:.26});btHit(t,dmgF(a.atk,t.def),'',a);if(a.atkSt&&t.alive&&Math.random()<.6)stAdd(t,a.atkSt[0],a.atkSt[1],a);await btBack(a);}
- else if(act.type==='echarge'){a.chg=1;btMsg(a.n+'蓄力！下一击极重——快防御或上护盾');btPop(a,'蓄力','st shock');BT.fx.push({k:'ring',x:a.bx,y:a.by-24,col:'#ff6a4a',t0:BT.t,dur:.9});await tween(a,{oy:-8},260);await tween(a,{oy:0},160);await bwait(250);}
+ else if(act.type==='echarge'){a.chg=1;a.weak=bossWeak(a);btMsg(a.n+(a.mech==='tide'?'在引潮！':'蓄力！')+'破绽：'+EL[a.weak].n+'系可打断——否则快防御');btTip('<b>'+esc(a.n)+(a.mech==='tide'?' 在引潮':' 在蓄力')+'</b>　下一击极重<br><span>破绽：用<b style="color:'+EL[a.weak].c+'">'+EL[a.weak].n+'</b>系招式或符箓打中它即可打断；做不到就防御、上护盾</span>',3500);btPop(a,'破绽·'+EL[a.weak].n,'st shock');BT.fx.push({k:'ring',x:a.bx,y:a.by-24,col:'#ff6a4a',t0:BT.t,dur:.9});await tween(a,{oy:-8},260);await tween(a,{oy:0},160);await bwait(250);}
  else if(act.type==='eheavy'){const t=act.t;btMsg(a.n+' 全力一击！');await btLunge(a,t);BT.shake=.6;BT.fx.push({k:'claw',x:t.bx,y:t.by-btSpr(t).hh*.55,t0:BT.t,dur:.3});BT.fx.push({k:'flash',t0:BT.t,dur:.3});btHit(t,dmgF(a.atk*2.3,t.def),'',a);await btBack(a);}
+ else if(act.type==='etide'){btMsg(a.n+' 掀起大潮！');await tween(a,{oy:-14},200);BT.shake=.7;BT.fx.push({k:'wave',x:a.bx,y:a.by-10,t0:BT.t,dur:.7});BT.fx.push({k:'flash',t0:BT.t,dur:.3});await tween(a,{oy:0},150);await bwait(200);BT.party.filter(p=>p.alive).forEach(p=>{btHit(p,dmgF(a.atk*1.5,p.def),'',a);if(p.alive)stAdd(p,'wet',2,a);});}
  else if(act.type==='eall'){btMsg(a.n+' 发出一声怒吼，震动全场！');await tween(a,{oy:-10},150);BT.shake=.45;BT.fx.push({k:'wave',x:a.bx,y:a.by-10,t0:BT.t,dur:.55});await tween(a,{oy:0},150);await bwait(200);BT.party.filter(p=>p.alive).forEach(p=>btHit(p,dmgF(a.atk*.72,p.def),'',a));}
  btParty();await bwait(330);if(BT)btNext();}
 async function btArea(fx,a,ts){if(fx==='sweep'){BT.fx.push({k:'sweep',x0:a.bx,y0:a.by-24,x1:BT.W*.08,y1:BT.H*.5,t0:BT.t,dur:.45});await bwait(420);}
@@ -3994,7 +4000,7 @@ function roundStart(){if(!BT)return false;const ps=BT.party.filter(p=>p.alive),f
   if(e==='lei'){const f=pick(fs);if(f)elStrike(h,f,'lei',h.atk*1.2,{st:'shock',stn:1});}
   if(e==='shui'||e==='tu')ps.forEach(p=>{p.sh=(p.sh||0)+p.max*.07;});if(e==='mu')ps.forEach(p=>btHeal(p,p.max*.07));}
  fs.forEach(f=>{const s=f.st||{};
-  if(f.mech==='heal'&&f.hp<f.max){if(s.burn>0)btPop(f,'草木焦枯','tag');else btHeal(f,f.max*.1);}
+  if(f.mech==='heal'&&f.hp<f.max){if(s.burn>0)btPop(f,'草木焦枯','tag');else btHeal(f,f.max*(f.healK||.1));}
   if(f.mech==='summon'&&BT.round%3===0&&BT.foes.filter(x=>x.alive).length<3){const g=mkCustom(Math.max(0,f.z||0),{look:'归墟游魂',name:'幽冥鬼仆',m:.55});g.z=f.z;g.el='bing';g.noLoot=1;g.summ=1;Object.assign(g,{side:'e',alive:true,ox:0,oy:-10,alpha:0,flash:0,buf:0,defd:false,spd:8,idx:BT.foes.length,max:g.hp});BT.foes.push(g);btLayout();tween(g,{alpha:1,oy:0},400);btMsg(f.n+' 招来了鬼仆');}});
  if(BT.opt.jie){BT.jr=(BT.jr||0)+1;const N=BT.opt.jie;if(BT.jr>N){BT.foes.forEach(f=>{f.alive=false;tween(f,{alpha:0},500);});btMsg('最后一道雷落下——云开了。');return false;}btMsg('天劫 · 第 '+BT.jr+' / '+N+' 道');}
  return false;}
@@ -5423,6 +5429,115 @@ const _smSF=sectFight;sectFight=function(k){if(smOn()&&S.sm.k===k){toast('这是
 /* ---------- 读档：老存档补上感悟 ---------- */
 const _smPI=pplInit;pplInit=function(){const r=_smPI.apply(this,arguments);if(S.wu==null){S.wu=Math.min(250,(S.seen||[]).length*3+Object.keys(S.q||{}).filter(id=>S.q[id].s==='done').length*8);}dbInit();return r;};
 
+/* ================= 首领门道 · 破绽 · 道果 · 因果簿 · 功能解锁 · 背景音乐 ================= */
+
+/* ---------- 每个首领一个门道 ---------- */
+const BOSS_MECH={
+ 0:{el:'tu',mech:'swarm',add:'变异鼠',addN:'鼠群',d:'每三回合召来鼠群；鼠群还在时，鼠王受到的伤害减半',tip:'先清掉鼠群'},
+ 1:{el:'jin',mech:'shell',d:'钢甲：伤害只剩四成。挨够六下，或被金、雷击中，甲壳碎裂两回合',tip:'连续出手，用金或雷'},
+ 2:{el:'mu',mech:'heal',healK:.06,d:'每回合回复一成生命的六成',tip:'灼烧能断它的生机——火系、烈焰符'},
+ 3:{el:'shui',mech:'tide',d:'它的蓄力是引潮：全体重击并潮湿',tip:'看到引潮就打破绽，打不了就防御、上护盾'},
+ 4:{el:'lei',mech:'shuijing',d:'水镜反射三成伤害',tip:'让它感电，水镜即破——雷系、天雷符'},
+ 5:{el:'huo',mech:'fireImm',atkSt:['burn',1],d:'不惧灼烧，出手带火，还有第二重真身',tip:'水克火；留好回复'},
+ 6:{el:'lei',mech:'surge',d:'灵潮：每回合攻击 +6%，越拖越强',tip:'速战速决；打中破绽能打散灵潮'},
+ 8:{el:'shui',mech:'swarm',add:'星砂蠕虫',addN:'星砂蠕虫',d:'召来星砂蠕虫；蠕虫在时本体减伤一半',tip:'先清小怪'},
+ 9:{el:'jin',mech:'shell',d:'天兵甲：伤害只剩四成，挨够六下或被金、雷击中碎裂',tip:'连续出手，用金或雷'},
+ 10:{el:'bing',mech:'surge',d:'千目：每回合攻击 +6%，越拖越强',tip:'速战速决；打中破绽能打散它'}};
+const ABYSS_MECH=['shell','heal','tide','surge','swarm'];
+function applyBossMech(e,z){let M=BOSS_MECH[z];if(z===7){const m=ABYSS_MECH[S.abyss%5];M=Object.assign({},BOSS_MECH[[1,2,3,6,0][S.abyss%5]],{mech:m,el:pick(['jin','mu','shui','huo','tu','lei'])});}
+ if(!M)return e;e.el=M.el;e.mech=M.mech;e.bossD=M.d;e.bossT=M.tip;if(M.healK)e.healK=M.healK;if(M.atkSt)e.atkSt=M.atkSt;if(M.add){e.addLook=M.add;e.addN=M.addN;}return e;}
+const _bmE=mkEnemy;mkEnemy=function(z,boss,special){const e=_bmE.apply(this,arguments);if(boss&&!special)applyBossMech(e,z);return e;};
+/* 破绽：克制首领五行的元素。优先挑你手上用得出来的 */
+function partyEls(){const s=new Set();SKILLS.forEach(k=>{if(k.el&&skOk(k))s.add(k.el);});if(S.fu.lei>0)s.add('lei');if(S.fu.huo>0)s.add('huo');(BT?BT.party:[]).forEach(p=>{if(p.el)s.add(p.el);});return s;}
+function bossWeak(a){const E=a.el||'tu',C=Object.keys(KE).filter(x=>KE[x]===E&&EL[x]);const have=partyEls(),ok=C.filter(x=>have.has(x));return pick(ok.length?ok:C.length?C:['lei']);}
+const _bmStrike=elStrike;elStrike=function(a,t,el,d,o){
+ if(t&&t.alive&&t.side==='e'&&a&&a.side==='p'){
+  if(t.chg&&t.weak&&el===t.weak){t.chg=0;t.weak=null;t.exp2=2;BT.shake=.6;btPop(t,'破绽！','crit');btMsg('打中破绽！蓄力被打断');btTip('<b>破绽！</b>'+esc(t.n)+'的蓄力被打断，两回合内受伤加重',2500);sfx('combo');if(t.mech==='surge'&&t.sg){t.atk/=Math.pow(1.06,t.sg);t.sg=0;btPop(t,'灵潮散了','tag');}}
+  if(t.exp2>0)d*=daoHas('tianyan')?2:1.5;
+  if(t.mech==='swarm'&&BT.foes.some(f=>f.alive&&f.summ)){d*=.5;if(Math.random()<.3)btPop(t,'鼠群护体','tag');}
+  if(t.mech==='shell'){if(t.crack>0){}else{t.hits=(t.hits||0)+1;if(el==='jin'||el==='lei'||t.hits>=6){t.crack=2;t.hits=0;btPop(t,'甲壳碎了','crit');}else{d*=.4;if(Math.random()<.35)btPop(t,'甲壳','tag');}}}
+  if(a.key==='hero'){if(daoHas('fenshen')&&a.hp<a.max*.5)d*=1.3;if(daoHas('leiyi')&&Math.random()<.2&&t.alive)setTimeout(()=>{if(BT&&t.alive)stAdd(t,'shock',1,a);},60);}}
+ return _bmStrike.call(this,a,t,el,d,o);};
+const _bmRS=roundStart;roundStart=function(){const r=_bmRS.apply(this,arguments);if(!BT)return r;const fs=BT.foes.filter(f=>f.alive);
+ fs.forEach(f=>{if(f.exp2>0)f.exp2--;if(f.crack>0)f.crack--;
+  if(f.mech==='surge'&&BT.round>1){f.atk*=1.06;f.sg=(f.sg||0)+1;if(f.sg%2===0)btPop(f,'灵潮 +'+f.sg,'tag');}
+  if(f.mech==='swarm'&&(BT.round===1||BT.round%3===0)&&BT.foes.filter(x=>x.alive&&x.summ).length<2){for(let i=0;i<2;i++){const g=mkCustom(Math.max(0,Math.min(f.z||0,10)),{look:f.addLook||'变异鼠',name:f.addN||'鼠群',m:.5});g.noLoot=1;g.summ=1;g.atk*=.6;Object.assign(g,{side:'e',alive:true,ox:0,oy:-10,alpha:0,flash:0,buf:0,defd:false,spd:8,idx:BT.foes.length,max:g.hp});BT.foes.push(g);tween(g,{alpha:1,oy:0},400);}btLayout();btMsg(f.n+' 召来了'+(f.addN||'鼠群'));}});
+ if(BT.round===1){const h=BT.party[0];if(h&&daoHas('shuijingx')){h.sh=(h.sh||0)+h.max*.3;btPop(h,'水镜心','buff');}
+  const b=fs.find(f=>f.bossD);if(b)setTimeout(()=>{if(BT)btTip('<b>'+esc(b.n)+'</b>　'+esc(b.bossD)+'<br><span>破法：'+esc(b.bossT)+'</span>',6000);},900);}
+ return r;};
+const _bmDie=btFoeDie;btFoeDie=function(e){const r=_bmDie.apply(this,arguments);if(BT&&daoHas('shafa')&&!e.summ){const h=BT.party[0];if(h&&h.alive){h.atk*=1.1;btPop(h,'杀伐 +10%','buff');}}return r;};
+
+/* ---------- 道果：每破一个大境界，三选一 ---------- */
+const DAO={
+ fenshen:{n:'焚身',d:'生命低于一半时，伤害 +30%'},
+ shuijingx:{n:'水镜心',d:'每场战斗开局，获得三成生命的护盾'},
+ jianxin:{n:'剑心通明',d:'暴击 +8%，暴伤 +30%'},
+ houtu:{n:'厚土',d:'生命 +20%，防御 +10%'},
+ changsheng:{n:'长生',d:'寿元 +20%，每回合回复 3% 生命'},
+ tianyan:{n:'天眼',d:'打中首领破绽后，伤害加成从 50% 变为 100%'},
+ leiyi:{n:'雷意',d:'你的每次出手有两成几率附带感电'},
+ juling2:{n:'聚灵体',d:'吐纳 +25%'},
+ jiyuan:{n:'机缘',d:'感悟获取 +50%'},
+ shafa:{n:'杀伐',d:'每击败一个敌人，本场攻击 +10%'},
+ xixing:{n:'吸星',d:'吸血 +8%'},
+ pojun:{n:'破军',d:'攻击 +12%，无视敌人一成防御'}};
+const daoHas=k=>!!(S&&S.dao2&&S.dao2.includes(k));
+const daoPend=()=>Math.max(0,realmIdx()-((S.dao2||[]).length));
+function daoPick(){if(daoPend()<=0||BT||!OV_FREE())return;S.dao2=S.dao2||[];const pool=Object.keys(DAO).filter(k=>!S.dao2.includes(k)).sort(()=>Math.random()-.5).slice(0,3);if(!pool.length)return;
+ modal(`<h3>道果 · 参悟</h3><p>破境之后，心中生出三条路。只能走一条。${daoPend()>1?'（还有 '+daoPend()+' 次参悟）':''}</p>`,pool.map(k=>({t:'<b>'+DAO[k].n+'</b><small style="display:block;opacity:.75;font-size:12px">'+DAO[k].d+'</small>',cls:'gold',fn:()=>{S.dao2.push(k);if(k==='changsheng')S.lifeB=(S.lifeB||0)+Math.round(lifeOf(S.stage)*.2);toast('道果 · '+DAO[k].n,'big');sfx('bell');save();render();if(daoPend()>0)setTimeout(daoPick,400);}})));}
+const _dfBF=buildFx;buildFx=function(){const A=_dfBF.apply(this,arguments);const add=(k,v)=>A[k]=(A[k]||0)+v;
+ if(daoHas('jianxin')){add('critA',.08);add('cd',.3);}if(daoHas('houtu')){add('hpP',.2);add('defP',.1);}if(daoHas('changsheng'))add('regen',.03);if(daoHas('xixing'))add('ls',.08);if(daoHas('pojun')){add('atkP',.12);add('pen',.1);}return A;};
+const _dfCB=clanBonus;clanBonus=function(){const b=Object.assign({},_dfCB.apply(this,arguments));if(daoHas('juling2'))b.idle=(b.idle||0)+.25;return b;};
+const _dfWu=wuAdd;wuAdd=function(n,q){return _dfWu.call(this,daoHas('jiyuan')?Math.round(n*1.5):n,q);};
+const _dfCer=ceremony;ceremony=function(old,r,yrs,L,done){return _dfCer.call(this,old,r,yrs,L,function(){done&&done.apply(this,arguments);setTimeout(daoPick,700);});};
+function daoHTML(){const L=(S.dao2||[]).map(k=>DAO[k]);const p=daoPend();
+ return `<h2 class="sec">道果 <small>${L.length} 枚</small></h2>${p?`<div class="row2 friend"><div class="in"><div class="iname">尚有 ${p} 次参悟</div><div class="istat">每破一个大境界，可从三条道果里选一条</div></div><div class="ibtn"><button class="btn sm gold" data-act="daoPick">参悟</button></div></div>`:''}${L.length?`<p class="note">${(S.dao2||[]).map(k=>'<b>'+DAO[k].n+'</b>：'+DAO[k].d).join('<br>')}</p>`:'<p class="empty">还没有道果。破一个大境界之后来这里参悟。</p>'}`;}
+
+/* ---------- 因果簿：你种下的种子 ---------- */
+const SEED_N={revenge:'有人记恨你',grace:'有人记着你的恩',modis:'血债',sect:'宗门记仇',betray:'弟子离心'};
+function yinguoHTML(){const L=(S.seeds||[]).slice().reverse();if(!L.length)return '<p class="empty">你还没有种下什么因果。你做的选择，会在这里留下痕迹。</p>';
+ return `<p class="note">你做过的选择，会在很多年之后回来。下面是还在路上的、和已经回来了的。</p>`+L.slice(0,30).map(sd=>{const p=sd.pid&&P_(sd.pid),who=p?p.n:sd.sect&&SECTS[sd.sect]?SECTS[sd.sect].n:'某人';const done=sd.fired;
+  return `<div class="row2 ${done?'dim':''} ${sd.k==='grace'?'friend':'foe'}"><div class="in"><div class="iname">${esc(SEED_N[sd.k]||'因果')}<span class="lv">${done?'已了结':'约在'+yearName(sd.due)+'前后'}</span></div><div class="istat">${esc(who)}${sd.why?'：「'+esc(String(sd.why).slice(0,28))+'」':''}${p&&!p.alive?'（已故）':''}</div></div></div>`;}).join('');}
+
+/* ---------- 功能按进度解锁：一开始不把所有东西都摆出来 ---------- */
+const FEAT=[
+ {k:'shop',n:'坊市',need:()=>S.stage>=3,d:'城南旧街的修士坊市：丹药、法器、符箓、拍卖'},
+ {k:'ppl',n:'人物',need:()=>true,d:'江湖上有名有姓的人：他们会老，会变强，也会记仇'},
+ {k:'news',n:'传闻',need:()=>S.stage>=3,d:'江湖上一桩接一桩的事'},
+ {k:'rank',n:'江湖榜',need:()=>S.stage>=6,d:'天下修士排名'},
+ {k:'bounty',n:'悬赏',need:()=>S.stage>=6,d:'每天三张悬赏令'},
+ {k:'sect',n:'宗门',need:()=>S.stage>=9,d:'拜入宗门、挑战宗门、天下宗门大比'}];
+const featOn=k=>{const f=FEAT.find(x=>x.k===k);return !f||f.need()||!!(S.flags&&S.flags['ul_'+k]);};
+function featCheck(){if(!S.started)return;const nw=FEAT.filter(f=>!S.flags['ul_'+f.k]&&f.need());if(!nw.length)return;nw.forEach(f=>S.flags['ul_'+f.k]=1);save();
+ if(S.stage>9&&nw.length>3)return;/* 老存档一次性全部解锁，不弹窗 */
+ setTimeout(()=>{if(!BT&&OV_FREE()&&!SC)modal(`<h3>新的去处</h3>${nw.map(f=>`<p><b>江湖 · ${f.n}</b><br><span class="note">${f.d}</span></p>`).join('')}<p class="note">点下方「江湖」打开。</p>`,[{t:'去看看',cls:'gold',fn:()=>jhOpen(nw[0].k)},{t:'稍后',cls:'ghost'}]);else toast('新的去处：江湖 · '+nw.map(f=>f.n).join('、'),'big');},600);}
+const _ftCS=checkStory;checkStory=function(){const r=_ftCS.apply(this,arguments);try{featCheck();}catch(e){}return r;};
+const _ftJR=jhRender;jhRender=function(){_ftJR.apply(this,arguments);const el=$('#jh');if(!el)return;el.querySelectorAll('[data-jt]').forEach(b=>{if(!featOn(b.dataset.jt))b.style.display='none';});};
+const _ftJO=jhOpen;jhOpen=function(tab,sub){if(tab&&!featOn(tab)){toast('还没到时候——修为再高些','bad');return;}if(!tab&&!featOn(JH.tab))JH.tab=FEAT.find(f=>featOn(f.k))?FEAT.find(f=>featOn(f.k)).k:'ppl';return _ftJO.apply(this,arguments);};
+
+/* ---------- 背景音乐：五声音阶，按场景换调 ---------- */
+let BGM={on:(()=>{try{return localStorage.getItem('lc_bgm')!=='0';}catch(e){return true;}})(),mode:null,t:0,bus:null,step:0};
+const BGM_MODE={
+ town:{root:220,scale:[0,2,4,7,9],gap:[.7,1.6],oct:[0,1],v:.05,drone:110},
+ wild:{root:196,scale:[0,3,5,7,10],gap:[.9,2],oct:[-1,0,1],v:.045,drone:98},
+ battle:{root:220,scale:[0,3,5,7,10],gap:[.22,.45],oct:[0,1],v:.05,drum:.5},
+ boss:{root:164.8,scale:[0,1,5,7,8],gap:[.18,.36],oct:[-1,0],v:.055,drum:.33,drone:82.4},
+ calm:{root:261.6,scale:[0,2,4,7,9],gap:[1.2,2.6],oct:[0,1],v:.04,drone:130.8}};
+function bgmMode(){if(BT)return BT.foes.some(f=>f.boss)?'boss':'battle';if(SC||(typeof TAB!=='undefined'&&(TAB==='cult'||TAB==='story')))return 'calm';if(WD.M&&WD.M.kind!=='town'&&!WD.M.mk)return 'wild';return 'town';}
+function pluck(f,at,v,dur){if(!AC||!BGM.bus)return;const t=AC.currentTime+at,o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter();
+ o.type='triangle';o2.type='sine';o.frequency.value=f;o2.frequency.value=f*2.003;lp.type='lowpass';lp.frequency.setValueAtTime(f*6,t);lp.frequency.exponentialRampToValueAtTime(f*1.5,t+dur);
+ g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(lp);o2.connect(lp);lp.connect(g);g.connect(BGM.bus);o.start(t);o2.start(t);o.stop(t+dur+.05);o2.stop(t+dur+.05);}
+function bgmTick(dt){if(!BGM.on||MUTE||!AC||AC.state!=='running')return;if(!BGM.bus){BGM.bus=AC.createGain();BGM.bus.gain.value=.9;BGM.bus.connect(AC.destination);}
+ const m=bgmMode();if(m!==BGM.mode){BGM.mode=m;BGM.t=0;BGM.step=0;}const M=BGM_MODE[m];BGM.t-=dt;if(BGM.t>0)return;
+ BGM.t=M.gap[0]+Math.random()*(M.gap[1]-M.gap[0]);BGM.step++;const deg=pick(M.scale),oc=pick(M.oct),f=M.root*Math.pow(2,deg/12+oc);pluck(f,0,M.v,m==='battle'||m==='boss'?.5:1.8);
+ if(Math.random()<.25)pluck(f*Math.pow(2,pick(M.scale)/12),.09,M.v*.6,1.2);
+ if(M.drum&&BGM.step%2===0)tone(m==='boss'?55:70,.18,{v:.09,to:40});
+ if(M.drone&&BGM.step%8===1)tone(M.drone,3.2,{v:.025,a:.6});}
+function bgmToggle(){BGM.on=!BGM.on;try{localStorage.setItem('lc_bgm',BGM.on?'1':'0');}catch(e){}if(BGM.on)acInit();toast(BGM.on?'背景音乐已开启':'背景音乐已关闭');const b=$('#bgmBtn');if(b)b.textContent=BGM.on?'音乐 开':'音乐 关';}
+
+/* 战斗里的提示卡：比顶部那一行字能多说几句 */
+function btTip(html,ms){const st=$('#btStage');if(!st)return;let el=$('#btTip');if(!el){el=document.createElement('div');el.id='btTip';el.className='bt-tip';st.appendChild(el);}el.innerHTML=html;el.classList.remove('off');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.add('off'),ms||4000);}
+
 /* ================= 境界：解锁的能力 · 突破仪式 · 天劫 · 地图神通 ================= */
 const REALM_UNLOCK={
  1:[['御剑飞行','地图上御剑：移动快一倍，妖兽追不上你'],['收徒','在「族」页收徒，把你的道传下去']],
@@ -5939,6 +6054,7 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).
  ${fresh.length?fresh.map(chapterHTML).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
  ${journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
  ${journalFold('rw','江湖人物志',rwSum(),rwHTML())}
+ ${journalFold('yinguo','因果簿',(S.seeds||[]).filter(x=>!x.fired).length+' 颗种子在路上',yinguoHTML())}
  ${journalFold('relations','缘分与声望','人物与势力',relations)}
  ${journalFold('read','已读篇章',read.length+' 段',read.map(chapterHTML).join('')||'<p class="empty">还没有读完的篇章。</p>')}
  <p class="note">${yearName()} · 隐秘机缘 ${STORY.filter(c=>c.hid&&S.seen.includes(c.id)).length}/${STORY.filter(c=>c.hid).length}</p>
@@ -5958,7 +6074,7 @@ VIEWS.save=()=>`<section class="save-page">
     return `<div class="sl3 ${cur?'cur':''}"><div class="no">${n}</div><div class="in">${inf?`<div class="iname">${esc(inf.name)}<span class="lv">${inf.realm}${inf.reb?' · 第'+(inf.reb+1)+'世':''}</span></div><div class="istat">${cur?'正在游玩':'上次游玩 '+ago(inf.last)}</div>`:'<div class="iname dim">空存档位</div><div class="istat">从头开一个新角色</div>'}</div>
      <div class="ibtn">${cur?'<span class="curtag">当前</span>':inf?`<button class="btn sm" data-act="slot" data-arg="${n}">读取</button><button class="btn sm ${delArm===n?'red':'ghost'}" data-act="slotDel" data-arg="${n}">${delArm===n?'确认删除':'删除'}</button>`:`<button class="btn sm gold" data-act="slot" data-arg="${n}">新开</button>`}</div></div>`;}).join('')}</div>
  <p class="note">切换时会先保存当前进度；没在玩的存档也会累积闭关收益。</p>
- <div class="row" style="margin-top:8px"><button class="btn sm ghost" data-act="sfx" id="sfxBtn">${MUTE?'音效 关':'音效 开'}</button></div>
+ <div class="row" style="margin-top:8px"><button class="btn sm ghost" data-act="sfx" id="sfxBtn">${MUTE?'音效 关':'音效 开'}</button> <button class="btn sm ghost" data-act="bgm" id="bgmBtn">${BGM.on?'音乐 开':'音乐 关'}</button></div>
  <details class="journal-fold" data-fold="save-record" ${JOURNAL_OPEN.has('save-record')?'open':''}><summary><span>修行记录与重开</span></summary><div class="journal-fold-body">
   <p class="note">已斩妖 ${fmt(S.slain)} · 引气 ${fmt(S.taps)} 次 · 击退追兵 ${S.hunts} 次 · 深渊 ${S.abyss} 层 · 第 ${S.rebirth+1} 世</p>
   <button class="btn sm reset-save ${resetArm?'red':'ghost'}" data-act="reset">${resetArm?'再点一次，清空存档 '+SLOT:'清空当前存档重来'}</button>
@@ -5985,7 +6101,7 @@ function live(){const need=req(S.stage);$('#saveOpen').disabled=!S.started;
 
 /* ---------- 交互 ---------- */
 const ACT={
- saveBack:()=>closeSaves(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
+ saveBack:()=>closeSaves(),daoPick:()=>daoPick(),bgm:()=>bgmToggle(),bagMore:()=>{BAG_SHOW+=80;render();},rwTalk:a=>rwTalk(a),
  brew:a=>brewOpen(a),natal:a=>natalForge(a),natalUp:()=>natalUp(),closed:a=>closedGo(a),eatLife:()=>{if(S.lifeP>0){S.lifeP--;S.lifeB=(S.lifeB||0)+30;S.dying=0;S.agewarn=0;toast('寿元 +30 年','big');save();render();}},
  teach:a=>{const [i,h]=a.split('|');disTeach(i,h);},disTake:a=>disRecruit(+a),ending:a=>playEnding(a),goals:()=>goalsOpen(),fly:()=>flyToggle(),soul:()=>soulOut(),void:()=>voidStep(),jh:()=>jhOpen(),root:()=>openRootTest(),form:a=>{if(S.forms.includes(a)){S.form=a;toast('阵法：'+FORMS[a].n);save();render();}},sfx:()=>sfxMute(),path:()=>pathAsk(),zong:()=>zongFound(),xf:()=>playEvent('xf'+(S.flags.xfStage||1),{}),
  break:()=>breakthrough(),
@@ -6047,7 +6163,7 @@ function daily(){const d=new Date().toDateString();if(!S.started||S.lastDaily===
 
 /* ---------- 主循环 ---------- */
 let lastT=performance.now(),uiAcc=0,fAcc=0;
-function loop(t){const dt=Math.min(.1,(t-lastT)/1000),big=Math.min(1,(t-lastT)/1000);lastT=t;if(S.started){addQi(idleRate()*big);jTick(big);idleEventTick(big);clanTick(big);omenTick(big);timeTick(big);fAcc+=big;if(fAcc>2.5){fAcc=0;fateCheck();}}
+function loop(t){const dt=Math.min(.1,(t-lastT)/1000),big=Math.min(1,(t-lastT)/1000);lastT=t;try{bgmTick(big);}catch(e){}if(S.started){addQi(idleRate()*big);jTick(big);idleEventTick(big);clanTick(big);omenTick(big);timeTick(big);fAcc+=big;if(fAcc>2.5){fAcc=0;fateCheck();}}
   try{if(BT)btFrame(dt);else if(TAB==='world'&&WD.cx&&WD.M){if(OV_FREE()&&S.started)wUpdate(dt);else WD.t+=dt;wRender();}}catch(e){if(!loop.err){loop.err=1;console.error(e);}}
   uiAcc+=dt;if(uiAcc>.2){uiAcc=0;live();}requestAnimationFrame(loop);}
 function offline(){const now=Date.now(),sec=(now-S.last)/1000;S.last=now;if(!S.started||sec<5)return;jTick(sec);clanTick(sec,1);daily();if(sec<90)return;const yrs=Math.min(10,Math.floor(sec/Y_SEC));let ylines='';if(yrs>0){const L=simYears(yrs);ageCheck();ylines=`<p>世上已过去 <b>${yrs}</b> 年（${yearName()}）。</p>${L.slice(0,3).map(t=>'<p class="note">'+esc(sub(t))+'</p>').join('')}`;}
@@ -6073,7 +6189,7 @@ window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
 if(location.hash==='#debug')window.__lc={sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
-function cultMore(){const R=realmIdx();return `${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
+function cultMore(){const R=realmIdx();return `${daoHTML()}${S.injury>Date.now()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${fmtT((S.injury-Date.now())/1000)}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>
  <div class="skl">${SKILLS.filter(s=>s.root&&hasRoot(s.root)).map(s=>`<span class="${realmIdx()>=(s.rl||0)?'':'dim'}"><i class="elg" style="--ec:${EL[s.el].c}">${EL[s.el].n}</i>${s.n}${realmIdx()>=(s.rl||0)?'':'（'+REALMS[s.rl]+'）'}</span>`).join('')}</div>
  <h3 class="sub">阵法 <small>战斗前布下，影响全队</small></h3><div class="forms">${S.forms.map(k=>`<button class="fm ${S.form===k?'on':''}" data-act="form" data-arg="${k}"><b>${FORMS[k].n}</b><small>${FORMS[k].d}</small></button>`).join('')}</div>
