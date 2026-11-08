@@ -7388,7 +7388,7 @@ function npcTalk(k){const npc=NPCS[k];if(!npc||BT)return;const ready=QUESTS.find
   ov.querySelectorAll('.st-choices button').forEach(el=>el.onclick=()=>{ov.hidden=true;ov.innerHTML='';ov.className='';const b=btns[+el.dataset.i];b.fn&&b.fn();});}
 
 /* ---------- 提示 / 弹窗 ---------- */
-function modal(html,btns,bg){const ov=$('#ov');ov.hidden=false;ov.className='';if(TAB==='world')bg=null;
+function modal(html,btns,bg){const ov=$('#ov');ov.hidden=false;ov.className='';const jh=$('#jh');ov.style.zIndex=jh&&!jh.hidden?'45':'';if(TAB==='world')bg=null;
   ov.innerHTML=`${bg?'<canvas class="vbg" id="vbg" style="opacity:.55"></canvas>':''}<div class="inner"><div class="modal">${html}<div class="row">${btns.map((b,i)=>`<button class="btn ${b.cls||''}" data-i="${i}">${b.t}</button>`).join('')}</div></div></div>`;
   if(bg)requestAnimationFrame(()=>paintTo($('#vbg'),bg));
   ov.querySelectorAll('.modal .row button').forEach(el=>el.onclick=()=>{ov.hidden=true;ov.innerHTML='';const b=btns[+el.dataset.i];b.fn&&b.fn();});}
