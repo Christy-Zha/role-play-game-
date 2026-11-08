@@ -628,6 +628,13 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 .cstage.img .sit{bottom:16%;width:40%;filter:drop-shadow(0 8px 10px rgba(30,20,10,.55)) sepia(.12) saturate(.92) brightness(1.02)}
 .cstage.img .ring{bottom:14%;opacity:.7}
 
+.port:has(.porimg){aspect-ratio:2/3;height:min(66vh,540px);filter:drop-shadow(0 10px 24px rgba(0,0,0,.65))}
+.port.l:has(.porimg){left:-10%}.port.r:has(.porimg){right:-10%}
+#ov.talk .port:has(.porimg){height:min(54vh,440px)}
+.porimg.por_mo{opacity:.93;filter:drop-shadow(0 0 18px rgba(143,214,181,.45))}
+.bp .porimg{object-fit:cover;object-position:50% 6%;transform:none;width:100%;height:100%}
+.port .porimg{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+
 </style>
 </head>
 <body>
@@ -3786,13 +3793,13 @@ const _cultScene=cultScene;cultScene=function(){const r=STAGES[S.stage].r;if(S.s
 ZONE_SCN[9]='tianting';ZONE_SCN.jie='leijie';
 
 /* ---------- 插画素材接口：把图片放进 art/ 并登记在 ART_HAVE ---------- */
-const ART_HAVE=['scene_xiulian'];
+const ART_HAVE=['scene_xiulian','por_hero_m','por_hero_f','por_mo'];
 const ART_IMG={};
-function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();paintAll&&paintAll();};im.src='art/'+k+(k.startsWith('por_')?'.png':'.jpg');});}
+function artLoad(){ART_HAVE.forEach(k=>{const im=new Image();im.onload=()=>{ART_IMG[k]=im;SCC_CLEAR();paintAll&&paintAll();};im.src='art/'+k+(k.startsWith('por_')?'.webp':'.jpg');});}
 function SCC_CLEAR(){try{_scnCache.clear();}catch(e){}}
 const _sceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){const im=ART_IMG['scene_'+key];if(!im)return _sceneCanvas(key,w,h);
  return cvMemo('img|'+key+'|'+Math.round(w)+'x'+Math.round(h),()=>{const dpr=Math.min(2,window.devicePixelRatio||1),cv=mkCv(Math.round(w*dpr),Math.round(h*dpr)),x=cv.getContext('2d');const s=Math.max(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,(cv.height-im.height*s)/2,im.width*s,im.height*s);return cv;});};
-Object.keys(PORTRAIT).forEach(k=>{const f=PORTRAIT[k];PORTRAIT[k]=function(){const im=ART_IMG['por_'+k];return im?`<img class="porimg" src="${im.src}" alt="">`:f.apply(this,arguments);};});
+Object.keys(PORTRAIT).forEach(k=>{const f=PORTRAIT[k];PORTRAIT[k]=function(){const im=ART_IMG['por_'+k];return im?`<img class="porimg ${k}" src="${im.src}" alt="">`:f.apply(this,arguments);};});
 
 /* ================= 灵根 · 五行 · 状态 · 连携 · 阵法 · 神通 ================= */
 const EL={jin:{n:'金',c:'#f2d478'},mu:{n:'木',c:'#7ad08a'},shui:{n:'水',c:'#6ab8ff'},huo:{n:'火',c:'#ff7a3a'},tu:{n:'土',c:'#d0a868'},lei:{n:'雷',c:'#c9a8ff'},bing:{n:'冰',c:'#bfefff'}};
