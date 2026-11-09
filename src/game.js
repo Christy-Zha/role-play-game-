@@ -398,7 +398,7 @@ function breakHTML(){const ni=nextInfo(),full=S.qi>=needQ();
   if(ni.final)return `<div class="t">大罗已至圆满。归墟之下还有一道门，推开它就是新的一世。</div><div class="row"><button class="btn gold" data-act="break" ${full?'':'disabled'}>轮回</button></div>`;
   if(!ni.major&&ni.bn)return `<div class="t">下一层：<em>${ni.name}</em></div><div class="t gate">瓶颈·${ni.bn}：${BN_TIP[ni.bi]}${full?'':'（先把这一层的修为攒满）'}</div><div class="row"><button class="btn ${full?'gold':''}" data-act="bnGo" ${full?'':'disabled'}>闯关历练</button></div>`;
   if(!ni.major)return `<div class="t">下一层：<em>${ni.name}</em>　修为满后自动突破</div>`;
-  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.capped?capMsg():ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、做宗门任务、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
+  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.capped?capMsg():ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
   return `<div class="t">下一境：<em>${ni.name}</em>　成功率 <em>${Math.round(ni.ch*100)}%</em>　失败散去四成灵气</div>
    <div class="row"><button class="btn ${full?'gold':''}" data-act="break" ${full?'':'disabled'}>${ni.fs?'飞升 · 破天门':'冲击'+REALMS[STAGES[S.stage+1].r]}</button>
    ${S.pills>0?`<label class="pill"><input type="checkbox" id="usePill" ${S.usePill?'checked':''}>服用破境丹 +25%（余 ${S.pills}）</label>`:''}</div>`;}
@@ -459,7 +459,7 @@ function chapterHTML(ch){const seen=S.seen.includes(ch.id),pend=S.pending.includ
  return `<div class="ch ${cls}"><div class="th"><canvas data-scene="${ch.bg}"></canvas><span>${pend||seen?ch.g:''}</span></div><div><div class="ct">${pend||seen?ch.title:ch.hid?'隐秘·？？？':(ch.side?'支线·？？？':'主线·？？？')}</div><div class="ch-h">${pend?(ch.side?'支线剧情':'主线剧情'):seen?(ch.side?'支线 · 已读':'主线 · 已读'):ch.hid?'只有特定的机缘才能触发':'开启条件：'+chHint(ch)}</div></div>
  ${pend?`<button class="btn sm gold" data-act="play" data-arg="${ch.id}">观看</button>`:seen?`<button class="btn sm ghost" data-act="play" data-arg="${ch.id}">重温</button>`:''}</div>`;}
 VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).sort((a,b)=>(qSt(b.id)==='ready')-(qSt(a.id)==='ready'));const done=QUESTS.filter(q=>qDone(q.id)).length;
- const fresh=STORY.filter(ch=>S.pending.includes(ch.id)),read=STORY.filter(ch=>S.seen.includes(ch.id)&&!S.pending.includes(ch.id)),locked=STORY.filter(ch=>!ch.rw&&!S.seen.includes(ch.id)&&!S.pending.includes(ch.id));
+ const fresh=STORY.filter(ch=>S.pending.includes(ch.id)),read=STORY.filter(ch=>S.seen.includes(ch.id)&&!S.pending.includes(ch.id)),locked=STORY.filter(ch=>!ch.rw&&!S.seen.includes(ch.id)&&!S.pending.includes(ch.id)&&!(ch.gone&&ch.gone()));
  const relations=`${bondHTML()}  <h2 class="sec">声望 <small>名号「${stTier()}」 · 人口 ${S.pop}</small></h2>
   <div class="row2"><div class="in"><div class="iname">青石站 <span class="lv">${S.rep.station}</span></div><div class="istat">声望越高，铁叔每天送来的补给越多。</div></div></div>
   <div class="row2"><div class="in"><div class="iname">红鹞商队 <span class="lv">${S.rep.caravan}</span></div><div class="istat">坊市折扣 ${Math.round((1-disc())*100)}%</div></div></div>

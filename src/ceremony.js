@@ -1,6 +1,6 @@
 /* ================= 境界：解锁的能力 · 突破仪式 · 天劫 · 地图神通 ================= */
 const REALM_UNLOCK={
- 1:[['御剑飞行','地图上御剑：移动快一倍，妖兽追不上你'],['收徒','在「族」页收徒，把你的道传下去']],
+ 1:[['御剑飞行','地图上御剑：移动快一倍，妖兽追不上你']],
  2:[['本命法宝','以心血祭炼法宝，随你一同成长，战斗中祭出'],['第二门灵根法术','灵根之力更进一层'],['天劫','从此每个大境界，都要渡雷劫']],
  3:[['元神出窍','地图上元神离体，看见常人看不见的东西'],['元婴不灭','每场战斗可死而复生一次'],['问道','选择你的道途：正、魔、隐、宗']],
  4:[['领域','战斗神通：展开灵根领域三回合']],
@@ -14,11 +14,11 @@ const REALM_UNLOCK={
 const BT_YEARS=[0,1,3,10,20,30,50,80,100,150,200,300,500,800];
 const OMEN_TXT=['','灵雨三日，站外的枯树抽出了新芽','紫气东来三万里，城中百鸟惊飞','元婴出世之时，月亮在白天升了起来','天地失色，方圆百里的灵气倒卷而来','虚空裂开一道缝，又缓缓合上','你的影子在云海上站成了一座山','天降金莲，落地不散','九天雷云散尽，天门洞开','仙乐自天外来','星河倒悬','诸天寂静','万道齐鸣','三界同震'];
 function unlockList(r){return (REALM_UNLOCK[r]||[]);}
-function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <small>每个大境界都会带来新的能力</small></h2><div class="unl">${Object.keys(REALM_UNLOCK).slice(0,9).map(k=>{const r=+k,got=R>=r;return `<div class="u ${got?'got':''}"><b>${REALMS[r]}</b><span>${unlockList(r).map(u=>u[0]).join(' · ')}</span></div>`;}).join('')}</div>`;}
+function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <small>每个大境界都会带来新的能力</small></h2><div class="unl">${Object.keys(REALM_UNLOCK).filter(k=>+k<=STAGES[canonCap()].r).map(k=>{const r=+k,got=R>=r;return `<div class="u ${got?'got':''}"><b>${REALMS[r]}</b><span>${unlockList(r).map(u=>u[0]).join(' · ')}</span></div>`;}).join('')}<div class="u"><b>……</b><span>再往上的路，还看不清。</span></div></div>`;}
 
 /* ---------- 突破 ---------- */
 function breakthrough(){const need=req(S.stage);if(S.qi<need||BT)return;const ni=nextInfo();if(ni.final)return ascend();
- if(ni.gate){toast(ni.capped?capMsg():ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、做宗门任务、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
+ if(ni.gate){toast(ni.capped?capMsg():ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
  if(injOn()){toast('重伤未愈，经不起冲关（还要 '+injLeft()+' 天'+'）','bad');return;}
  const r1=STAGES[S.stage+1].r;if(ni.major&&r1>=2){jieAsk(ni);return;}
  const used=ni.major&&S.usePill&&S.pills>0;if(used){S.pills--;toxAdd(20);}

@@ -89,7 +89,7 @@ function clanView(){const c=S.clan;if(!c)return '<p class="empty">还没有行�
    ${m.busy?'':`<button class="btn sm" data-act="clGo" data-arg="${m.id}">派遣</button>`}</div>`).join('')}</div>
   <div class="row" style="display:flex;gap:8px;margin-top:10px"><button class="btn sm" data-act="clRec" ${S.stones>=clRecruitCost()&&act.length<clCap()?'':'disabled'}>招募散修 · ${fmt(clRecruitCost())} 灵石</button></div>
   <p class="note">散修资质有高有低，偶尔会埋没着天才。也偶尔……混进来别有用心的人。</p>
-  ${zongHTML()}${disHTML()}<h2 class="sec">建筑</h2>
+  ${zongHTML()}<h2 class="sec">建筑</h2>
   ${Object.keys(CL_BLD).map(k=>{const B=CL_BLD[k],lv=c.bld[k],mx=clBuildMax(k),cost=clCost(k,lv);return `<div class="row2"><div class="clg">${B.g}</div><div class="in"><div class="iname">${B.n}<span class="lv">${lv} 级</span></div><div class="istat">${B.d(lv)}</div></div>
    <button class="btn sm" data-act="clUp" data-arg="${k}" ${lv<mx&&S.stones>=cost?'':'disabled'}>${lv>=10?'已满':lv>=mx?'需扩议事堂':fmt(cost)+' 灵石'}</button></div>`;}).join('')}
   <h2 class="sec">行社纪事</h2>${c.log.length?c.log.map(l=>`<p class="note">· ${esc(l.t)}</p>`).join(''):'<p class="note">还没有什么可记的。</p>'}`;}

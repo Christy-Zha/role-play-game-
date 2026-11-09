@@ -83,7 +83,7 @@ let JH={tab:'shop',sub:'dan'};
 const inMarket=()=>!!(WD.M&&WD.M.mk);
 function jhOpen(tab,sub){if(BT)return;JH.tab=tab||JH.tab;if(sub)JH.sub=sub;let el=$('#jh');if(!el){el=document.createElement('div');el.id='jh';document.body.appendChild(el);}el.hidden=false;jhRender();}
 function jhClose(){const el=$('#jh');if(el){el.hidden=true;el.innerHTML='';}if(TAB==='world')wHud();}
-function jhRender(){const el=$('#jh');if(!el||el.hidden)return;const T={shop:'坊市',bounty:'悬赏',sect:'宗门',rank:'江湖榜',ppl:'人物',news:'传闻'};
+function jhRender(){const el=$('#jh');if(!el||el.hidden)return;const T={shop:'坊市',bounty:'悬赏',rank:'江湖榜',ppl:'人物',news:'传闻'};if(!T[JH.tab])JH.tab='shop';
  el.innerHTML=`<div class="jh-in"><div class="jh-top"><b>江湖</b><small>${yearName()} · 声望 ${S.fame} · 灵石 ${fmt(S.stones)}</small><button class="btn sm ghost" data-jx="close">关闭</button></div>
  <div class="jh-tabs">${Object.keys(T).map(k=>`<button class="${JH.tab===k?'on':''}" data-jt="${k}">${T[k]}</button>`).join('')}</div><div class="jh-body">${jhBody()}</div></div>`;
  el.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.jx==='close'){jhClose();return;}if(b.dataset.jt){JH.tab=b.dataset.jt;jhRender();return;}if(b.dataset.js){JH.sub=b.dataset.js;jhRender();return;}if(b.dataset.ja){const [a,arg]=[b.dataset.ja,b.dataset.arg];JH_ACT[a]&&JH_ACT[a](arg);}};}
@@ -256,11 +256,11 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
  else if(injOn())g.s={t:'重伤未愈：'+injLeft()+' 天',a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>12?'修为已满：元婴的门还关着':'修为已满：结金丹还缺一味药'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>12?'修为已满：元婴的门还关着':'修为已满：结金丹还缺一味药'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
  else{const b=S.bnt&&S.bnt.day===dayKey()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
  if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};
- else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:sk?{t:'挑战'+SECTS[sk].n+'（'+RANKN[Math.min(2,(S.sects[sk]||{beat:0}).beat)]+'）',a:'sect'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
+ else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9&&R+1<=STAGES[canonCap()].r?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
   if(un&&sk&&Math.random()<.4)g.m={t:'挑战'+SECTS[sk].n,a:'sect'};}
  const E=S.path?ENDS[PATHS[S.path].end]:null;g.l=E&&!(S.endings||[]).includes(PATHS[S.path].end)?{t:'道果「'+E.n+'」',sub:E.cond,a:'ends'}:(S.xf||0)<5?{t:'寻找仙府残图 '+(S.xf||0)+'/5',sub:'散落在拍卖行、深渊、隐秘的洞府和人心里',a:'ends'}:{t:'登上江湖榜首（现'+(jhRank()>100?'在榜外':'第 '+jhRank()+' 位')+'）',a:'rank'};
  return g;}
