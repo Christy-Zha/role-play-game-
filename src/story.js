@@ -1,6 +1,6 @@
 /* ================= 剧情 ================= */
 const SPK={mo:'墨老',tie:'铁叔',he:'阿禾',hong:'红姐',zero:'零号',zhou:'周烈',zhou2:'周烈',tq:'天穹会执事',sx:'堕仙'};
-const F=k=>!!(S.flags&&S.flags[k]);
+const F=k=>S.flags?S.flags[k]:undefined;
 const STORY=[
  {id:'prologue',title:'序章·灵潮',g:'潮',bg:'leijie',cond:()=>true,hint:'',lines:[
   {fn:()=>cgShow('dujie')},

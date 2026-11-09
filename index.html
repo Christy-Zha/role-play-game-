@@ -1395,7 +1395,7 @@ function shadowCvPx(w){return cvMemo('sh'+w,()=>{const g=new PX(w,Math.max(3,Mat
 
 /* ================= 剧情 ================= */
 const SPK={mo:'墨老',tie:'铁叔',he:'阿禾',hong:'红姐',zero:'零号',zhou:'周烈',zhou2:'周烈',tq:'天穹会执事',sx:'堕仙'};
-const F=k=>!!(S.flags&&S.flags[k]);
+const F=k=>S.flags?S.flags[k]:undefined;
 const STORY=[
  {id:'prologue',title:'序章·灵潮',g:'潮',bg:'leijie',cond:()=>true,hint:'',lines:[
   {fn:()=>cgShow('dujie')},
@@ -11044,7 +11044,7 @@ V13({t:'五行之间',g:'行',bg:'starsea',lines:[
  ['','第一道潮光落下时，你只来得及把苏绾推开。光擦过左肩，护衣烧出一条口子，皮肉还没觉出疼，整条手臂先麻了。你看清了晏枢手中那条银色细线——它连着主槽的八处受潮片。'],
  ['','这里是他值守数十年的工位，每一块会松的石、每一道先亮的纹，他都熟悉。你不能以更多灵气取胜。'],
  ['','【迎战：晏枢。】']
-],after:()=>{v13Fight({title:'主槽',many:[{look:'晏枢',name:'晏枢',st:S.stage+2,m:1.9,boss:true},{look:'天穹追兵',name:'主槽守卫',st:S.stage,m:1},{look:'天穹追兵',name:'持杖的守卫',st:S.stage,m:1}],
+],after:()=>{v13Fight({title:'主槽',many:[{look:'晏枢',name:'晏枢',st:S.stage+2,m:1.6,boss:true},{look:'天穹追兵',name:'主槽守卫',st:S.stage,m:.8},{look:'天穹追兵',name:'持杖的守卫',st:S.stage,m:.8}],
   win:()=>{S.flags.v13Main='win';return '你停了火。剑上亮光忽灭，晏枢的长弧从暗处穿过，割进你肋侧。你咬牙不退，以留下的水气推偏下一寸锋刃，再把木气贴上身后的旧支架。\n支架没有炸开，只被你向外缓缓撑歪了一点。萧尘在检修槽前，短刀崩了口仍没退开；红鹞和泊工扳下绞架制动，重门卡住了增援的路。\n苏绾终于看见那一寸空隙：「第三片，后面！」三栈工师攀上检修梯，插入断令片。晏枢手里的银线，松了一根。';},
   lose:()=>{S.flags.v13Main='lose';return '腕骨一响，你退了四步，险些握不住剑。金丹在腹中急转，五股灵息都想重新闭合那道窄隙——你知道一闭合，主槽就会把你整轮气认作可以牵动的供给。\n你停了火，任长弧割进肋侧。萧尘挡在槽口，红鹞卡住了重门，苏绾喊：「第三片，后面！」\n三栈工师插入断令片。晏枢手里的银线，松了一根。';}});}});
 
@@ -11939,7 +11939,7 @@ function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;if(SC
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="port l hide" id="pL"></div><div class="port r hide" id="pR"></div>
    <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
    <div class="st-box"><div class="st-s" id="stS" hidden></div><div class="st-x" id="stX"></div><div class="st-more" id="stM">▾</div></div></div>`;
-  requestAnimationFrame(()=>paintTo($('#vbg'),SC.bg));
+  requestAnimationFrame(()=>{if(SC)paintTo($('#vbg'),SC.bg);});
   $('#stSkip').onclick=e=>{e.stopPropagation();if(!SC.read&&!SC.skipArm){SC.skipArm=true;e.target.textContent='再点跳过未读';setTimeout(()=>{if(SC&&SC.skipArm){SC.skipArm=false;const b=$('#stSkip');if(b)b.textContent='跳过';}},2500);return;}skipStory();};
   $('#stLog').onclick=e=>{e.stopPropagation();vnLog();};
   $('#stSpd').onclick=e=>{e.stopPropagation();const ks=Object.keys(VN_SPD);VN.spd=ks[(ks.indexOf(VN.spd)+1)%ks.length];vnSave();e.target.textContent=VN_SPDN[VN.spd];};

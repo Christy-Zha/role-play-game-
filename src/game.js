@@ -300,7 +300,7 @@ function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;if(SC
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="port l hide" id="pL"></div><div class="port r hide" id="pR"></div>
    <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
    <div class="st-box"><div class="st-s" id="stS" hidden></div><div class="st-x" id="stX"></div><div class="st-more" id="stM">▾</div></div></div>`;
-  requestAnimationFrame(()=>paintTo($('#vbg'),SC.bg));
+  requestAnimationFrame(()=>{if(SC)paintTo($('#vbg'),SC.bg);});
   $('#stSkip').onclick=e=>{e.stopPropagation();if(!SC.read&&!SC.skipArm){SC.skipArm=true;e.target.textContent='再点跳过未读';setTimeout(()=>{if(SC&&SC.skipArm){SC.skipArm=false;const b=$('#stSkip');if(b)b.textContent='跳过';}},2500);return;}skipStory();};
   $('#stLog').onclick=e=>{e.stopPropagation();vnLog();};
   $('#stSpd').onclick=e=>{e.stopPropagation();const ks=Object.keys(VN_SPD);VN.spd=ks[(ks.indexOf(VN.spd)+1)%ks.length];vnSave();e.target.textContent=VN_SPDN[VN.spd];};
