@@ -723,3 +723,6 @@ body:has(#ov:not([hidden])) .toast{opacity:.94;font-size:12px}
 .ico-f{width:18px;height:18px;vertical-align:-4px;margin-right:3px;object-fit:contain}
 .ico-s{width:22px;height:22px;vertical-align:-5px;margin-right:4px;object-fit:contain}
 .tame-img{display:block;width:120px;height:120px;object-fit:contain;margin:6px auto}
+.xh-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px}
+.xh-dots{font-size:11px;color:var(--gold);letter-spacing:1px}
+.xh-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;margin:4px 0 10px;border:1px dashed var(--gold);border-radius:6px}

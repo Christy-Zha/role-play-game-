@@ -61,3 +61,7 @@ console.log('PASS third batch: 31 files, chapter scenes, five story CG and five 
  for(const [id,key] of [['v5_22','hedeng'],['v7_18','fenshan'],['v8_13','duanjing'],['v9_14','guichao'],['v10_8','zhexing'],['v10_9','diwushan']])
   assert.ok(t.STORY.find(c=>c.id===id).lines.some(l=>l.fn&&String(l.fn).includes("cgShow('"+key+"')")),'cue '+key);
  console.log('PASS fourth batch: '+need.length+' files, chapter scenes and '+cg4.length+' story CG');}
+/* 叙话：人物篇章 */
+{const xh=t.STORY.filter(c=>/^xh_/.test(c.id));assert.equal(xh.length,24,'24 人物篇章');
+ for(const c of xh){assert.ok(c.rw,'不进主线未解锁列表 '+c.id);assert.equal(c.cond(),false,'不自动弹出 '+c.id);assert.ok(c.lines.some(l=>l&&(l.c||l.fx)),'有选择或收获 '+c.id);}
+ console.log('PASS 叙话: 24 人物篇章');}

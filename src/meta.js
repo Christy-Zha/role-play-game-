@@ -174,8 +174,10 @@ function peopleSeen(){if(PPL_CACHE&&PPL_CACHE.n===S.seen.length)return PPL_CACHE
  STORY.forEach(c=>{if(S.seen.includes(c.id))walk(c.lines);});PPL_CACHE={n:S.seen.length,s};return s;}
 function peopleHTML(){const s=peopleSeen();if(s.has('zero'))s.add('chuyi');const keys=Object.keys(PEOPLE).filter(k=>s.has(k));
  if(!keys.length)return '<p class="empty">还没有记下谁。</p>';
- return `<div class="pplbook">${keys.map(k=>{const por=(typeof PORTRAIT!=='undefined'&&PORTRAIT[k])?PORTRAIT[k]():sealPortrait(k);const deep=BOND[k]&&avOf(k)>=60&&BOND_DEEP[k];
-  return `<div class="pp"><div class="pp-por">${por}</div><div><b>${esc(SPK[k]||BOND[k]&&BOND[k].n||k)}</b><p>${esc(PEOPLE[k])}</p>${deep?'<p class="note">'+esc(deep)+'</p>':''}</div></div>`;}).join('')}</div><p class="note">记下 ${keys.length}/${Object.keys(PEOPLE).length} 人。</p>`;}
+ const want=typeof xhPids==='function'?xhPids().filter(p=>xhNext(p)):[];
+ const top=want.length?`<div class="xh-top"><b>有话想对你说</b>${want.map(p=>`<button class="btn sm gold" data-act="xhPlay" data-arg="${p}">${esc(SPK[p]||p)} ·「${esc(xhNext(p).t)}」</button>`).join('')}</div>`:'';
+ return top+`<div class="pplbook">${keys.map(k=>{const por=(typeof PORTRAIT!=='undefined'&&PORTRAIT[k])?PORTRAIT[k]():sealPortrait(k);const deep=BOND[k]&&avOf(k)>=60&&BOND_DEEP[k];
+  return `<div class="pp"><div class="pp-por">${por}</div><div><b>${esc(SPK[k]||BOND[k]&&BOND[k].n||k)}</b><p>${esc(PEOPLE[k])}</p>${deep?'<p class="note">'+esc(deep)+'</p>':''}${typeof xhBtn==='function'?xhBtn(k):''}</div></div>`;}).join('')}</div><p class="note">记下 ${keys.length}/${Object.keys(PEOPLE).length} 人。</p>`;}
 const BOND_DEEP={hong:'她的账本里，你那一格描过很多遍。',zhou:'他不爱说，可每次你出门，他都在站口。',su:'她在图上给你留过一块空白，说等你回来自己画。',
  xiao:'他的登记簿第一行，写的是你的名字。',mo:'他教你的，比他承认的多。',he:'她第一次拿起绳尺的时候，是你在旁边扶着。',chuyi:'她把手伸过来，让你剪指甲。'};
 function placesHTML(){const seenBg={};STORY.forEach(c=>{if(!S.seen.includes(c.id))return;const add=k=>{if(k&&!seenBg[k])seenBg[k]=c.title;};add(c.bg);(c.lines||[]).forEach(l=>{if(l&&!Array.isArray(l)&&l.bg)add(l.bg);});});
@@ -196,7 +198,7 @@ LATE.push(()=>{
  const sv0=VIEWS.story;VIEWS.story=()=>{metaSync();const h=sv0();
   const extra=journalFold('fate','命途图',Object.keys(metaGet().br||{}).length+' 处岔路',fateHTML())
    +journalFold('letters','来信',(S.letters||[]).length+' 封',letterHTML())
-   +journalFold('people','人物志',[...peopleSeen()].filter(k=>PEOPLE[k]).length+' 人',peopleHTML())
+   +journalFold('people','人物志',[...peopleSeen()].filter(k=>PEOPLE[k]).length+' 人'+(typeof xhPids==='function'&&xhPids().some(p=>xhNext(p))?' · 有人想叙话':''),peopleHTML())
    +journalFold('places','地图志','',placesHTML());
   const i=h.lastIndexOf('</section>');return i>=0?h.slice(0,i)+extra+h.slice(i):h+extra;};
  {const es=endStory;endStory=function(){const r=es.apply(this,arguments);try{metaSync();}catch(e){}return r;};}
