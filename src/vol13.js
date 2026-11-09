@@ -410,4 +410,4 @@ V13({t:'将至',end:1,g:'终',bg:'starsea',hint:'终章',lines:[
 ],after:()=>{S.flags.v13done=1;wuAdd(30);S.stones+=zsAt(maxZone(),60);
   const e=F('v13End');setTimeout(()=>{try{modal(`<h3>终章 · ${esc(V13_END_NAME[e]||'')}</h3><p>这是你走出来的那一种结局。</p>${e==='qing'?'<p>散丹以后，你只剩炼气三层的修为。这一世灵气薄了，能重新修到筑基为止。</p>':''}<p>过些日子，卷宗里会有一段「后日」。</p><p class="note">另外几种结局，要从别的选择里走过去：新开一份存档，在丹方、旧案、去留这三处换一条路试试。江湖、行社、灵源深渊都还开着，这一份存档可以接着玩，往后每个月也会有这条路上的日常收获。</p>`,[{t:'好',cls:'gold'}]);}catch(_){}} ,400);}});
 
-initThirdChapterArt();
+initThirdChapterArt();initFourthChapterArt();

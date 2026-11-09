@@ -75,6 +75,39 @@ const _thirdBtPortrait=btPortrait;btPortrait=function(a){
  return cvMemo('third-enemy|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const s=Math.min(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,cv.height-im.height*s,im.width*s,im.height*s);return cv;});
 };
 Object.assign(CG,{jiedan:'此身',chudeng:'灯下人',xuanhe:'潮从何来',lalang:'不放手',duanling:'门松了',end_deng:'万家灯火',end_feng:'长风万里',end_shou:'守潮人',end_qing:'归青石',end_bai:'白塔长明'});
+/* ---------- 第四批：第四至第十卷的场景、人物、敌人、CG ---------- */
+const FOURTH_SCENE_KEYS=new Set('chiliang zhexing huiting qingshi_po yanhu tianxi taiyi lufu tieliang fudeng gongfang yancang'.split(' '));
+const _fourthSceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){if(FOURTH_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _fourthSceneCanvas(key,w,h);};
+const _fourthBtBg=btBg;btBg=function(key,w,h){if(FOURTH_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _fourthBtBg(key,w,h);};
+const FOURTH_PORTRAITS={heq:'heq',hey:'heq',hengd:'hengd',mengq:'mengq',lhd:'lhd',wenq:'wenq',sangf:'sangf',aying:'aying',xman:'xman',chengw:'chengw',yutan:'yut',liangl:'liangl',qiw:'qiw',luoy:'luoy',duh:'duh'};
+Object.entries(FOURTH_PORTRAITS).forEach(([key,file])=>{PORTRAIT[key]=()=>thirdPortrait(file);});
+const FOURTH_ENEMIES=({'负碑鼋':'fubei','衡渡':'hengd','镜中错影':'hengd','孟确':'mengq','寄焰藤':'jiyan','寄焰藤根':'jiyan','护炉架':'hulu','晶翼':'jingyi','盲鳗':'mangman',
+ '盐壳螯群':'yanqiao','岩鬃獾':'yanzong','晶背蛾':'jingbeie','晶背蛾群':'jingbeie','晶背兽':'jingbeis','蒙面人':'mengmian','翻船帮的蒙面人':'mengmian','持弩的蒙面人':'mengmian','雾鲨':'wusha1','寒壳蟹':'hanke'});
+const _fourthBtPortrait=btPortrait;btPortrait=function(a){
+ const key=a.side==='e'&&FOURTH_ENEMIES[a.n||a.name];if(!key)return _fourthBtPortrait.apply(this,arguments);
+ requestThirdArt('enemy_'+key,'webp');const im=ART_IMG['enemy_'+key];if(!im)return _fourthBtPortrait.apply(this,arguments);
+ const h=Math.round(Math.max(40,Math.min(BT.H*.40,BT.W*.25)));
+ return cvMemo('fourth-enemy|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const s=Math.min(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,cv.height-im.height*s,im.width*s,im.height*s);return cv;});
+};
+Object.assign(CG,{hedeng:'河灯',zhexing:'折星埠',fenshan:'分山',duanjing:'断颈',guichao:'归潮',diwushan:'第五扇窗'});
+const FOURTH_FIGHT_BG={'寄焰藤':'taiyi','护炉架':'lufu','伏灯站':'fudeng'};
+function initFourthChapterArt(){
+ const ch=id=>{const c=STORY.find(c=>c.id===id);if(!c)throw Error('Missing fourth-batch chapter '+id);return c;};
+ const swap=(id,from,to)=>{const c=ch(id);if(c.bg===from)c.bg=to;(c.lines||[]).forEach(l=>{if(l&&!Array.isArray(l)&&l.bg===from)l.bg=to;});};
+ for(let n=1;n<=22;n++)swap('v5_'+n,'shelter','qingshi_po');ch('v5_13').bg='tieliang';
+ for(let n=3;n<=10;n++)swap('v6_'+n,'xianfu','taiyi');ch('v6_14').bg='lufu';
+ for(let n=1;n<=22;n++)swap('v7_'+n,'town','chiliang');
+ for(let n=1;n<=16;n++)swap('v8_'+n,'sky','tianxi');
+ for(let n=1;n<=16;n++){swap('v9_'+n,'town','huiting');swap('v9_'+n,'pit','yanhu');}
+ ch('v10_2').bg='yancang';ch('v10_6').bg='fudeng';for(let n=8;n<=20;n++)swap('v10_'+n,'starsea','zhexing');ch('v10_9').bg='gongfang';
+ chapterInsert('v5_22','她出发前最后一晚',{fn:()=>cgShow('hedeng')});
+ chapterInsert('v7_18','周烈把斧子交到左手',{fn:()=>cgShow('fenshan')});
+ chapterInsert('v8_13','到了外面，许多声音都变远了',{fn:()=>cgShow('duanjing')});
+ chapterInsert('v9_14','三层薄叶向三个方向弹开',{fn:()=>cgShow('guichao')});
+ chapterInsert('v10_8','折星埠最先被看见的',{fn:()=>cgShow('zhexing')});
+ chapterInsert('v10_9','轮子停了',{fn:()=>cgShow('diwushan')});
+ const rf=rwFight;rwFight=function(o){if(o&&FOURTH_FIGHT_BG[o.title])o=Object.assign({},o,{bg:FOURTH_FIGHT_BG[o.title]});return rf.apply(this,[o].concat([].slice.call(arguments,1)));};
+}
 function initThirdChapterArt(){
  const set=(id,bg)=>{const c=STORY.find(c=>c.id===id);if(!c)throw Error('Missing third-batch chapter '+id);c.bg=bg;};
  set('v11_1','xiaowu');for(let n=2;n<=10;n++)set('v11_'+n,'huifeng');

@@ -47,3 +47,17 @@ console.log('PASS third batch: 31 files, chapter scenes, five story CG and five 
  for(const e of ['deng','feng','shou','bai','qing']){const c=t.STORY.find(x=>x.id==='after_'+e);assert.ok(c&&String(c.lines[0].fn).includes("cgShow('after_'+e)"),'after CG cue '+e);}
  const rk=t.STORY.find(c=>c.id==='ratking');assert.ok(rk.lines.some(l=>l.fn&&String(l.fn).includes("cgShow('huitu')")),'huitu CG cue');
  console.log('PASS fifth batch: '+need.length+' files, '+cg5.length+' CG registered and cued');}
+/* 第四批：第四至第十卷 */
+{const fs4=require('node:fs');const need=[];
+ for(const k of 'chiliang zhexing huiting qingshi_po yanhu tianxi taiyi lufu tieliang fudeng gongfang yancang'.split(' '))need.push('scene_'+k+'.jpg');
+ for(const k of 'heq hengd mengq lhd wenq sangf aying xman chengw yut liangl qiw luoy duh'.split(' '))need.push('por_'+k+'.webp');
+ for(const k of 'fubei hengd mengq jiyan hulu jingyi mangman yanqiao yanzong jingbeie jingbeis mengmian wusha1 hanke'.split(' '))need.push('enemy_'+k+'.webp');
+ const cg4=['hedeng','zhexing','fenshan','duanjing','guichao','diwushan'];for(const k of cg4){assert.ok(t.CG[k],'CG '+k);need.push('cg_'+k+'.jpg');}
+ for(const f of need)assert.ok(fs4.existsSync(__dirname+'/art/'+f),'missing art/'+f);
+ const bg=id=>t.STORY.find(c=>c.id===id).bg;
+ assert.equal(bg('v5_1'),'qingshi_po');assert.equal(bg('v5_13'),'tieliang');assert.equal(bg('v6_3'),'taiyi');assert.equal(bg('v6_14'),'lufu');
+ assert.equal(bg('v7_1'),'chiliang');assert.equal(bg('v8_6'),'tianxi');assert.equal(bg('v9_1'),'huiting');assert.equal(bg('v9_2'),'yanhu');
+ assert.equal(bg('v10_2'),'yancang');assert.equal(bg('v10_6'),'fudeng');assert.equal(bg('v10_8'),'zhexing');assert.equal(bg('v10_9'),'gongfang');
+ for(const [id,key] of [['v5_22','hedeng'],['v7_18','fenshan'],['v8_13','duanjing'],['v9_14','guichao'],['v10_8','zhexing'],['v10_9','diwushan']])
+  assert.ok(t.STORY.find(c=>c.id===id).lines.some(l=>l.fn&&String(l.fn).includes("cgShow('"+key+"')")),'cue '+key);
+ console.log('PASS fourth batch: '+need.length+' files, chapter scenes and '+cg4.length+' story CG');}

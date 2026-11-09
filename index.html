@@ -7302,6 +7302,39 @@ const _thirdBtPortrait=btPortrait;btPortrait=function(a){
  return cvMemo('third-enemy|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const s=Math.min(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,cv.height-im.height*s,im.width*s,im.height*s);return cv;});
 };
 Object.assign(CG,{jiedan:'此身',chudeng:'灯下人',xuanhe:'潮从何来',lalang:'不放手',duanling:'门松了',end_deng:'万家灯火',end_feng:'长风万里',end_shou:'守潮人',end_qing:'归青石',end_bai:'白塔长明'});
+/* ---------- 第四批：第四至第十卷的场景、人物、敌人、CG ---------- */
+const FOURTH_SCENE_KEYS=new Set('chiliang zhexing huiting qingshi_po yanhu tianxi taiyi lufu tieliang fudeng gongfang yancang'.split(' '));
+const _fourthSceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){if(FOURTH_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _fourthSceneCanvas(key,w,h);};
+const _fourthBtBg=btBg;btBg=function(key,w,h){if(FOURTH_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _fourthBtBg(key,w,h);};
+const FOURTH_PORTRAITS={heq:'heq',hey:'heq',hengd:'hengd',mengq:'mengq',lhd:'lhd',wenq:'wenq',sangf:'sangf',aying:'aying',xman:'xman',chengw:'chengw',yutan:'yut',liangl:'liangl',qiw:'qiw',luoy:'luoy',duh:'duh'};
+Object.entries(FOURTH_PORTRAITS).forEach(([key,file])=>{PORTRAIT[key]=()=>thirdPortrait(file);});
+const FOURTH_ENEMIES=({'负碑鼋':'fubei','衡渡':'hengd','镜中错影':'hengd','孟确':'mengq','寄焰藤':'jiyan','寄焰藤根':'jiyan','护炉架':'hulu','晶翼':'jingyi','盲鳗':'mangman',
+ '盐壳螯群':'yanqiao','岩鬃獾':'yanzong','晶背蛾':'jingbeie','晶背蛾群':'jingbeie','晶背兽':'jingbeis','蒙面人':'mengmian','翻船帮的蒙面人':'mengmian','持弩的蒙面人':'mengmian','雾鲨':'wusha1','寒壳蟹':'hanke'});
+const _fourthBtPortrait=btPortrait;btPortrait=function(a){
+ const key=a.side==='e'&&FOURTH_ENEMIES[a.n||a.name];if(!key)return _fourthBtPortrait.apply(this,arguments);
+ requestThirdArt('enemy_'+key,'webp');const im=ART_IMG['enemy_'+key];if(!im)return _fourthBtPortrait.apply(this,arguments);
+ const h=Math.round(Math.max(40,Math.min(BT.H*.40,BT.W*.25)));
+ return cvMemo('fourth-enemy|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const s=Math.min(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,cv.height-im.height*s,im.width*s,im.height*s);return cv;});
+};
+Object.assign(CG,{hedeng:'河灯',zhexing:'折星埠',fenshan:'分山',duanjing:'断颈',guichao:'归潮',diwushan:'第五扇窗'});
+const FOURTH_FIGHT_BG={'寄焰藤':'taiyi','护炉架':'lufu','伏灯站':'fudeng'};
+function initFourthChapterArt(){
+ const ch=id=>{const c=STORY.find(c=>c.id===id);if(!c)throw Error('Missing fourth-batch chapter '+id);return c;};
+ const swap=(id,from,to)=>{const c=ch(id);if(c.bg===from)c.bg=to;(c.lines||[]).forEach(l=>{if(l&&!Array.isArray(l)&&l.bg===from)l.bg=to;});};
+ for(let n=1;n<=22;n++)swap('v5_'+n,'shelter','qingshi_po');ch('v5_13').bg='tieliang';
+ for(let n=3;n<=10;n++)swap('v6_'+n,'xianfu','taiyi');ch('v6_14').bg='lufu';
+ for(let n=1;n<=22;n++)swap('v7_'+n,'town','chiliang');
+ for(let n=1;n<=16;n++)swap('v8_'+n,'sky','tianxi');
+ for(let n=1;n<=16;n++){swap('v9_'+n,'town','huiting');swap('v9_'+n,'pit','yanhu');}
+ ch('v10_2').bg='yancang';ch('v10_6').bg='fudeng';for(let n=8;n<=20;n++)swap('v10_'+n,'starsea','zhexing');ch('v10_9').bg='gongfang';
+ chapterInsert('v5_22','她出发前最后一晚',{fn:()=>cgShow('hedeng')});
+ chapterInsert('v7_18','周烈把斧子交到左手',{fn:()=>cgShow('fenshan')});
+ chapterInsert('v8_13','到了外面，许多声音都变远了',{fn:()=>cgShow('duanjing')});
+ chapterInsert('v9_14','三层薄叶向三个方向弹开',{fn:()=>cgShow('guichao')});
+ chapterInsert('v10_8','折星埠最先被看见的',{fn:()=>cgShow('zhexing')});
+ chapterInsert('v10_9','轮子停了',{fn:()=>cgShow('diwushan')});
+ const rf=rwFight;rwFight=function(o){if(o&&FOURTH_FIGHT_BG[o.title])o=Object.assign({},o,{bg:FOURTH_FIGHT_BG[o.title]});return rf.apply(this,[o].concat([].slice.call(arguments,1)));};
+}
 function initThirdChapterArt(){
  const set=(id,bg)=>{const c=STORY.find(c=>c.id===id);if(!c)throw Error('Missing third-batch chapter '+id);c.bg=bg;};
  set('v11_1','xiaowu');for(let n=2;n<=10;n++)set('v11_'+n,'huifeng');
@@ -11349,7 +11382,7 @@ V13({t:'将至',end:1,g:'终',bg:'starsea',hint:'终章',lines:[
 ],after:()=>{S.flags.v13done=1;wuAdd(30);S.stones+=zsAt(maxZone(),60);
   const e=F('v13End');setTimeout(()=>{try{modal(`<h3>终章 · ${esc(V13_END_NAME[e]||'')}</h3><p>这是你走出来的那一种结局。</p>${e==='qing'?'<p>散丹以后，你只剩炼气三层的修为。这一世灵气薄了，能重新修到筑基为止。</p>':''}<p>过些日子，卷宗里会有一段「后日」。</p><p class="note">另外几种结局，要从别的选择里走过去：新开一份存档，在丹方、旧案、去留这三处换一条路试试。江湖、行社、灵源深渊都还开着，这一份存档可以接着玩，往后每个月也会有这条路上的日常收获。</p>`,[{t:'好',cls:'gold'}]);}catch(_){}} ,400);}});
 
-initThirdChapterArt();
+initThirdChapterArt();initFourthChapterArt();
 
 /* ================= 后日：通关以后，按终章分开的日子 =================
    读完终章后，各结局有一段「后日」小剧情，往后每三十天按结局送来一份日常收获。
@@ -11966,7 +11999,13 @@ const PLACES={shelter:['青石站','地铁站改成的避难所，后来搬到�
  market:['坊市','丹铺、器铺、符箓铺都在这里。'],xianfu:['太一古坊','被山藏了三百年的地方。'],shanmen:['太一山门','山门不认人。'],
  huifeng:['灰枫谷','没有山门的药谷。求结丹者先去洗手。'],xiheng:['息衡埠','只收船路旧簿的旧港。'],boshi:['薄石坡','港外背风的小坡。'],
  guanchao:['观潮石堂','头顶悬着一条不是水的河。'],zhucao:['主槽','刻满供息人名字的长廊。'],xiaowu:['北山小屋','第三张桌挂在门后。'],
- xiaoshe:['坡上校舍','墙上的粉笔字擦过很多遍。'],xinhai:['新岸','会漏潮雾的仓屋，远处有灯塔。'],baita_v3:['白塔','塔上装着调潮尺。']};
+ xiaoshe:['坡上校舍','墙上的粉笔字擦过很多遍。'],
+ qingshi_po:['坡上的青石','搬到坡上以后的新屋，墙上画着身高线。'],tieliang:['铁梁场','灰蓝色的石质从地底长上来，把铁梁吞进去。'],
+ taiyi:['太一古坊','古坊的墙和新修的公路撞在一处。'],lufu:['炉腹','一口被挖空的古炉，井腰一座砖台。'],
+ chiliang:['赤梁窑场','窑口有的冒火，有的冷着，灰像雪一样落。'],tianxi:['天隙悬台','封舱挂在索上，云海在脚下。'],
+ huiting:['回汀镇','灯主拿竹竿一盏盏敲亮铜皮灯罩。'],yanhu:['盐湖','盐壳薄得像一夜的冰，下面是黑卤。'],
+ yancang:['回汀盐仓','堆满盐袋的仓房，高窗外有人站岗。'],fudeng:['伏灯站','云海里的补给泊台，三盏引航灯。'],
+ zhexing:['折星埠','一排朝下开的窗。'],gongfang:['折星西工坊','五扇窗，一架旧踏机。'],xinhai:['新岸','会漏潮雾的仓屋，远处有灯塔。'],baita_v3:['白塔','塔上装着调潮尺。']};
 let PPL_CACHE=null;
 function peopleSeen(){if(PPL_CACHE&&PPL_CACHE.n===S.seen.length)return PPL_CACHE.s;const s=new Set();
  const walk=a=>(a||[]).forEach(l=>{if(Array.isArray(l)){if(l[0]&&l[0]!=='@')s.add(l[0]);}else if(l&&l.c)l.c.forEach(o=>walk(o.r));});
