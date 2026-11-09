@@ -18,7 +18,7 @@ function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <sma
 
 /* ---------- 突破 ---------- */
 function breakthrough(){const need=req(S.stage);if(S.qi<need||BT)return;const ni=nextInfo();if(ni.final)return ascend();
- if(ni.gate){toast(ni.capped?'金丹这一关，要等第十一卷的故事。':ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、做宗门任务、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
+ if(ni.gate){toast(ni.capped?capMsg():ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+'/'+ni.wuG+'）。去交委托、做宗门任务、玩小游戏、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了，先走完「人间篇」':'瓶颈：需先走完主线终章「灵源」'):'瓶颈：需先在「'+ZONES[ni.gz].n+'」探索尽头击败「'+ni.gate+'」','bad');return;}
  if(injOn()){toast('重伤未愈，经不起冲关（还要 '+injLeft()+' 天'+'）','bad');return;}
  const r1=STAGES[S.stage+1].r;if(ni.major&&r1>=2){jieAsk(ni);return;}
  const used=ni.major&&S.usePill&&S.pills>0;if(used){S.pills--;toxAdd(20);}

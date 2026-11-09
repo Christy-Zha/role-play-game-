@@ -2,7 +2,10 @@
    旧版主线（雾港、槐下、堕仙、灵源终章、飞升、星海、天庭、归墟……）和新卷宗互相打架。
    现在以第一到第十卷为准：冲突的旧章节整段撤下，人物的名字、来历、去留都以卷宗为准。
    境界停在筑基大圆满，金丹留给第十一卷。 */
-const CANON_CAP=12;
+let CANON_CAP=12;
+/* 金丹：第十一卷抱元丹的药力化开以后，上限放到金丹大圆满 */
+const canonCap=()=>F('v11Dan')?16:12;
+function capMsg(){return canonCap()>12?'元婴这一关，还没有写到。金丹的路先走稳：修为攒满了也不会浪费。':'金丹这一关，要等第十一卷的故事。先把手头的路走稳：修为攒满了也不会浪费。';}
 const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','locust','jindan','ningxuan','canju','zero','zhoufate','fallen','suwan','finale','tianmen','feisheng',
  'neigui','xinghai','tianting','guixu','cmsis','tw1','tw2','tw3','motest_a','motest_b','motest_c','zhounight_a','zhounight_b','zhounight_c','he_root','he_scar','hong_road','hong_sold',
  'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root',
@@ -183,7 +186,7 @@ STORY.push({id:'lizu',title:'青石·行社挂牌',g:'社',bg:'shelter',cond:()=
 {const z6=STORY.find(c=>c.id==='z6');if(z6)z6.lines=[['','空气浓得像水。每呼吸一口，丹田都在发烫。'],['','碎石悬在半空，绕着一道通天的光柱慢慢转动。'],['mo','这里的灵气不是长出来的，是被什么东西往下压出来的。别待太久。']];}
 
 /* ---------- 境界上限：筑基大圆满 ---------- */
-{const _ni=nextInfo;nextInfo=function(){const o=_ni();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||'第十一卷';o.capped=true;}return o;};}
+{const _ni=nextInfo;nextInfo=function(){const o=_ni();CANON_CAP=canonCap();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||(CANON_CAP>12?'元婴':'第十一卷');o.capped=true;}return o;};}
 BOND_PERK_FIX:{const bp0=bondPerk;bondPerk=k=>k==='zero'?((S.sworn||[]).includes('zero')?'初一战斗中攻击 +20%':''):bp0(k);}
 if(typeof NPCS!=='undefined'){if(NPCS.hong)NPCS.hong.name='红鹞';if(NPCS.zero)NPCS.zero.name='初一';if(NPCS.ning)NPCS.ning.unlock=()=>false;if(NPCS.zhou)NPCS.zhou.unlock=()=>S.seen.includes('v1_caravan');if(NPCS.shen)NPCS.shen.unlock=()=>S.seen.includes('v2_10');if(NPCS.qian)NPCS.qian.unlock=()=>S.seen.includes('v2_6');if(NPCS.gui)NPCS.gui.unlock=()=>false;if(NPCS.man)NPCS.man.unlock=()=>false;}
 /* 旧委托里和卷宗冲突的（阿禾妈妈的白旗船、给零号起名、陈默的妹妹、星海天庭……）撤下 */
@@ -201,7 +204,13 @@ const CAUSE=[
  {v:7,f:()=>F('v7Drill')===1?'你让大家再练，练到两息。':F('v7Drill')===0?'你说三息够了，没有耽误行程。':null},
  {v:8,f:()=>F('v8Promise')===1?'你答应连夜走，天亮前把所有人送下去。':F('v8Promise')===0?'你先问清每个人的身体，再排舱位和时辰。':null},
  {v:9,f:()=>F('v9Risk')==='novel'?'你照短测的结果把五座药炉接进同一个循环。傍晚反吸，工具车毁了，陆怀灯受了伤。':F('v9Risk')==='early'?'你先查回收纹，只做能隔开的测试。保田的方案放弃了，车和药炉保住了大半。':null},
- {v:10,f:()=>F('v10Zhao')===0?'在伏灯站，你识破了灯号，按住了赵笙的手。':F('v10Zhao')===1?'在伏灯站，你没看出灯号。赵笙的左掌伤得很重。':null}
+ {v:10,f:()=>F('v10Zhao')===0?'在伏灯站，你识破了灯号，按住了赵笙的手。':F('v10Zhao')===1?'在伏灯站，你没看出灯号。赵笙的左掌伤得很重。':null},
+ {v:11,f:()=>F('v11Fang')==='san'?'丹谱你抄给了各地，教人自己开炉。炉砌得慢，夜里火该不该停，终于有人能在本地看懂。':F('v11Fang')==='gong'?'你在北山合办了药院，领药与入会分开。药送得快，外传的期限，你得一直守着。':null},
+ {v:11,f:()=>F('v11Heart')==='grown'?'结丹时，你对心魔里的小阿禾说：你已经长大了。':F('v11Heart')==='still'?'结丹时，你没有向心魔里的小阿禾伸手。':null},
+ {v:12,f:()=>F('v12An')==='zhong'?'旧案和危险告知一起见了光。几段航路停了核验，各地开始互相写信。':F('v12An')==='chuan'?'你先给撤离船留路，第二批船过界，旧案才启封。':null},
+ {v:12,f:()=>F('v12Hall')==='win'?'息衡外廊，你逼退了乌衡，把悬在泊壁外的他拖了回来。':F('v12Hall')==='lose'?'息衡外廊，你没能一剑逼退乌衡，还是把他拖了回来。':null},
+ {v:13,f:()=>F('v13Qu')==='an'?'你留在了岸上。':F('v13Qu')==='hai'?'你随迁航船走了。':F('v13Qu')==='xiang'?'你关掉了那段导槽，回了青石。':null},
+ {v:13,f:()=>F('v13End')?'终章：'+({deng:'万家灯火',feng:'长风万里',shou:'守潮人',qing:'归青石',bai:'白塔长明'}[F('v13End')]||'')+'。':null}
 ];
 const VOL_NAME=v=>{const c=STORY.find(x=>x.id===(v===1?'zhuji':'v'+v+'_1'));return v===1?'青石':c?c.title.split('·')[0]:'第'+cnNum(v)+'卷';};
 function causeOf(v){return CAUSE.filter(c=>!v||c.v===v).map(c=>{let t=null;try{t=c.f();}catch(e){}return t?{v:c.v,t}:null;}).filter(Boolean);}
@@ -216,7 +225,10 @@ const CALLBACK={
  v8_1:()=>F('v6Defy')?['','北壁那一息留下的伤，天一冷就提醒你一回。']:null,
  v9_1:()=>F('v8Promise')===1?['','那一夜送下去的人里，有人托车队给你捎来一包干枣。']:F('v8Promise')===0?['','那张排好的舱位表，你一直夹在玉简旁边。']:null,
  v10_1:()=>F('v9Risk')==='novel'?['','路过一处修车铺，你停下来看了很久。那辆工具车，到底没修回来。']:F('v9Risk')==='early'?['','药炉的火还在烧。那天你放下了一块田，保住了这一炉。']:null,
- v10_21:()=>F('v10Zhao')===1?['','赵笙用右手接过了碗。左手还缠着。']:null
+ v10_21:()=>F('v10Zhao')===1?['','赵笙用右手接过了碗。左手还缠着。']:null,
+ v11_1:()=>F('v10Key')?['','门锁是青石买的那把铜锁。两把钥匙，一把在你兜里，一把在红鹞的钥匙串上。']:null,
+ v12_1:()=>F('v11Fang')==='san'?['','临走前，小椿托人捎来一句话：屋顶补好了，雨天没再强开炉。']:F('v11Fang')==='gong'?['','临走前，北山药院贴出了这个月的用量。领药的队，比上个月短了一截。']:null,
+ v13_1:()=>F('v12An')==='zhong'?['','青石的告示栏上，息衡那份旧案还贴着。有人在边上用炭笔补了一行：别揭。']:F('v12An')==='chuan'?['','迁来的老人托人送回一块旧匾，说地址你记对了。']:null
 };
 /* 道侣不止红鹞一个时，别的道侣也有话说 */
 const PARTNER_SEND={
@@ -225,7 +237,12 @@ const PARTNER_SEND={
  su:['苏绾把一张手绘的路线图折好，塞进你的袖口：「水位会变，图是死的。人别死。」','苏绾的罗盘借给你了。她说差两度，够用。','苏绾在你的图上添了一个记号：回来的路。','苏绾说她会在图上留一块空白，等你回来自己画。','苏绾把笔帽咬在嘴里，没说再见，只在你手心画了一个小小的箭头。'],
  hong:['红鹞（看了一眼你身后的人）：「行，人多，车上挤挤。」','红鹞把副驾的座垫翻了个面：「轮流坐。」','红鹞：「都上车。谁晕车谁坐前头。」','红鹞把账本上你那一格又描了一遍。','红鹞按了一声喇叭，算是送行。']
 };
-['v6_1','v7_1','v8_1','v9_1','v10_1'].forEach((id,i)=>{const c=STORY.find(x=>x.id===id);if(!c||!Array.isArray(c.lines))return;
+/* 第十一至十三卷的送行 */
+PARTNER_SEND.zhou.push('周烈托人捎来一袋窑边烤的栗子，附一句：结丹别逞强。','周烈把斧子往门边一靠：「天上的事你去问，地上的窑我看着。」','周烈什么也没说，把你的行李往车上一扔，自己先坐了上去。');
+PARTNER_SEND.xiao.push('萧尘在你的药理册里夹了一张纸条：疼就停。','萧尘把短刀擦了三遍，说这回他跟着。','萧尘看着你，说：这回我们两个的名字，都不刻。');
+PARTNER_SEND.su.push('苏绾的信里画了灰枫谷的路，旁边写：这条是我问来的，不是猜的。','苏绾说息衡的旧簿她先去核，你只管把人带到。','苏绾把一封给母亲的短信折好，又折了一封给你：今晚能不能一起吃饭，尚不确定。');
+PARTNER_SEND.hong.push('红鹞把骡子的缰绳递给你一根：「窄路，你牵一头。」','红鹞把船票一张张数过：「人多，舱挤挤。」','红鹞把你们几个的出行单夹在同一只匣子里。');
+['v6_1','v7_1','v8_1','v9_1','v10_1','v11_1','v12_1','v13_1'].forEach((id,i)=>{const c=STORY.find(x=>x.id===id);if(!c||!Array.isArray(c.lines))return;
  c.lines=[{fn:()=>{const P=partners();const L=P.filter(k=>PARTNER_SEND[k]&&(k!=='hong'||P.length>1)).map(k=>['',PARTNER_SEND[k][i]]);if(L.length)SC.q.unshift(...L);}},...c.lines];});
 Object.keys(CALLBACK).forEach(id=>{const c=STORY.find(x=>x.id===id);if(!c||!Array.isArray(c.lines))return;c.lines=[{fn:()=>{let l=null;try{l=CALLBACK[id]();}catch(e){}if(l)SC.q.unshift(l);}},...c.lines];});
 
@@ -279,7 +296,9 @@ const STORY_RULE={
  '镜中的衡渡':{rule:'认脚下的盐印，别认镜里的影子：先打碎错影。',mech:{'衡渡':'mirror'},decoy:{'镜中错影':1},look:{'衡渡':'衡渡','镜中错影':'镜中错影'}},
  '归相钉前':{rule:'只有这半息：八个回合内断钉。',turnLimit:8,limitMsg:'归相钉合拢了。你被震出了镜腹。',look:{'衡渡':'衡渡'}},
  '伏灯站':{look:{'蒙面人':'蒙面人','持弩的蒙面人':'蒙面人','翻船帮的蒙面人':'蒙面人'}},
- '折鳞舟':{rule:'看他握刀那只手的指根：他蓄力时，正是破绽。',look:{'孟确':'孟确'}}
+ '折鳞舟':{rule:'看他握刀那只手的指根：他蓄力时，正是破绽。',look:{'孟确':'孟确'}},
+ '息衡外廊':{rule:'冻息叶压火：别拿火硬撞，金气贴住他的杖身。',mech:{'冻息叶':'heat'},look:{'乌衡':'乌衡','冻息叶':'冻息叶'}},
+ '主槽':{rule:'别跟他拼灵气：撑过六个回合，等工师插下断令片。',surviveN:6,surviveMsg:'第三片断令片插到底。晏枢手里的银线，松了一根。',look:{'晏枢':'晏枢','主槽守卫':'天穹追兵','持杖的守卫':'天穹追兵'}}
 };
 {const rf0=rwFight;rwFight=function(o){const R=o&&STORY_RULE[o.title];if(R){o=Object.assign({},o,{rule:R.rule,surviveN:R.surviveN,surviveMsg:R.surviveMsg,turnLimit:R.turnLimit,limitMsg:R.limitMsg});
   if(o.many)o.many=o.many.map(f=>Object.assign({},f,{mech:R.mech&&R.mech[f.name]||f.mech,decoy:R.decoy&&R.decoy[f.name]||f.decoy,look:R.look&&R.look[f.name]&&LOOK[R.look[f.name]]?R.look[f.name]:f.look}));}
@@ -287,6 +306,9 @@ const STORY_RULE={
 {const rb0=rwBattle;rwBattle=function(o){rb0(o);if(BT&&o&&o.many&&STORY_RULE[o.title]){const R=STORY_RULE[o.title];BT.foes.forEach(e=>{if(R.drain&&R.drain[e.n||e.name])e.drain=1;});}};}
 /* 新敌人的样子（先用像素造型顶上，等插画） */
 Object.assign(LOOK,{
+ '乌衡':{a:'human',k:'cult',c:'#1e1e24',c2:'#0e0e12',e:'#c8d0e8'},
+ '冻息叶':{a:'flyer',k:'bee',c:'#d8eef8',c2:'#8ab0c8',e:'#ffffff'},
+ '晏枢':{a:'human',k:'cult',c:'#8a8a86',c2:'#4e4e4a',e:'#e8f0ff'},
  '盲鳗':{a:'fish',k:'serpent',c:'#b8b8ae',c2:'#6a6a62',e:'#e8e8e0'},
  '盐壳螯':{a:'crab',c:'#d8d2c2',c2:'#8a8270',e:'#ffffff'},
  '负碑鼋':{a:'crab',c:'#5a6a5a',c2:'#3a4436',e:'#e8f0ff',spikes:1,big:1},

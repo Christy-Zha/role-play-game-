@@ -398,7 +398,7 @@ function breakHTML(){const ni=nextInfo(),full=S.qi>=needQ();
   if(ni.final)return `<div class="t">大罗已至圆满。归墟之下还有一道门，推开它就是新的一世。</div><div class="row"><button class="btn gold" data-act="break" ${full?'':'disabled'}>轮回</button></div>`;
   if(!ni.major&&ni.bn)return `<div class="t">下一层：<em>${ni.name}</em></div><div class="t gate">瓶颈·${ni.bn}：${BN_TIP[ni.bi]}${full?'':'（先把这一层的修为攒满）'}</div><div class="row"><button class="btn ${full?'gold':''}" data-act="bnGo" ${full?'':'disabled'}>闯关历练</button></div>`;
   if(!ni.major)return `<div class="t">下一层：<em>${ni.name}</em>　修为满后自动突破</div>`;
-  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.capped?'金丹这一关，要等第十一卷的故事。先把手头的路走稳：修为攒满了也不会浪费。':ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、做宗门任务、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
+  if(ni.gate)return `<div class="t">下一境：<em>${ni.name}</em></div><div class="t gate">${ni.capped?capMsg():ni.wuG?'瓶颈：感悟不足（'+(S.wu||0)+' / '+ni.wuG+'）。交委托、做宗门任务、玩小游戏、经历奇遇和剧情，都能增长感悟。光靠打坐，破不了大境界。':ni.fs?(ni.gate===RJ_GATE?'瓶颈：人间未了。先走完「人间篇」（卷宗里的新篇章）':'瓶颈：天门未开。先走完主线终章「灵源」'):`瓶颈：需先在「${ZONES[ni.gz].n}」探索到尽头，击败「${ni.gate}」`}</div>`;
   return `<div class="t">下一境：<em>${ni.name}</em>　成功率 <em>${Math.round(ni.ch*100)}%</em>　失败散去四成灵气</div>
    <div class="row"><button class="btn ${full?'gold':''}" data-act="break" ${full?'':'disabled'}>${ni.fs?'飞升 · 破天门':'冲击'+REALMS[STAGES[S.stage+1].r]}</button>
    ${S.pills>0?`<label class="pill"><input type="checkbox" id="usePill" ${S.usePill?'checked':''}>服用破境丹 +25%（余 ${S.pills}）</label>`:''}</div>`;}

@@ -2,7 +2,7 @@ import pathlib
 ROOT=pathlib.Path(__file__).resolve().parent
 src=ROOT/'src'
 css=(src/'style.css').read_text(encoding='utf-8')
-js='(function(){\n'+'\n'.join((src/f).read_text(encoding='utf-8') for f in ['art.js','pixel.js','story.js','art2.js','hd.js','items.js','story2.js','events.js','quests.js','content2.js','bond.js','branch.js','world.js','battle.js','sweep.js','minigame.js','clan.js','surprise.js','sfx.js','art3.js','art4.js','elements.js','craft.js','fate.js','jianghu.js','renwu.js','renjian.js','zongmen.js','boss.js','rival.js','ceremony.js','vol1.js','vol2.js','vol3.js','chart.js','vol4.js','vol5.js','vol6.js','vol7.js','vol8.js','vol9.js','vol10.js','canon.js','timeline.js','game.js'])+'\n})();'
+js='(function(){\n'+'\n'.join((src/f).read_text(encoding='utf-8') for f in ['art.js','pixel.js','story.js','art2.js','hd.js','items.js','story2.js','events.js','quests.js','content2.js','bond.js','branch.js','world.js','battle.js','sweep.js','minigame.js','clan.js','surprise.js','sfx.js','art3.js','art4.js','elements.js','craft.js','fate.js','jianghu.js','renwu.js','renjian.js','zongmen.js','boss.js','rival.js','ceremony.js','vol1.js','vol2.js','vol3.js','chart.js','vol4.js','vol5.js','vol6.js','vol7.js','vol8.js','vol9.js','vol10.js','vol11.js','vol12.js','vol13.js','canon.js','timeline.js','game.js'])+'\n})();'
 body='''<div id="app">
   <header class="top">
     <div class="who"><div class="nm" id="hName"></div><div class="rl" id="hRealm"></div></div>
