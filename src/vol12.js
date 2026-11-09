@@ -9,7 +9,7 @@ function V12(o){const prev=V12_IDS.length?V12_IDS[V12_IDS.length-1]:'v11_11',id=
   hint:o.hint||(st&&kills?'修为到了，再斩妖 '+kills+' 只':kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v12',gap)&&(S.slain||0)>=(S.flags.v12k||0)+kills&&S.stage>=st,
   after:()=>{S.flags.v12y=S.year;S.flags.v12d=daysAll();S.flags.v12k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
-const v12Fight=(o)=>rwFight(Object.assign({bg:'starsea',noFlee:1},o));
+const v12Fight=(o)=>rwFight(Object.assign({bg:'xiheng',noFlee:1},o));
 
 /* 一 · 下陆来人 */
 V12({t:'下陆来人',g:'陆',gap:1,hint:'过些日子：搭换风号去息衡埠',lines:[

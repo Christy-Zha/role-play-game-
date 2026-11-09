@@ -10,7 +10,7 @@ function V13(o){const prev=V13_IDS.length?V13_IDS[V13_IDS.length-1]:'v12_12',id=
   hint:o.hint||(st&&kills?'修为到了，再斩妖 '+kills+' 只':kills?'到城外再斩妖 '+kills+' 只':gap?'过些日子':''),
   cond:()=>F('v1')&&S.seen.includes(prev)&&paceOk('v13',gap)&&(S.slain||0)>=(S.flags.v13k||0)+kills&&S.stage>=st,
   after:()=>{S.flags.v13y=S.year;S.flags.v13d=daysAll();S.flags.v13k=S.slain||0;try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
-const v13Fight=(o)=>rwFight(Object.assign({bg:'starsea',noFlee:1},o));
+const v13Fight=(o)=>rwFight(Object.assign({bg:'zhucao',noFlee:1},o));
 /* 能走到哪几种终局 */
 function v13Ends(){const q=F('v13Qu'),f=F('v11Fang'),a=F('v12An');
  if(q==='hai')return ['feng'];if(q==='xiang')return ['qing'];
@@ -409,3 +409,5 @@ V13({t:'将至',end:1,g:'终',bg:'starsea',hint:'终章',lines:[
   SC.q.unshift(['','【终章·'+V13_END_NAME[e]+'】'],...L,['','终。']);}}
 ],after:()=>{S.flags.v13done=1;wuAdd(30);S.stones+=zsAt(maxZone(),60);
   const e=F('v13End');setTimeout(()=>{try{modal(`<h3>终章 · ${esc(V13_END_NAME[e]||'')}</h3><p>这是你走出来的那一种结局。</p><p class="note">另外几种结局，要从别的选择里走过去：新开一份存档，在丹方、旧案、去留这三处换一条路试试。江湖、行社、灵源深渊都还开着，这一份存档可以接着玩。</p>`,[{t:'好',cls:'gold'}]);}catch(_){}} ,400);}});
+
+initThirdChapterArt();

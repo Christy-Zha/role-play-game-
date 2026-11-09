@@ -50,3 +50,48 @@ Object.assign(CG,{zhou:'粥棚',xinmo:'心魔问',cheding:'去看海',sanwan:'�
 const CHAPTER_CG=[['mock','粥棚搭在','zhou'],['zhuji','你站在空无一人的','xinmo'],['v1_caravan','夜里，「老驴」车顶','cheding'],['v2_1','天亮以后','sanwan'],['v2_13','顾春抓住笔','xieming'],['v2_18','老驴驶出南街','chechuang'],['v3_3',null,'baixiang'],['v3_4','她把写着旧名的纸','chuyi'],['v3_8','驾驶室单独搁在','jiashi'],['v3_9','坡下的石阶','kanhai'],['v3_12','宁玄抽出','tashui'],['v3_12','你握着木匣','xiaoting']];
 CHAPTER_CG.forEach(([id,cue,key])=>{const c=STORY.find(c=>c.id===id);const needle=cue||c.lines.find(l=>Array.isArray(l)&&typeof l[1]==='string')[1];chapterInsert(id,needle,{fn:()=>cgShow(key)});});
 
+/* Third illustration batch. Kept separate from the earlier atlas mappings. */
+const THIRD_SCENE_KEYS=new Set('huifeng xiheng guanchao zhucao boshi xiaowu xiaoshe xinhai baita_v3'.split(' '));
+const thirdArtLoading=new Set();
+function requestThirdArt(key,ext){
+ if(ART_IMG[key]||thirdArtLoading.has(key))return;
+ thirdArtLoading.add(key);const im=new Image();
+ im.onload=()=>{ART_IMG[key]=im;thirdArtLoading.delete(key);SCC_CLEAR();paintAll();const cv=document.getElementById('vbg');if(cv&&cv.dataset.key)paintTo(cv,cv.dataset.key);};
+ im.onerror=()=>thirdArtLoading.delete(key);im.src='art/'+key+'.'+ext;
+}
+const _thirdSceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){if(THIRD_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _thirdSceneCanvas(key,w,h);};
+const _thirdBtBg=btBg;btBg=function(key,w,h){if(THIRD_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _thirdBtBg(key,w,h);};
+const THIRD_PORTRAITS={taoq:'taoq',yans:'yans',xupz:'xupz',qir:'qir',xchun:'xchun',yaoj:'yaoj',yaod:'yaoj'};
+function thirdPortrait(key){return `<img class="porimg" src="art/por_${key}.png" alt="">`;}
+Object.entries(THIRD_PORTRAITS).forEach(([key,file])=>{PORTRAIT[key]=()=>thirdPortrait(file);});
+const _thirdMo=PORTRAIT.mo,_thirdXie=PORTRAIT.xie;
+PORTRAIT.mo=()=>S.seen.includes('v11_10')?thirdPortrait('mo_lamp'):_thirdMo();
+PORTRAIT.xie=()=>S.seen.includes('v11_10')?thirdPortrait('xie_lamp'):(_thirdXie?_thirdXie():sealPortrait('xie'));
+const THIRD_ENEMIES={'晏枢':'yans','乌衡':'wuh2','冻息叶':'dongxi','主槽守卫':'zhucao','持杖的守卫':'zhucao'};
+const _thirdBtPortrait=btPortrait;btPortrait=function(a){
+ const key=a.side==='e'&&THIRD_ENEMIES[a.n||a.name];if(!key)return _thirdBtPortrait.apply(this,arguments);
+ requestThirdArt('enemy_'+key,'png');const im=ART_IMG['enemy_'+key];if(!im)return _thirdBtPortrait.apply(this,arguments);
+ const h=Math.round(Math.max(40,Math.min(BT.H*.40,BT.W*.25)));
+ return cvMemo('third-enemy|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const s=Math.min(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,cv.height-im.height*s,im.width*s,im.height*s);return cv;});
+};
+Object.assign(CG,{jiedan:'此身',chudeng:'灯下人',xuanhe:'潮从何来',lalang:'不放手',duanling:'门松了',end_deng:'万家灯火',end_feng:'长风万里',end_shou:'守潮人',end_qing:'归青石',end_bai:'白塔长明'});
+function initThirdChapterArt(){
+ const set=(id,bg)=>{const c=STORY.find(c=>c.id===id);if(!c)throw Error('Missing third-batch chapter '+id);c.bg=bg;};
+ set('v11_1','xiaowu');for(let n=2;n<=10;n++)set('v11_'+n,'huifeng');
+ for(let n=1;n<=5;n++)set('v12_'+n,'xiheng');set('v12_2','boshi');set('v12_6','guanchao');set('v12_7','guanchao');
+ for(let n=1;n<=5;n++)set('v13_'+n,'xiaoshe');for(let n=7;n<=11;n++){set('v13_'+n,'zhucao');STORY.find(c=>c.id==='v13_'+n).lines.forEach(l=>{if(l.bg==='starsea')l.bg='zhucao';});}
+ chapterInsert('v12_2','回港后',{bg:'xiheng'});
+ chapterInsert('v11_9','五股灵息各循旧路归来',{fn:()=>cgShow('jiedan')});
+ chapterInsert('v11_10','他站稳以后',{fn:()=>cgShow('chudeng')});
+ chapterInsert('v12_6','那不是水',{fn:()=>cgShow('xuanhe')});
+ chapterInsert('v12_5','你抓紧他的衣领',{fn:()=>cgShow('lalang')});
+ chapterInsert('v13_10','铜针一起弹起',{fn:()=>cgShow('duanling')});
+ // Endings share a chapter but have separate queues: unlock only the chosen CG.
+ const endings=[[V13_DENG,'deng','十五年后的一个秋日'],[V13_FENG,'feng','第八年深秋'],[V13_SHOU,'shou','提稳行囊'],[V13_QING,'qing','药铺门上的字'],[V13_BAI,'bai','抽屉里有铜钥匙']];
+ for(const [lines,key,cue] of endings){const i=cue?lines.findIndex(l=>Array.isArray(l)&&typeof l[1]==='string'&&l[1].includes(cue)):lines.length-1;if(i<0)throw Error('Missing ending art cue '+key);lines.splice(i,0,{fn:()=>cgShow('end_'+key)});}
+ V13_DENG.forEach(l=>{if(l.bg==='shelter')l.bg='xiaowu';});
+ const endingScene=(lines,cue,bg)=>{const i=lines.findIndex(l=>Array.isArray(l)&&typeof l[1]==='string'&&l[1].includes(cue));if(i<0)throw Error('Missing ending scene '+bg);lines.splice(i,0,{bg});};
+ endingScene(V13_FENG,'到了新泊地','xinhai');
+ endingScene(V13_BAI,'第二年，人们为新中枢修了一座白塔','baita_v3');
+}
+
