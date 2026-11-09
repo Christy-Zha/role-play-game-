@@ -3,7 +3,7 @@
    归青石：终章读完时散丹——修为退到炼气三层，这一世灵气薄了，境界上限是筑基大圆满（见 canon.js 的 canonCap）。 */
 const AFTER_IDS={};
 function AFTER(e,o){const id='after_'+e;AFTER_IDS[e]=id;
- STORY.push({id,pk:'v13',pg:o.gap||1,title:'后日·'+o.t,g:'后',bg:o.bg||'shelter',lines:o.lines,hint:o.hint||'过些日子：终章之后的日子',gone:()=>F('v13End')!==e,
+ STORY.push({id,pk:'v13',pg:o.gap||1,title:'后日·'+o.t,g:'后',bg:o.bg||'shelter',lines:[{fn:()=>cgShow('after_'+e)},...o.lines],hint:o.hint||'过些日子：终章之后的日子',gone:()=>F('v13End')!==e,
   cond:()=>F('v1')&&S.seen.includes('v13_12')&&F('v13End')===e&&paceOk('v13',o.gap||1),
   after:()=>{S.flags.afterD=daysAll();try{o.after&&o.after();}catch(err){console.error(err);}save();}});}
 

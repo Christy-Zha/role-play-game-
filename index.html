@@ -737,6 +737,9 @@ body:has(#ov:not([hidden])) .toast{opacity:.94;font-size:12px}
 .pet-bar b.low{background:var(--bad)}
 .pet-bar em{font-style:normal;text-align:right}
 .pet-shop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 12px}
+.ico-f{width:18px;height:18px;vertical-align:-4px;margin-right:3px;object-fit:contain}
+.ico-s{width:22px;height:22px;vertical-align:-5px;margin-right:4px;object-fit:contain}
+.tame-img{display:block;width:120px;height:120px;object-fit:contain;margin:6px auto}
 
 </style>
 </head>
@@ -11353,7 +11356,7 @@ initThirdChapterArt();
    归青石：终章读完时散丹——修为退到炼气三层，这一世灵气薄了，境界上限是筑基大圆满（见 canon.js 的 canonCap）。 */
 const AFTER_IDS={};
 function AFTER(e,o){const id='after_'+e;AFTER_IDS[e]=id;
- STORY.push({id,pk:'v13',pg:o.gap||1,title:'后日·'+o.t,g:'后',bg:o.bg||'shelter',lines:o.lines,hint:o.hint||'过些日子：终章之后的日子',gone:()=>F('v13End')!==e,
+ STORY.push({id,pk:'v13',pg:o.gap||1,title:'后日·'+o.t,g:'后',bg:o.bg||'shelter',lines:[{fn:()=>cgShow('after_'+e)},...o.lines],hint:o.hint||'过些日子：终章之后的日子',gone:()=>F('v13End')!==e,
   cond:()=>F('v1')&&S.seen.includes('v13_12')&&F('v13End')===e&&paceOk('v13',o.gap||1),
   after:()=>{S.flags.afterD=daysAll();try{o.after&&o.after();}catch(err){console.error(err);}save();}});}
 
@@ -11847,7 +11850,7 @@ function ngStart(){let n=0;for(let i=1;i<=SLOTS;i++){if(i!==SLOT&&!slotInfo(i)){
   [{t:'开始',cls:'gold',fn:()=>{try{localStorage.setItem(NG_KEY,String((S.ng||0)+1));}catch(e){}switchSlot(n);}},{t:'再想想'}]);}
 {const ps0=playStory;playStory=function(id){
   if(id==='prologue'&&!S.seen.includes('prologue')){let ng=0;try{ng=+localStorage.getItem(NG_KEY)||0;localStorage.removeItem(NG_KEY);}catch(e){}
-   if(ng>0){S.ng=ng;const m=metaGet();S.cgSeen=[...new Set([...(S.cgSeen||[]),...(m.cg||[])])];}}
+   if(ng>0){S.ng=ng;const m=metaGet();S.cgSeen=[...new Set([...(S.cgSeen||[]),...(m.cg||[])])];setTimeout(()=>{try{cgShow('ng');}catch(err){}},800);}}
   const r=ps0.apply(this,arguments);
   try{if(SC&&!SC.read&&(metaGet().read||[]).includes(id))SC.read=true;}catch(e){}
   return r;};}
@@ -11884,7 +11887,7 @@ const SEAL_SHOP=[
 ];
 const sealCount=()=>Object.keys(S.seals||{}).length-(S.sealSpent||0);
 function sealHTML(){const got=Object.keys(S.seals||{});if(!got.length)return `<p class="note">剧情战里有「可选目标」，打出漂亮的赢法会得一枚印。</p>`;
- return `<h3 class="sub">印 <small>得过 ${got.length} 枚 · 可用 ${sealCount()} 枚</small></h3><p class="note">${got.map(esc).join(' · ')}</p><div class="row">${SEAL_SHOP.map(s=>`<button class="btn sm ${sealCount()>=s.c?'gold':'ghost'}" data-act="sealBuy" data-arg="${s.k}" ${sealCount()>=s.c?'':'disabled'}>${s.n}（${s.c} 印）</button>`).join('')}</div>`;}
+ return `<h3 class="sub"><img class="ico-s" src="art/ico_seal.webp" alt="">印 <small>得过 ${got.length} 枚 · 可用 ${sealCount()} 枚</small></h3><p class="note">${got.map(esc).join(' · ')}</p><div class="row">${SEAL_SHOP.map(s=>`<button class="btn sm ${sealCount()>=s.c?'gold':'ghost'}" data-act="sealBuy" data-arg="${s.k}" ${sealCount()>=s.c?'':'disabled'}>${s.n}（${s.c} 印）</button>`).join('')}</div>`;}
 function sealBuy(k){const s=SEAL_SHOP.find(x=>x.k===k);if(!s||sealCount()<s.c)return;S.sealSpent=(S.sealSpent||0)+s.c;const t=s.fn()||'';toast('用了 '+s.c+' 枚印。'+t,'big');save();render();}
 
 /* ---------- 等待的日子：来信 ---------- */
@@ -11979,10 +11982,11 @@ function placesHTML(){const seenBg={};STORY.forEach(c=>{if(!S.seen.includes(c.id
  return `<div class="placebook">${keys.map(k=>{const P=PLACES[k];const t=seenBg[k];return `<div class="pl"><canvas data-scene="${k}"></canvas><div><b>${esc(P?P[0]:t.split('·').slice(1).join('·')||t)}</b><p>${esc(P?P[1]:'')}</p><p class="note">初见于「${esc(t)}」</p></div></div>`;}).join('')}</div>`;}
 
 /* ---------- 陪玩小游戏 ---------- */
+function withCg(k,go){if((S.cgSeen||[]).includes(k)){go();return;}cgShow(k);const wait=()=>{if(document.getElementById('cgOv'))setTimeout(wait,200);else go();};setTimeout(wait,900);}
 {const cb0=chatBtn;chatBtn=function(k){const L=cb0.apply(this,arguments);if(!L.length)return L;
- if(k==='mo')L.push({t:'陪墨老下一盘',fn:()=>{const lv=avOf('mo')>=60?3:avOf('mo')>=25?2:1;openMini('gomoku',{lv,title:'和墨老下棋',onDone:w=>{aff('mo',w?3:1);toast(w?pick(['墨老：「这步还行。」','墨老：「……再来一盘。」']):pick(['墨老：「急什么。」','墨老：「看三步，再落子。」']));live();}});}});
- if(k==='hong')L.push({t:'和红鹞押大小',fn:()=>openMini('sicbo',{lv:1,title:'车上押大小',onDone:w=>{if(w){aff('hong',2);toast('红鹞：「手气不错。今晚的饭你请。」');}else{aff('hong',1);advanceDays(1,'help');toast('输了。你替她卸了一天货。');}live();}})});
- if(k==='he')L.push({t:'帮阿禾测水',fn:()=>openMini('memory',{lv:F('v5Sample')===1?1:2,title:'阿禾的测水',onDone:w=>{aff('he',w?3:1);if(w)S.flags.heMeasure=(S.flags.heMeasure||0)+1;toast(w?'读数对上了。阿禾在图上把那条线描实了。':'读数错了一格。阿禾说：「再量一次。」');live();}})});
+ if(k==='mo')L.push({t:'陪墨老下一盘',fn:()=>withCg('mo_go',()=>{const lv=avOf('mo')>=60?3:avOf('mo')>=25?2:1;openMini('gomoku',{lv,title:'和墨老下棋',onDone:w=>{aff('mo',w?3:1);toast(w?pick(['墨老：「这步还行。」','墨老：「……再来一盘。」']):pick(['墨老：「急什么。」','墨老：「看三步，再落子。」']));live();}});})});
+ if(k==='hong')L.push({t:'和红鹞押大小',fn:()=>withCg('hong_dice',()=>openMini('sicbo',{lv:1,title:'车上押大小',onDone:w=>{if(w){aff('hong',2);toast('红鹞：「手气不错。今晚的饭你请。」');}else{aff('hong',1);advanceDays(1,'help');toast('输了。你替她卸了一天货。');}live();}}))});
+ if(k==='he')L.push({t:'帮阿禾测水',fn:()=>withCg('he_water',()=>openMini('memory',{lv:F('v5Sample')===1?1:2,title:'阿禾的测水',onDone:w=>{aff('he',w?3:1);if(w)S.flags.heMeasure=(S.flags.heMeasure||0)+1;toast(w?'读数对上了。阿禾在图上把那条线描实了。':'读数错了一格。阿禾说：「再量一次。」');live();}}))});
  return L;};}
 
 /* ---------- 卷宗与动作：game.js 定义好以后再接上 ---------- */
@@ -12049,7 +12053,7 @@ let PET_TAME_Q=null;
 function petTameAsk(sp){if(!sp||petHas(sp)||BT)return;const s=PET_SP[sp];S.tame=S.tame||{};const prog=S.tame[sp]||0;
  const have=Object.keys(PET_FOOD).filter(k=>(S.petFood[k]||0)>0);
  const btns=have.map(k=>({t:'喂一块'+PET_FOOD[k].n,cls:k===s.like?'gold':'',fn:()=>petTameFeed(sp,k)}));btns.push({t:'不打扰它'});
- modal(`<h3>${esc(s.n)}幼崽</h3><p>${prog?'又是那只'+esc(s.n)+'幼崽。它比上回靠得近了一点。':'仗打完，石缝后面探出一只'+esc(s.n)+'幼崽，盯着你的行囊看。'}</p><p class="note">${esc(s.d)}${have.length?'':'<br>你身上没有吃的。行囊里可以买灵宠食料。'}</p>`,btns);}
+ if(!(S.cgSeen||[]).includes('tame'))cgShow('tame');modal(`<h3>${esc(s.n)}幼崽</h3><img class="tame-img" src="art/pet_${sp}_1.webp" alt=""><p>${prog?'又是那只'+esc(s.n)+'幼崽。它比上回靠得近了一点。':'仗打完，石缝后面探出一只'+esc(s.n)+'幼崽，盯着你的行囊看。'}</p><p class="note">${esc(s.d)}${have.length?'':'<br>你身上没有吃的。行囊里可以买灵宠食料。'}</p>`,btns);}
 function petTameFeed(sp,food){const s=PET_SP[sp];S.petFood[food]--;S.tame=S.tame||{};
  if(food===s.hate){toast('它闻了闻，扭头钻回石缝里了。');save();return;}
  S.tame[sp]=(S.tame[sp]||0)+(food===s.like?1.5:1);
@@ -12058,7 +12062,7 @@ function petTameFeed(sp,food){const s=PET_SP[sp];S.petFood[food]--;S.tame=S.tame
 
 /* 第一卷：鼠王之后，灰团跟你回站 */
 {const rk=STORY.find(c=>c.id==='ratking');if(rk&&Array.isArray(rk.lines))rk.lines.push(
- ['','回站的路上，一只巴掌大的石皮鼠幼崽一直跟在你脚后。你停，它也停。'],
+ {fn:()=>cgShow('huitu')},['','回站的路上，一只巴掌大的石皮鼠幼崽一直跟在你脚后。你停，它也停。'],
  ['tie','（看了一眼）鼠王窝里掉出来的。养得活，就养着。'],
  {fn:()=>{petGive('huitu');}},['','它叫灰团。吃杂粮，不吃果子。'],['','【灵宠：灰团。在行囊里喂它。筑基以后，它能跟你出战。】']);}
 
@@ -12067,13 +12071,13 @@ const petImg=look=>cvMemo('petimg|'+look,()=>{const c=monCv(look,.9,null,9);cons
 function petHTML(){const P=S.pets||[];if(!P.length)return '';const fd=S.petFood||{};
  return `<h2 class="sec">灵宠 <small>${realmIdx()>=1?'出战的那只跟你进战斗':'筑基以后，它能跟你出战'}</small></h2>
  ${P.map((p,i)=>{const sp=PET_SP[p.sp];const on=S.petOn===i,hungry=p.full<PET_HUNGRY;
-  return `<div class="pet ${on?'on':''}"><img class="pet-img" src="${petImg(sp.look)}" alt=""><div class="pet-in"><div class="iname">${esc(p.name)}<span class="lv">${sp.n} · ${petStage(p.lv)} · ${p.lv} 级</span></div>
+  return `<div class="pet ${on?'on':''}"><img class="pet-img" src="art/${petArtKey(p)}.webp" alt=""><div class="pet-in"><div class="iname">${esc(p.name)}<span class="lv">${sp.n} · ${petStage(p.lv)} · ${p.lv} 级</span></div>
    <div class="pet-bar"><span>饱食</span><i><b style="width:${p.full}%" class="${hungry?'low':''}"></b></i><em>${Math.round(p.full)}</em></div>
    <div class="pet-bar"><span>成长</span><i><b style="width:${p.lv>=PET_MAX?100:Math.round(p.xp/petNeed(p.lv)*100)}%"></b></i><em>${p.lv>=PET_MAX?'满':Math.round(p.xp)+'/'+petNeed(p.lv)}</em></div>
    <div class="istat">${hungry?'饿了，没力气，不肯出战。':''}喜欢${PET_FOOD[sp.like].n}，不吃${PET_FOOD[sp.hate].n}。招式「${sp.sk}」。亲近 ${p.bond}</div>
-   <div class="row">${Object.keys(PET_FOOD).filter(k=>(fd[k]||0)>0).map(k=>`<button class="btn sm ${k===sp.like?'gold':'ghost'}" data-act="petFeed" data-arg="${i}|${k}">喂${PET_FOOD[k].n}</button>`).join('')||'<span class="note">没有食料了。</span>'}
+   <div class="row">${Object.keys(PET_FOOD).filter(k=>(fd[k]||0)>0).map(k=>`<button class="btn sm ${k===sp.like?'gold':'ghost'}" data-act="petFeed" data-arg="${i}|${k}">${foodIco(k)}喂${PET_FOOD[k].n}</button>`).join('')||'<span class="note">没有食料了。</span>'}
    <button class="btn sm ${on?'':'ghost'}" data-act="petOn" data-arg="${i}">${on?'出战中':'让它出战'}</button></div></div></div>`;}).join('')}
- <div class="pet-shop"><b>食料</b> ${Object.keys(PET_FOOD).map(k=>`<button class="btn sm ghost" data-act="petBuy" data-arg="${k}">${PET_FOOD[k].n} ×${fd[k]||0} · 买五份 ${fmt(zsAt(maxZone(),PET_FOOD[k].p*5))}</button>`).join('')}
+ <div class="pet-shop"><b>食料</b> ${Object.keys(PET_FOOD).map(k=>`<button class="btn sm ghost" data-act="petBuy" data-arg="${k}">${foodIco(k)}${PET_FOOD[k].n} ×${fd[k]||0} · 买五份 ${fmt(zsAt(maxZone(),PET_FOOD[k].p*5))}</button>`).join('')}
  <button class="btn sm ${S.petAuto?'gold':'ghost'}" data-act="petAuto">自动喂食：${S.petAuto?'开':'关'}</button></div>`;}
 function petFeedAct(arg){const [i,k]=String(arg).split('|');const p=(S.pets||[])[+i];if(!p||!(S.petFood[k]>0))return;
  const r=petEat(p,k);if(r==='hate'){toast(p.name+'闻了闻，扭过头去。');return;}S.petFood[k]--;
@@ -12087,8 +12091,20 @@ LATE.push(()=>{
 });
 /* 已经走过鼠王那一章的存档：灰团补上（开局和切换存档都会经过 render） */
 function petGiftOld(){if(S&&S.started&&S.seen.includes('ratking')&&!petHas('huitu')&&!S.flags.petGift){S.flags.petGift=1;petGive('huitu');save();
- setTimeout(()=>{try{modal('<h3>灰团</h3><p>站里的人说，鼠王一战以后，有只石皮鼠幼崽一直在你铺位底下打转，赶都赶不走。你叫它灰团。</p><p class="note">在行囊里能喂它。筑基以后，它能跟你出战。</p>',[{t:'好',cls:'gold'}]);}catch(e){}},1500);}}
+ setTimeout(()=>{try{cgShow('huitu');}catch(e){}},1200);setTimeout(()=>{try{modal('<h3>灰团</h3><p>站里的人说，鼠王一战以后，有只石皮鼠幼崽一直在你铺位底下打转，赶都赶不走。你叫它灰团。</p><p class="note">在行囊里能喂它。筑基以后，它能跟你出战。</p>',[{t:'好',cls:'gold'}]);}catch(e){}},1600);}}
 {const r0=render;render=function(){try{petGiftOld();}catch(e){}return r0.apply(this,arguments);};}
+
+/* ---------- 第五批插画：灵宠、食料、印、CG ---------- */
+Object.assign(CG,{huitu:'灰团',tame:'石缝后面',ng:'带着记忆重来',mo_go:'和墨老下棋',hong_dice:'车上押大小',he_water:'阿禾的测水',
+ after_deng:'两处药炉',after_feng:'新岸的药名',after_shou:'急诊的地址',after_bai:'没盖的印',after_qing:'重新起炉'});
+const petArtKey=p=>'pet_'+p.sp+'_'+(p.lv>=10?3:1);
+const foodIco=k=>`<img class="ico-f" src="art/ico_food_${k}.webp" alt="">`;
+const ART5_LOAD=new Set();
+function art5(key){if(ART_IMG[key])return ART_IMG[key];if(!ART5_LOAD.has(key)){ART5_LOAD.add(key);const im=new Image();im.onload=()=>{ART_IMG[key]=im;};im.onerror=()=>ART5_LOAD.delete(key);im.src='art/'+key+'.webp';}return null;}
+{const bs1=btSpr;btSpr=function(a){if(a&&a.pet){const p=petActive();const key=p?petArtKey(p):null;const im=key&&art5(key);
+  if(im){const h=Math.round(Math.max(40,Math.min(BT.H*.26,BT.W*.2)));return cvMemo('petart|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const k=Math.min(cv.width/im.width,cv.height/im.height);
+   x.translate(cv.width,0);x.scale(-1,1);x.drawImage(im,(cv.width-im.width*k)/2,cv.height-im.height*k,im.width*k,im.height*k);return cv;});}}
+  return bs1.apply(this,arguments);};}
 
 /* ================= GAME ================= */
 const $=s=>document.querySelector(s);

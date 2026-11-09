@@ -720,3 +720,6 @@ body:has(#ov:not([hidden])) .toast{opacity:.94;font-size:12px}
 .pet-bar b.low{background:var(--bad)}
 .pet-bar em{font-style:normal;text-align:right}
 .pet-shop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 12px}
+.ico-f{width:18px;height:18px;vertical-align:-4px;margin-right:3px;object-fit:contain}
+.ico-s{width:22px;height:22px;vertical-align:-5px;margin-right:4px;object-fit:contain}
+.tame-img{display:block;width:120px;height:120px;object-fit:contain;margin:6px auto}

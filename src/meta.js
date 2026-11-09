@@ -45,7 +45,7 @@ function ngStart(){let n=0;for(let i=1;i<=SLOTS;i++){if(i!==SLOT&&!slotInfo(i)){
   [{t:'开始',cls:'gold',fn:()=>{try{localStorage.setItem(NG_KEY,String((S.ng||0)+1));}catch(e){}switchSlot(n);}},{t:'再想想'}]);}
 {const ps0=playStory;playStory=function(id){
   if(id==='prologue'&&!S.seen.includes('prologue')){let ng=0;try{ng=+localStorage.getItem(NG_KEY)||0;localStorage.removeItem(NG_KEY);}catch(e){}
-   if(ng>0){S.ng=ng;const m=metaGet();S.cgSeen=[...new Set([...(S.cgSeen||[]),...(m.cg||[])])];}}
+   if(ng>0){S.ng=ng;const m=metaGet();S.cgSeen=[...new Set([...(S.cgSeen||[]),...(m.cg||[])])];setTimeout(()=>{try{cgShow('ng');}catch(err){}},800);}}
   const r=ps0.apply(this,arguments);
   try{if(SC&&!SC.read&&(metaGet().read||[]).includes(id))SC.read=true;}catch(e){}
   return r;};}
@@ -82,7 +82,7 @@ const SEAL_SHOP=[
 ];
 const sealCount=()=>Object.keys(S.seals||{}).length-(S.sealSpent||0);
 function sealHTML(){const got=Object.keys(S.seals||{});if(!got.length)return `<p class="note">剧情战里有「可选目标」，打出漂亮的赢法会得一枚印。</p>`;
- return `<h3 class="sub">印 <small>得过 ${got.length} 枚 · 可用 ${sealCount()} 枚</small></h3><p class="note">${got.map(esc).join(' · ')}</p><div class="row">${SEAL_SHOP.map(s=>`<button class="btn sm ${sealCount()>=s.c?'gold':'ghost'}" data-act="sealBuy" data-arg="${s.k}" ${sealCount()>=s.c?'':'disabled'}>${s.n}（${s.c} 印）</button>`).join('')}</div>`;}
+ return `<h3 class="sub"><img class="ico-s" src="art/ico_seal.webp" alt="">印 <small>得过 ${got.length} 枚 · 可用 ${sealCount()} 枚</small></h3><p class="note">${got.map(esc).join(' · ')}</p><div class="row">${SEAL_SHOP.map(s=>`<button class="btn sm ${sealCount()>=s.c?'gold':'ghost'}" data-act="sealBuy" data-arg="${s.k}" ${sealCount()>=s.c?'':'disabled'}>${s.n}（${s.c} 印）</button>`).join('')}</div>`;}
 function sealBuy(k){const s=SEAL_SHOP.find(x=>x.k===k);if(!s||sealCount()<s.c)return;S.sealSpent=(S.sealSpent||0)+s.c;const t=s.fn()||'';toast('用了 '+s.c+' 枚印。'+t,'big');save();render();}
 
 /* ---------- 等待的日子：来信 ---------- */
@@ -177,10 +177,11 @@ function placesHTML(){const seenBg={};STORY.forEach(c=>{if(!S.seen.includes(c.id
  return `<div class="placebook">${keys.map(k=>{const P=PLACES[k];const t=seenBg[k];return `<div class="pl"><canvas data-scene="${k}"></canvas><div><b>${esc(P?P[0]:t.split('·').slice(1).join('·')||t)}</b><p>${esc(P?P[1]:'')}</p><p class="note">初见于「${esc(t)}」</p></div></div>`;}).join('')}</div>`;}
 
 /* ---------- 陪玩小游戏 ---------- */
+function withCg(k,go){if((S.cgSeen||[]).includes(k)){go();return;}cgShow(k);const wait=()=>{if(document.getElementById('cgOv'))setTimeout(wait,200);else go();};setTimeout(wait,900);}
 {const cb0=chatBtn;chatBtn=function(k){const L=cb0.apply(this,arguments);if(!L.length)return L;
- if(k==='mo')L.push({t:'陪墨老下一盘',fn:()=>{const lv=avOf('mo')>=60?3:avOf('mo')>=25?2:1;openMini('gomoku',{lv,title:'和墨老下棋',onDone:w=>{aff('mo',w?3:1);toast(w?pick(['墨老：「这步还行。」','墨老：「……再来一盘。」']):pick(['墨老：「急什么。」','墨老：「看三步，再落子。」']));live();}});}});
- if(k==='hong')L.push({t:'和红鹞押大小',fn:()=>openMini('sicbo',{lv:1,title:'车上押大小',onDone:w=>{if(w){aff('hong',2);toast('红鹞：「手气不错。今晚的饭你请。」');}else{aff('hong',1);advanceDays(1,'help');toast('输了。你替她卸了一天货。');}live();}})});
- if(k==='he')L.push({t:'帮阿禾测水',fn:()=>openMini('memory',{lv:F('v5Sample')===1?1:2,title:'阿禾的测水',onDone:w=>{aff('he',w?3:1);if(w)S.flags.heMeasure=(S.flags.heMeasure||0)+1;toast(w?'读数对上了。阿禾在图上把那条线描实了。':'读数错了一格。阿禾说：「再量一次。」');live();}})});
+ if(k==='mo')L.push({t:'陪墨老下一盘',fn:()=>withCg('mo_go',()=>{const lv=avOf('mo')>=60?3:avOf('mo')>=25?2:1;openMini('gomoku',{lv,title:'和墨老下棋',onDone:w=>{aff('mo',w?3:1);toast(w?pick(['墨老：「这步还行。」','墨老：「……再来一盘。」']):pick(['墨老：「急什么。」','墨老：「看三步，再落子。」']));live();}});})});
+ if(k==='hong')L.push({t:'和红鹞押大小',fn:()=>withCg('hong_dice',()=>openMini('sicbo',{lv:1,title:'车上押大小',onDone:w=>{if(w){aff('hong',2);toast('红鹞：「手气不错。今晚的饭你请。」');}else{aff('hong',1);advanceDays(1,'help');toast('输了。你替她卸了一天货。');}live();}}))});
+ if(k==='he')L.push({t:'帮阿禾测水',fn:()=>withCg('he_water',()=>openMini('memory',{lv:F('v5Sample')===1?1:2,title:'阿禾的测水',onDone:w=>{aff('he',w?3:1);if(w)S.flags.heMeasure=(S.flags.heMeasure||0)+1;toast(w?'读数对上了。阿禾在图上把那条线描实了。':'读数错了一格。阿禾说：「再量一次。」');live();}}))});
  return L;};}
 
 /* ---------- 卷宗与动作：game.js 定义好以后再接上 ---------- */

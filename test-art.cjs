@@ -37,3 +37,13 @@ for(const [id,key] of [['v11_9','jiedan'],['v11_10','chudeng'],['v12_6','xuanhe'
  assert.ok(fn,'Missing cue '+key);assert.equal(t.captureCG(fn.fn),key);
 }
 console.log('PASS third batch: 31 files, chapter scenes, five story CG and five isolated ending CG');
+/* 第五批：灵宠、食料与印的图标、CG */
+{const fs5=require('node:fs');const need=[];
+ for(const sp of ['huitu','yaer','hu','xie','jing','lang'])for(const n of [1,3])need.push('pet_'+sp+'_'+n+'.webp');
+ for(const f of ['grain','jerky','fish','fruit','core'])need.push('ico_food_'+f+'.webp');need.push('ico_seal.webp');
+ const cg5=['huitu','tame','ng','mo_go','hong_dice','he_water','after_deng','after_feng','after_shou','after_bai','after_qing'];
+ for(const k of cg5){assert.ok(t.CG[k],'CG not registered: '+k);need.push('cg_'+k+'.jpg');}
+ for(const f of need)assert.ok(fs5.existsSync(__dirname+'/art/'+f),'missing art/'+f);
+ for(const e of ['deng','feng','shou','bai','qing']){const c=t.STORY.find(x=>x.id==='after_'+e);assert.ok(c&&String(c.lines[0].fn).includes("cgShow('after_'+e)"),'after CG cue '+e);}
+ const rk=t.STORY.find(c=>c.id==='ratking');assert.ok(rk.lines.some(l=>l.fn&&String(l.fn).includes("cgShow('huitu')")),'huitu CG cue');
+ console.log('PASS fifth batch: '+need.length+' files, '+cg5.length+' CG registered and cued');}
