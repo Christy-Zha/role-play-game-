@@ -5,7 +5,7 @@
 let CANON_CAP=12;
 /* 金丹：第十一卷抱元丹的药力化开以后，上限放到金丹大圆满 */
 const canonCap=()=>F('qingSan')?12:F('v11Dan')?16:12;
-function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>12?'元婴这一关，还没有写到。金丹的路先走稳：修为攒满了也不会浪费。':'金丹这一关，要等第十一卷的故事。先把手头的路走稳：修为攒满了也不会浪费。';}
+function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>12?'元婴的门还关着。金丹的路先走稳：修为攒满了也不会浪费。':'要结金丹，还缺一味药。顺着卷宗里的路走下去，自然会碰上。修为攒满了也不会浪费。';}
 const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','locust','jindan','ningxuan','canju','zero','zhoufate','fallen','suwan','finale','tianmen','feisheng',
  'neigui','xinghai','tianting','guixu','cmsis','tw1','tw2','tw3','motest_a','motest_b','motest_c','zhounight_a','zhounight_b','zhounight_c','he_root','he_scar','hong_road','hong_sold',
  'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root',
