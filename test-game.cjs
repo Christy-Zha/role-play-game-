@@ -11,6 +11,8 @@ const ctx=vm.createContext({console,Date,Math,setTimeout:()=>0,window:{},S:{},BT
  jTick:()=>{},clanDays:()=>{},zoneRegen:()=>{},wHud:()=>{},
  modal:(html,buttons)=>{ctx.modalHTML=html;ctx.buttons=buttons;},simYears:n=>{ctx.S.year+=n;ctx.S.age+=n;return[];},addQi:n=>{ctx.S.qi=Math.min(10000,ctx.S.qi+n);}});
 const run=s=>vm.runInContext(s,ctx);
+/* 用游戏里真正的 F，不用替身：之前替身写对了、正式版写错了，测试没抓到 */
+{const m=/const F=(k=>[^;]+);/.exec(code);assert.ok(m,'missing F');ctx.F=run('('+m[1]+')');}
 run(fs.readFileSync(__dirname+'/novels.js','utf8'));
 run(section('const GIFTS=','function relName('));
 run(section('/* Social gains','const BOND_CHAT='));
@@ -36,4 +38,20 @@ test('repeated gifts cost stones and have diminishing returns',()=>{fresh();for(
 test('player-facing rest and retreat copy has no authoring or background explanations',()=>{fresh();const text=run('closedHTML()');assert.ok(!/原稿|改编|小说|后台|本稿|玩家|刷新|现实|设备当地|同步|强制/.test(text));});
 test('old conflicting chapters are switched off',()=>{const m=/const CANON_OFF=new Set\(\[([\s\S]*?)\]\)/.exec(code);assert.ok(m);for(const id of ['finale','feisheng','xinghai','zhoufate','port','locust'])assert.ok(m[1].includes("'"+id+"'"),id);});
 test('novels are not loaded with the page',()=>{assert.ok(!/<script src="novels.js">/.test(html));});
+test('flag reader returns the chosen value, not just true/false',()=>{fresh();ctx.S.flags={a:'san',b:0,c:2};assert.equal(run("F('a')"),'san');assert.equal(run("F('b')"),0);assert.equal(run("F('c')"),2);assert.equal(run("F('none')"),undefined);});
+test('every branch value the story checks is actually set by some choice',()=>{
+  const checks=[...code.matchAll(/F\('([A-Za-z0-9_]+)'\)(?:===|!==)('[^']*'|\d+)/g)];assert.ok(checks.length>30);
+  const miss=[];for(const [,k,v] of checks){const re=new RegExp('(?:\\b'+k+':'+v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\w\'])|flags\\.'+k+'='+v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\w\']))');if(re.test(code))continue;/* 动态写入：flags:{k:变量}，值来自某张表的键 */const dyn=new RegExp('flags:\\{'+k+':[a-z_]').test(code)&&new RegExp('\\b'+v.replace(/'/g,'')+':\\{').test(code);if(!dyn)miss.push(k+'='+v);}
+  assert.deepEqual([...new Set(miss)],[]);});
+test('five endings follow the reading table',()=>{run(section('function v13Ends(){','const V13_END_NAME'));
+  const T=[['san','zhong','an',['deng']],['san','chuan','an',['shou']],['gong','zhong','an',['shou']],['gong','chuan','an',['shou','bai']]];
+  for(const f of ['san','gong'])for(const a of ['zhong','chuan']){T.push([f,a,'hai',['feng']]);T.push([f,a,'xiang',['qing']]);}
+  for(const [f,a,q,want] of T){fresh();ctx.S.flags={v11Fang:f,v12An:a,v13Qu:q};assert.equal(JSON.stringify(run('v13Ends()')),JSON.stringify(want),f+a+q);}});
+test('saves from SAVE_V=4 on are kept; older test saves are not read',()=>{run(section('const SAVE_V=','function save(){'));
+  assert.equal(run('oldSave({v:3,name:"x"})'),true);assert.equal(run('oldSave(null)'),true);assert.equal(run('oldSave({v:4})'),false);assert.equal(run('oldSave({v:9})'),false);
+  ctx.save4={v:4,name:'林舟',stage:13,qi:55,stones:777,seen:['v10_21','v11_1'],flags:{v11Fang:'san',v10Key:1},aff:{hong:80},partners:['hong'],year:12,doy:40,daysAll:3000};
+  const o=run('hydrate(JSON.parse(JSON.stringify(save4)))');
+  assert.equal(o.v,run('SAVE_V'));assert.equal(o.name,'林舟');assert.equal(o.stage,13);assert.equal(o.stones,777);assert.equal(JSON.stringify(o.seen),'["v10_21","v11_1"]');
+  assert.equal(o.flags.v11Fang,'san');assert.equal(o.aff.hong,80);assert.equal(JSON.stringify(o.partners),'["hong"]');assert.equal(o.year,12);
+  assert.ok(Array.isArray(o.bag)&&o.gear&&typeof o.ups.tuna==='number','missing fields get defaults');});
 console.log(`${checks} tests passed`);

@@ -256,7 +256,7 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
  else if(injOn())g.s={t:'重伤未愈：'+injLeft()+' 天',a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(canonCap()>12?'修为已满：元婴还没写到':'修为已满：金丹要等第十一卷'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>12?'修为已满：元婴还没写到':'修为已满：金丹要等第十一卷'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
  else{const b=S.bnt&&S.bnt.day===dayKey()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
  if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};

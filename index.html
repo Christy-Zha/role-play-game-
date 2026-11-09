@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="灵潮修仙录">
 <meta name="theme-color" content="#16140f">
 <title>灵潮修仙录</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="art/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap">
@@ -4823,7 +4825,7 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
  else if(injOn())g.s={t:'重伤未愈：'+injLeft()+' 天',a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(canonCap()>12?'修为已满：元婴还没写到':'修为已满：金丹要等第十一卷'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>12?'修为已满：元婴还没写到':'修为已满：金丹要等第十一卷'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、做宗门任务':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
  else{const b=S.bnt&&S.bnt.day===dayKey()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
  if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};
@@ -11315,9 +11317,96 @@ V13({t:'将至',end:1,g:'终',bg:'starsea',hint:'终章',lines:[
  {fn:()=>{const e=F('v13End')||v13Ends()[0];S.flags.v13End=e;const L={deng:V13_DENG,feng:V13_FENG,shou:V13_SHOU,qing:V13_QING,bai:V13_BAI}[e]||V13_SHOU;
   SC.q.unshift(['','【终章·'+V13_END_NAME[e]+'】'],...L,['','终。']);}}
 ],after:()=>{S.flags.v13done=1;wuAdd(30);S.stones+=zsAt(maxZone(),60);
-  const e=F('v13End');setTimeout(()=>{try{modal(`<h3>终章 · ${esc(V13_END_NAME[e]||'')}</h3><p>这是你走出来的那一种结局。</p><p class="note">另外几种结局，要从别的选择里走过去：新开一份存档，在丹方、旧案、去留这三处换一条路试试。江湖、行社、灵源深渊都还开着，这一份存档可以接着玩。</p>`,[{t:'好',cls:'gold'}]);}catch(_){}} ,400);}});
+  const e=F('v13End');setTimeout(()=>{try{modal(`<h3>终章 · ${esc(V13_END_NAME[e]||'')}</h3><p>这是你走出来的那一种结局。</p>${e==='qing'?'<p>散丹以后，你只剩炼气三层的修为。这一世灵气薄了，能重新修到筑基为止。</p>':''}<p>过些日子，卷宗里会有一段「后日」。</p><p class="note">另外几种结局，要从别的选择里走过去：新开一份存档，在丹方、旧案、去留这三处换一条路试试。江湖、行社、灵源深渊都还开着，这一份存档可以接着玩，往后每个月也会有这条路上的日常收获。</p>`,[{t:'好',cls:'gold'}]);}catch(_){}} ,400);}});
 
 initThirdChapterArt();
+
+/* ================= 后日：通关以后，按终章分开的日子 =================
+   读完终章后，各结局有一段「后日」小剧情，往后每三十天按结局送来一份日常收获。
+   归青石：终章读完时散丹——修为退到炼气三层，这一世灵气薄了，境界上限是筑基大圆满（见 canon.js 的 canonCap）。 */
+const AFTER_IDS={};
+function AFTER(e,o){const id='after_'+e;AFTER_IDS[e]=id;
+ STORY.push({id,pk:'after',pg:o.gap||1,title:'后日·'+o.t,g:'后',bg:o.bg||'shelter',lines:o.lines,hint:o.hint||'过些日子',
+  cond:()=>F('v1')&&S.seen.includes('v13_12')&&F('v13End')===e&&paceOk('v13',o.gap||1),
+  after:()=>{S.flags.afterD=daysAll();try{o.after&&o.after();}catch(err){console.error(err);}save();}});}
+
+AFTER('deng',{t:'两处药炉',bg:'xiaowu',lines:[
+ ['','开春，青杉渡的信先到。小椿在信里画了第二座炉，比第一座正，屋顶补过两回，雨天再没强开炉。末尾一行字写得很大：火该不该停，我们自己看得懂了。'],
+ ['','北山这边，阿禾的新学徒拿着一张图来找你，说你三年前画的一段水沟偏了半尺，请你签字认错。'],
+ ['he','（在门口抱着胳膊）别看我。我也被划过。'],
+ {c:[
+  {t:'（接过笔，签上名字）',k:1,fx:{aff:{he:3}},r:[['','学徒把图收好，鞠了一躬，跑得飞快。阿禾在门口笑出了声。']]},
+  {t:'先带我去那段沟看看。',k:1,fx:{aff:{he:4}},r:[['','你们在沟边蹲了半个下午。确实偏了半尺。你回来签了名，学徒说下回也想带你去量。']]}
+ ]},
+ ['hong',HL('（卸完货进门，把一包烤饼放在第三张桌上）两处炉子都要料，往后我每月多跑一趟青杉渡。你记得给我留饭。','（卸完货进门，把一包烤饼放在桌上）两处炉子都要料，往后我每月多跑一趟青杉渡。')],
+ ['mo','（灯里）把热菜放近一点。'],
+ ['','【往后每月，两处药炉会送来一些药材和工钱。】']
+]});
+
+AFTER('feng',{t:'新岸的药名',bg:'xinhai',lines:[
+ ['','新泊地的药名和地上的不一样。同一株叶背发白的草，这里叫「潮里银」，你从前叫它退热草。一个渔家孩子在药坊门口看你认药，看了三天，第四天自己搬了张凳子进来。'],
+ ['','他说他奶奶的咳嗽，三个药坊都说要包治，收了钱就不来了。'],
+ {c:[
+  {t:'先说我治不治得好，再说钱。',k:2,fx:{flags:{afterFeng:1}},r:[['','你去看了老人，说能缓，不能断根，药要吃一个冬天。孩子把这句话一字一字背回去。第二天，他奶奶自己拄着拐来了。']]},
+  {t:'带他认药：先把潮里银认熟。',k:1,fx:{flags:{afterFeng:2}},r:[['','孩子认得很快，嘴里念着两套药名，一套地上的，一套海边的。']]}
+ ]},
+ ['hong','（傍晚从船上下来，船舱里装着一半货、一半别人托带的家书）这趟赚得不多。可有三封信是送到下陆的，我没收钱。'],
+ ['@','记账上。'],['hong','记了。写的是：顺路。'],
+ ['','【往后每月，红鹞的船会带回一份货款。】']
+]});
+
+AFTER('shou',{t:'急诊的地址',bg:'xiheng',lines:[
+ ['','任满第二年的一个雨夜，侧门被敲响。来的是息衡值守班里最年轻的一个，浑身湿透，手里攥着一张潮势图。'],
+ ['','他说今夜的潮线和你留下的哪一条都不像，班长让他来问问，又让他记住：只问，不请你回去。'],
+ {c:[
+  {t:'（看图，只说判断，不说「我来」）',k:2,fx:{flags:{afterShou:1}},r:[['','你看了很久，指出两处。他拿着图跑回去。天亮前，息衡送来两个字：已断。是他们自己断的。']]},
+  {t:'我跟你去一趟，看完就回。',k:0,fx:{flags:{afterShou:2}},r:[['','你跟去了。班长客气地请你坐在旁边，没有把印递给你。你看他们断完槽，天亮前回了家。']]}
+ ]},
+ ['hong','（替你把湿外衣挂起来）急诊的地址，留对了吧。'],
+ ['','【往后每月，息衡会按约付一份有期限的顾问工钱。】']
+]});
+
+AFTER('bai',{t:'没盖的印',bg:'baita_v3',lines:[
+ ['','白塔又过了一个冬天。一天傍晚，有人把一卷水图送上塔来。来人是个年轻测绘者，袖口别着一支笔，说她的老师姓阿，教过她：量完要写，写完要让人看。'],
+ ['','图上把三处中枢尚未核准的支渠，画成了可以自行断槽。'],
+ {c:[
+  {t:'（在图上盖印，准它张贴）',k:2,fx:{flags:{afterBai:'yes'}},r:[['','印落下去的时候，你的手停了一下。那三处支渠，后来各自出了两回错，也各自修好了。']]},
+  {t:'（退回：等核过再说）',k:-1,fx:{flags:{afterBai:'no'}},r:[['','她收起图，没有争，鞠了一躬下塔去了。你在灯下坐了很久，才拿起下一份请领。']]}
+ ]},
+ ['','【往后每月，白塔的俸禄照例送到。】']
+]});
+
+AFTER('qing',{t:'重新起炉',bg:'shelter',lines:[
+ ['','散丹后的第一个春天，你用炭炉熬药。火候要一点一点看，从前一息就能稳住的东西，现在得守一整个下午。'],
+ ['','阿禾的学徒来借药秤，看见你守着炉子打瞌睡，没叫醒你，把火拨小了一点。'],
+ ['','后来你重新开始打坐。灵气薄了，像在旱季的河里捧水，捧起来的总比从前少。陶清渡托人捎来一句话：这回不急，也不赶路。'],
+ {c:[
+  {t:'那就慢慢修。',k:1,r:[['','你把那张写着「金丹」的旧纸夹回药理册，在旁边添了一行：炼气三层，从这里起。']]},
+  {t:'（先把药熬好）',k:1,r:[['','药熬好的时候，天已经黑了。红鹞进门闻了闻，说这锅能喝。']]}
+ ]},
+ ['hong',HL('（坐下来揉膝盖）往后上坡，你走前面还是我走前面？','（路过进门）往后上坡，你别跟我抢着走前面。')],
+ ['@','谁慢谁走前面。'],
+ ['','【这一世灵气薄了，修为到筑基为止。药铺往后每月有一点进项。】']
+]});
+
+/* 每三十天，按终章送来一份日常收获 */
+const AFTER_GIFT={
+ deng:()=>{S.meds=(S.meds||0)+2;const g=zsAt(maxZone(),8);S.stones+=g;return '两处药炉送来药材两份、工钱'+fmt(g)+'。';},
+ feng:()=>{const g=zsAt(maxZone(),12);S.stones+=g;return '红鹞的船回港，带回货款'+fmt(g)+'。';},
+ shou:()=>{const g=zsAt(maxZone(),10);S.stones+=g;return '息衡送来这个月的顾问工钱'+fmt(g)+'。';},
+ bai:()=>{const g=zsAt(maxZone(),20);S.stones+=g;return '白塔的俸禄送到：'+fmt(g)+'。案上又多了一摞请领。';},
+ qing:()=>{S.meds=(S.meds||0)+3;const g=zsAt(maxZone(),5);S.stones+=g;return '药铺这个月的进项：'+fmt(g)+'，还有乡亲送来的草药三包。';}
+};
+{const ad0=advanceDays;advanceDays=function(n,why){const r=ad0.apply(this,arguments);
+  try{const e=S.flags&&S.flags.v13End;if(e&&S.seen.includes(AFTER_IDS[e])&&AFTER_GIFT[e]){
+   const last=S.flags.afterGift||S.flags.afterD||0;let k=Math.floor((daysAll()-last)/30);
+   if(k>0){k=Math.min(k,6);let t='';for(let i=0;i<k;i++)t=AFTER_GIFT[e]();S.flags.afterGift=last+30*Math.floor((daysAll()-last)/30);toast(t);}}}catch(err){console.error(err);}
+  return r;};}
+
+/* 归青石：终章读完时散丹 */
+{const c=STORY.find(x=>x.id==='v13_12');if(c){const a0=c.after;c.after=function(){
+  if(F('v13End')==='qing'&&!F('qingSan')){S.flags.qingSan=1;S.flags.qingFrom=S.stage;S.stage=Math.min(S.stage,2);S.layer=0;S.qi=0;S.yao=0;}
+  return a0&&a0.apply(this,arguments);};}}
 
 /* ================= 正史：第一至第十卷 =================
    旧版主线（雾港、槐下、堕仙、灵源终章、飞升、星海、天庭、归墟……）和新卷宗互相打架。
@@ -11325,8 +11414,8 @@ initThirdChapterArt();
    境界停在筑基大圆满，金丹留给第十一卷。 */
 let CANON_CAP=12;
 /* 金丹：第十一卷抱元丹的药力化开以后，上限放到金丹大圆满 */
-const canonCap=()=>F('v11Dan')?16:12;
-function capMsg(){return canonCap()>12?'元婴这一关，还没有写到。金丹的路先走稳：修为攒满了也不会浪费。':'金丹这一关，要等第十一卷的故事。先把手头的路走稳：修为攒满了也不会浪费。';}
+const canonCap=()=>F('qingSan')?12:F('v11Dan')?16:12;
+function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>12?'元婴这一关，还没有写到。金丹的路先走稳：修为攒满了也不会浪费。':'金丹这一关，要等第十一卷的故事。先把手头的路走稳：修为攒满了也不会浪费。';}
 const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','locust','jindan','ningxuan','canju','zero','zhoufate','fallen','suwan','finale','tianmen','feisheng',
  'neigui','xinghai','tianting','guixu','cmsis','tw1','tw2','tw3','motest_a','motest_b','motest_c','zhounight_a','zhounight_b','zhounight_c','he_root','he_scar','hong_road','hong_sold',
  'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root',
@@ -11735,7 +11824,7 @@ function fresh(){return {v:SAVE_V,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{
   pop:213,rep:{station:0,caravan:0,tq:0},q:{},seenEv:[],evClock:0,lastDaily:'',runs:0,meds:3,mps:1,hpF:1,mpF:1,btAuto:false,loc:'town',gems:{},books:{},learned:[],clan:null,omen:null,omenClock:0,mgW:{},raid:0,aff:{},affDay:{},giftDay:{},partner:null,sworn:[],
   root:null,root2:null,forms:[],form:null,mats:{},dan:{xp:0},fu:{},pity:{},natal:null,xisui:0,injury:0,injD:0,year:3,doy:240,daysAll:0,age:18,ppl:null,news:[],seeds:[],fateQ:[],dis:[],legacy:[],heir:null,path:null,dao:{zheng:0,mo:0,yin:0,zong:0},endings:[],sects:{},fame:0,lifeP:0,lifeB:0,jieDan:0,jzDan:0,zjDan:0,hhDan:0,xf:0,cnt:{},combos:0,closedY:0,kids:[]};}
 const OLD_IDS={0:'prologue',1:'ahe',2:'ratking',3:'caravan',4:'locust',5:'port',6:'zero',7:'fallen',8:'finale'};
-function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign(fresh().ups,(d&&d.ups)||{});o.gear=Object.assign(fresh().gear,(d&&d.gear)||{});
+function hydrate(d){migrateSave(d);const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign(fresh().ups,(d&&d.ups)||{});o.gear=Object.assign(fresh().gear,(d&&d.gear)||{});
   o.flags=Object.assign({},(d&&d.flags)||{});o.dt=Object.assign(fresh().dt,(d&&d.dt)||{});if(!Array.isArray(o.dt.slots))o.dt.slots=[];
   o.rep=Object.assign(fresh().rep,(d&&d.rep)||{});o.q=Object.assign({},(d&&d.q)||{});if(!Array.isArray(o.seenEv))o.seenEv=[];
   if(!Array.isArray(o.kills))o.kills=fresh().kills;while(o.kills.length<11)o.kills.push(0);o.gems=Object.assign({},(d&&d.gems)||{});o.books=Object.assign({},(d&&d.books)||{});if(!Array.isArray(o.learned))o.learned=[];o.mgW=Object.assign({},(d&&d.mgW)||{});o.aff=Object.assign({},(d&&d.aff)||{});if(!Array.isArray(o.sworn))o.sworn=[];o.affDay=o.affDay||{};o.giftDay=o.giftDay||{};if(o.clan)o.clan=clanHydrate(o.clan);if(!Array.isArray(o.visited))o.visited=[0];
@@ -11744,17 +11833,17 @@ function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign
   ['mats','dan','fu','pity','dao','sects','cnt'].forEach(k=>o[k]=Object.assign(fresh()[k],(d&&d[k])||{}));['forms','news','seeds','fateQ','dis','legacy','endings','kids'].forEach(k=>{if(!Array.isArray(o[k]))o[k]=[];});
   delete o.run;if(typeof o.hpF!=='number')o.hpF=1;if(typeof o.mpF!=='number')o.mpF=1;
   lifeSync(o);return o;}
-/* 旧版存档不再兼容：原样留一份存档码备份，然后开新档 */
-const OLD_BAK='lingchao_old_backup';
-function oldSave(d){return !d||d.v!==SAVE_V;}
-function stashOld(raw,n){let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(raw)));}catch(e){}
-  try{const L=JSON.parse(localStorage.getItem(OLD_BAK)||'[]');L.push({n,t:Date.now(),code});localStorage.setItem(OLD_BAK,JSON.stringify(L.slice(-6)));localStorage.removeItem(slotKey(n));}catch(e){}return code;}
-let OLD_NOTE=null;
-function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t){const d=JSON.parse(t);if(!oldSave(d))return hydrate(d);if(d&&d.name)OLD_NOTE={name:d.name,code:stashOld(t,SLOT)};else localStorage.removeItem(slotKey(SLOT));}}catch(e){}return fresh();}
-function oldBackups(){try{return JSON.parse(localStorage.getItem(OLD_BAK)||'[]');}catch(e){return [];}}
+/* 存档兼容：SAVE_MIN 之前的测试版存档直接不读；从 SAVE_MIN 起的存档都要能读进来。
+   以后改存档结构时：SAVE_V 加一，在 SAVE_MIGRATE 里写一步「从上一版到这一版」的迁移（改名的字段搬过去），缺的字段由 hydrate 用 fresh() 补默认值。 */
+const SAVE_MIN=4;
+const SAVE_MIGRATE={/* 例：5:d=>{d.newName=d.oldName;delete d.oldName;} */};
+function oldSave(d){return !d||!(d.v>=SAVE_MIN);}
+function migrateSave(d){if(!d)return d;for(let v=(d.v||SAVE_MIN)+1;v<=SAVE_V;v++){try{SAVE_MIGRATE[v]&&SAVE_MIGRATE[v](d);}catch(e){console.error(e);}}d.v=SAVE_V;return d;}
+try{localStorage.removeItem('lingchao_old_backup');}catch(e){}
+function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t){const d=JSON.parse(t);if(!oldSave(d))return hydrate(d);localStorage.removeItem(slotKey(SLOT));}}catch(e){}return fresh();}
 function save(){S.last=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S));}catch(e){}}
 function slotInfo(n){if(n===SLOT)return S.name?{name:S.name,realm:stName(),last:Date.now(),started:S.started,reb:S.rebirth}:null;
-  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;if(oldSave(d)){stashOld(t,n);return null;}return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
+  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;if(oldSave(d)){localStorage.removeItem(slotKey(n));return null;}return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
 function ago(t){const s=(Date.now()-t)/1000;return s<90?'刚刚':s<3600?Math.floor(s/60)+' 分钟前':s<86400?Math.floor(s/3600)+' 小时前':Math.floor(s/86400)+' 天前';}
 let delArm=0;
 function switchSlot(n){if(BT||n===SLOT)return;if(S.name)save();SLOT=n;try{localStorage.setItem(SLOT_KEY,String(n));}catch(e){}
@@ -12173,7 +12262,7 @@ VIEWS.save=()=>`<section class="save-page">
   <p class="note">清理浏览器数据会丢档。导出后请将存档码保存到备忘录，方便备份或换设备。</p>
    <label for="saveBox">存档码</label><textarea id="saveBox" placeholder="点「导出」生成存档码；或把存档码粘贴到这里再点「导入」"></textarea>
   <div class="row"><button class="btn sm ghost" data-act="import">${importArm?'确认覆盖当前进度':'导入存档码'}</button></div>
- </div>${oldBackups().length?`<h2 class="sec">旧版存档备份 <small>新版本不能再读取，原样留存</small></h2><div class="closed">${oldBackups().map((b,i)=>`<button class="btn sm ghost" data-act="oldCopy" data-arg="${i}">复制旧档码 · 存档 ${b.n} · ${ago(b.t)}</button>`).join('')}</div>`:''}
+ </div>
  <h2 class="sec">存档位 <small>共 ${SLOTS} 个 · 进度独立</small></h2>
   <div class="slots3">${Array.from({length:SLOTS},(_,i)=>{const n=i+1,inf=slotInfo(n),cur=n===SLOT;
     return `<div class="sl3 ${cur?'cur':''}"><div class="no">${n}</div><div class="in">${inf?`<div class="iname">${esc(inf.name)}<span class="lv">${inf.realm}${inf.reb?' · 第'+(inf.reb+1)+'世':''}</span></div><div class="istat">${cur?'正在游玩':'上次游玩 '+ago(inf.last)}</div>`:'<div class="iname dim">空存档位</div><div class="istat">从头开一个新角色</div>'}</div>
@@ -12231,7 +12320,7 @@ const ACT={
  jput:a=>{if(jHalted()){toast('洞天停转中，先击退天穹追兵','bad');return;}if(a.startsWith('item:'))jPut('item',a.slice(5));else jPut(a);},
  jtake:a=>jTake(+a),
  jup:()=>{const c=jUpCost();if(S.stones<c||S.dt.lv>=9)return;S.stones-=c;S.dt.lv++;toast('玉简洞天 第 '+S.dt.lv+' 重');render();save();},
- oldCopy:a=>{const b=oldBackups()[+a];if(!b)return;const box=$('#saveBox');box.value=b.code;const fail=()=>{box.focus();box.select();toast('已放进上面的框里，请长按全选后复制');};try{navigator.clipboard.writeText(b.code).then(()=>toast('旧档码已复制'),fail);}catch(e){fail();}},
+
  export:()=>{S.expD=daysAll();S.expCh=S.seen.length;save();let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){}const box=$('#saveBox');box.value=code;
    const fail=()=>{box.focus();box.select();toast('已生成，请长按全选后手动复制');};try{navigator.clipboard.writeText(code).then(()=>toast('存档码已复制，粘贴到备忘录保存'),fail);}catch(e){fail();}},
  import:()=>{const v=$('#saveBox').value.trim();if(!v){toast('先把存档码粘贴进上面的框里','bad');return;}let d=null;
@@ -12277,7 +12366,7 @@ function offline(){S.last=Date.now();}
 function intro(){const ov=$('#ov');ov.hidden=false;ov.className='vn';let g=S.gender||'m';
   let back=null;for(let n=1;n<=SLOTS;n++){if(n===SLOT)continue;const inf=slotInfo(n);if(inf&&(!back||inf.last>back.last))back=Object.assign({n},inf);}
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮${SLOT>1?' · 存档 '+SLOT:''}</div><h1>灵潮<span>修仙</span>录</h1>
-   ${OLD_NOTE?`<p class="note old-note">原来那份「${esc(OLD_NOTE.name)}」的存档是旧版本的，新版本已经读不了。它被原样留成了一份存档码，开局后在右上角「存档」里能复制。</p>`:''}<div class="poem"><p>那一年，天裂开了一道口子。</p><p>灵气像潮水漫过城市，三年未退。</p><p>旧城地下，一座叫青石的地铁站里，住着一百四十个人。</p><p>其中一个，每天黄昏出站，去废墟里拾些还能用的东西。</p></div>
+   <div class="poem"><p>那一年，天裂开了一道口子。</p><p>灵气像潮水漫过城市，三年未退。</p><p>旧城地下，一座叫青石的地铁站里，住着一百四十个人。</p><p>其中一个，每天黄昏出站，去废墟里拾些还能用的东西。</p></div>
    <p class="ask">那个人——</p><div class="seg"><button data-g="m" aria-pressed="${g==='m'}">是少年</button><button data-g="f" aria-pressed="${g==='f'}">是少女</button></div>
    <p class="ask">玉简会记住这个名字。</p><input id="nmIn" maxlength="6" placeholder="写下你的名字" autocomplete="off" aria-label="你的名字"><p class="nm-err" id="nmErr" hidden>灵潮里没有无名之人。写下你的名字，再出站。</p><button class="btn gold" id="nmGo">出站</button>${back?`<button class="btn sm ghost" id="nmBack">返回存档 ${back.n}（${esc(back.name)}）</button>`:''}</div></div>`;
   requestAnimationFrame(()=>paintTo($('#vbg'),'sky'));

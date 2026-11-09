@@ -2,7 +2,7 @@ import pathlib
 ROOT=pathlib.Path(__file__).resolve().parent
 src=ROOT/'src'
 css=(src/'style.css').read_text(encoding='utf-8')
-js='(function(){\n'+'\n'.join((src/f).read_text(encoding='utf-8') for f in ['art.js','pixel.js','story.js','art2.js','hd.js','items.js','story2.js','events.js','quests.js','content2.js','bond.js','branch.js','world.js','battle.js','sweep.js','minigame.js','clan.js','surprise.js','sfx.js','art3.js','art4.js','elements.js','craft.js','fate.js','jianghu.js','renwu.js','renjian.js','zongmen.js','boss.js','rival.js','ceremony.js','vol1.js','vol2.js','vol3.js','chart.js','vol4.js','vol5.js','vol6.js','vol7.js','vol8.js','vol9.js','vol10.js','vol11.js','vol12.js','vol13.js','canon.js','timeline.js','game.js'])+'\n})();'
+js='(function(){\n'+'\n'.join((src/f).read_text(encoding='utf-8') for f in ['art.js','pixel.js','story.js','art2.js','hd.js','items.js','story2.js','events.js','quests.js','content2.js','bond.js','branch.js','world.js','battle.js','sweep.js','minigame.js','clan.js','surprise.js','sfx.js','art3.js','art4.js','elements.js','craft.js','fate.js','jianghu.js','renwu.js','renjian.js','zongmen.js','boss.js','rival.js','ceremony.js','vol1.js','vol2.js','vol3.js','chart.js','vol4.js','vol5.js','vol6.js','vol7.js','vol8.js','vol9.js','vol10.js','vol11.js','vol12.js','vol13.js','after.js','canon.js','timeline.js','game.js'])+'\n})();'
 body='''<div id="app">
   <header class="top">
     <div class="who"><div class="nm" id="hName"></div><div class="rl" id="hRealm"></div></div>
@@ -39,6 +39,8 @@ head='''<!doctype html>
 <meta name="apple-mobile-web-app-title" content="灵潮修仙录">
 <meta name="theme-color" content="#16140f">
 <title>灵潮修仙录</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="art/icon-180.png">
 '''+fonts+'<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}\n'+css+'\n</style>\n</head>\n<body>\n'+body+'<script>\n'+js+'\n</script>\n</body>\n</html>\n'
 (ROOT/'index.html').write_text(head,encoding='utf-8')
 print('ok',len(art))

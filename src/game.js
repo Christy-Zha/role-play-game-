@@ -49,7 +49,7 @@ function fresh(){return {v:SAVE_V,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{
   pop:213,rep:{station:0,caravan:0,tq:0},q:{},seenEv:[],evClock:0,lastDaily:'',runs:0,meds:3,mps:1,hpF:1,mpF:1,btAuto:false,loc:'town',gems:{},books:{},learned:[],clan:null,omen:null,omenClock:0,mgW:{},raid:0,aff:{},affDay:{},giftDay:{},partner:null,sworn:[],
   root:null,root2:null,forms:[],form:null,mats:{},dan:{xp:0},fu:{},pity:{},natal:null,xisui:0,injury:0,injD:0,year:3,doy:240,daysAll:0,age:18,ppl:null,news:[],seeds:[],fateQ:[],dis:[],legacy:[],heir:null,path:null,dao:{zheng:0,mo:0,yin:0,zong:0},endings:[],sects:{},fame:0,lifeP:0,lifeB:0,jieDan:0,jzDan:0,zjDan:0,hhDan:0,xf:0,cnt:{},combos:0,closedY:0,kids:[]};}
 const OLD_IDS={0:'prologue',1:'ahe',2:'ratking',3:'caravan',4:'locust',5:'port',6:'zero',7:'fallen',8:'finale'};
-function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign(fresh().ups,(d&&d.ups)||{});o.gear=Object.assign(fresh().gear,(d&&d.gear)||{});
+function hydrate(d){migrateSave(d);const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign(fresh().ups,(d&&d.ups)||{});o.gear=Object.assign(fresh().gear,(d&&d.gear)||{});
   o.flags=Object.assign({},(d&&d.flags)||{});o.dt=Object.assign(fresh().dt,(d&&d.dt)||{});if(!Array.isArray(o.dt.slots))o.dt.slots=[];
   o.rep=Object.assign(fresh().rep,(d&&d.rep)||{});o.q=Object.assign({},(d&&d.q)||{});if(!Array.isArray(o.seenEv))o.seenEv=[];
   if(!Array.isArray(o.kills))o.kills=fresh().kills;while(o.kills.length<11)o.kills.push(0);o.gems=Object.assign({},(d&&d.gems)||{});o.books=Object.assign({},(d&&d.books)||{});if(!Array.isArray(o.learned))o.learned=[];o.mgW=Object.assign({},(d&&d.mgW)||{});o.aff=Object.assign({},(d&&d.aff)||{});if(!Array.isArray(o.sworn))o.sworn=[];o.affDay=o.affDay||{};o.giftDay=o.giftDay||{};if(o.clan)o.clan=clanHydrate(o.clan);if(!Array.isArray(o.visited))o.visited=[0];
@@ -58,17 +58,17 @@ function hydrate(d){const f=fresh(),o=Object.assign(f,d||{});o.ups=Object.assign
   ['mats','dan','fu','pity','dao','sects','cnt'].forEach(k=>o[k]=Object.assign(fresh()[k],(d&&d[k])||{}));['forms','news','seeds','fateQ','dis','legacy','endings','kids'].forEach(k=>{if(!Array.isArray(o[k]))o[k]=[];});
   delete o.run;if(typeof o.hpF!=='number')o.hpF=1;if(typeof o.mpF!=='number')o.mpF=1;
   lifeSync(o);return o;}
-/* 旧版存档不再兼容：原样留一份存档码备份，然后开新档 */
-const OLD_BAK='lingchao_old_backup';
-function oldSave(d){return !d||d.v!==SAVE_V;}
-function stashOld(raw,n){let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(raw)));}catch(e){}
-  try{const L=JSON.parse(localStorage.getItem(OLD_BAK)||'[]');L.push({n,t:Date.now(),code});localStorage.setItem(OLD_BAK,JSON.stringify(L.slice(-6)));localStorage.removeItem(slotKey(n));}catch(e){}return code;}
-let OLD_NOTE=null;
-function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t){const d=JSON.parse(t);if(!oldSave(d))return hydrate(d);if(d&&d.name)OLD_NOTE={name:d.name,code:stashOld(t,SLOT)};else localStorage.removeItem(slotKey(SLOT));}}catch(e){}return fresh();}
-function oldBackups(){try{return JSON.parse(localStorage.getItem(OLD_BAK)||'[]');}catch(e){return [];}}
+/* 存档兼容：SAVE_MIN 之前的测试版存档直接不读；从 SAVE_MIN 起的存档都要能读进来。
+   以后改存档结构时：SAVE_V 加一，在 SAVE_MIGRATE 里写一步「从上一版到这一版」的迁移（改名的字段搬过去），缺的字段由 hydrate 用 fresh() 补默认值。 */
+const SAVE_MIN=4;
+const SAVE_MIGRATE={/* 例：5:d=>{d.newName=d.oldName;delete d.oldName;} */};
+function oldSave(d){return !d||!(d.v>=SAVE_MIN);}
+function migrateSave(d){if(!d)return d;for(let v=(d.v||SAVE_MIN)+1;v<=SAVE_V;v++){try{SAVE_MIGRATE[v]&&SAVE_MIGRATE[v](d);}catch(e){console.error(e);}}d.v=SAVE_V;return d;}
+try{localStorage.removeItem('lingchao_old_backup');}catch(e){}
+function load(){try{const t=localStorage.getItem(slotKey(SLOT));if(t){const d=JSON.parse(t);if(!oldSave(d))return hydrate(d);localStorage.removeItem(slotKey(SLOT));}}catch(e){}return fresh();}
 function save(){S.last=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S));}catch(e){}}
 function slotInfo(n){if(n===SLOT)return S.name?{name:S.name,realm:stName(),last:Date.now(),started:S.started,reb:S.rebirth}:null;
-  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;if(oldSave(d)){stashOld(t,n);return null;}return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
+  try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const d=JSON.parse(t);if(!d||!d.name)return null;if(oldSave(d)){localStorage.removeItem(slotKey(n));return null;}return {name:d.name,realm:(STAGES[d.stage]||STAGES[0]).name,last:d.last||0,started:d.started,reb:d.rebirth||0};}catch(e){return null;}}
 function ago(t){const s=(Date.now()-t)/1000;return s<90?'刚刚':s<3600?Math.floor(s/60)+' 分钟前':s<86400?Math.floor(s/3600)+' 小时前':Math.floor(s/86400)+' 天前';}
 let delArm=0;
 function switchSlot(n){if(BT||n===SLOT)return;if(S.name)save();SLOT=n;try{localStorage.setItem(SLOT_KEY,String(n));}catch(e){}
@@ -487,7 +487,7 @@ VIEWS.save=()=>`<section class="save-page">
   <p class="note">清理浏览器数据会丢档。导出后请将存档码保存到备忘录，方便备份或换设备。</p>
    <label for="saveBox">存档码</label><textarea id="saveBox" placeholder="点「导出」生成存档码；或把存档码粘贴到这里再点「导入」"></textarea>
   <div class="row"><button class="btn sm ghost" data-act="import">${importArm?'确认覆盖当前进度':'导入存档码'}</button></div>
- </div>${oldBackups().length?`<h2 class="sec">旧版存档备份 <small>新版本不能再读取，原样留存</small></h2><div class="closed">${oldBackups().map((b,i)=>`<button class="btn sm ghost" data-act="oldCopy" data-arg="${i}">复制旧档码 · 存档 ${b.n} · ${ago(b.t)}</button>`).join('')}</div>`:''}
+ </div>
  <h2 class="sec">存档位 <small>共 ${SLOTS} 个 · 进度独立</small></h2>
   <div class="slots3">${Array.from({length:SLOTS},(_,i)=>{const n=i+1,inf=slotInfo(n),cur=n===SLOT;
     return `<div class="sl3 ${cur?'cur':''}"><div class="no">${n}</div><div class="in">${inf?`<div class="iname">${esc(inf.name)}<span class="lv">${inf.realm}${inf.reb?' · 第'+(inf.reb+1)+'世':''}</span></div><div class="istat">${cur?'正在游玩':'上次游玩 '+ago(inf.last)}</div>`:'<div class="iname dim">空存档位</div><div class="istat">从头开一个新角色</div>'}</div>
@@ -545,7 +545,7 @@ const ACT={
  jput:a=>{if(jHalted()){toast('洞天停转中，先击退天穹追兵','bad');return;}if(a.startsWith('item:'))jPut('item',a.slice(5));else jPut(a);},
  jtake:a=>jTake(+a),
  jup:()=>{const c=jUpCost();if(S.stones<c||S.dt.lv>=9)return;S.stones-=c;S.dt.lv++;toast('玉简洞天 第 '+S.dt.lv+' 重');render();save();},
- oldCopy:a=>{const b=oldBackups()[+a];if(!b)return;const box=$('#saveBox');box.value=b.code;const fail=()=>{box.focus();box.select();toast('已放进上面的框里，请长按全选后复制');};try{navigator.clipboard.writeText(b.code).then(()=>toast('旧档码已复制'),fail);}catch(e){fail();}},
+
  export:()=>{S.expD=daysAll();S.expCh=S.seen.length;save();let code='';try{code='LC1.'+btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){}const box=$('#saveBox');box.value=code;
    const fail=()=>{box.focus();box.select();toast('已生成，请长按全选后手动复制');};try{navigator.clipboard.writeText(code).then(()=>toast('存档码已复制，粘贴到备忘录保存'),fail);}catch(e){fail();}},
  import:()=>{const v=$('#saveBox').value.trim();if(!v){toast('先把存档码粘贴进上面的框里','bad');return;}let d=null;
@@ -591,7 +591,7 @@ function offline(){S.last=Date.now();}
 function intro(){const ov=$('#ov');ov.hidden=false;ov.className='vn';let g=S.gender||'m';
   let back=null;for(let n=1;n<=SLOTS;n++){if(n===SLOT)continue;const inf=slotInfo(n);if(inf&&(!back||inf.last>back.last))back=Object.assign({n},inf);}
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="inner"><div class="intro"><div class="yr">二〇四九 · 灵潮${SLOT>1?' · 存档 '+SLOT:''}</div><h1>灵潮<span>修仙</span>录</h1>
-   ${OLD_NOTE?`<p class="note old-note">原来那份「${esc(OLD_NOTE.name)}」的存档是旧版本的，新版本已经读不了。它被原样留成了一份存档码，开局后在右上角「存档」里能复制。</p>`:''}<div class="poem"><p>那一年，天裂开了一道口子。</p><p>灵气像潮水漫过城市，三年未退。</p><p>旧城地下，一座叫青石的地铁站里，住着一百四十个人。</p><p>其中一个，每天黄昏出站，去废墟里拾些还能用的东西。</p></div>
+   <div class="poem"><p>那一年，天裂开了一道口子。</p><p>灵气像潮水漫过城市，三年未退。</p><p>旧城地下，一座叫青石的地铁站里，住着一百四十个人。</p><p>其中一个，每天黄昏出站，去废墟里拾些还能用的东西。</p></div>
    <p class="ask">那个人——</p><div class="seg"><button data-g="m" aria-pressed="${g==='m'}">是少年</button><button data-g="f" aria-pressed="${g==='f'}">是少女</button></div>
    <p class="ask">玉简会记住这个名字。</p><input id="nmIn" maxlength="6" placeholder="写下你的名字" autocomplete="off" aria-label="你的名字"><p class="nm-err" id="nmErr" hidden>灵潮里没有无名之人。写下你的名字，再出站。</p><button class="btn gold" id="nmGo">出站</button>${back?`<button class="btn sm ghost" id="nmBack">返回存档 ${back.n}（${esc(back.name)}）</button>`:''}</div></div>`;
   requestAnimationFrame(()=>paintTo($('#vbg'),'sky'));
