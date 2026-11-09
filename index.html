@@ -710,6 +710,33 @@ h2.sec::after{content:"";flex-basis:100%;height:1px;margin-top:4px;background:li
 body:has(#ov:not([hidden]):not(.vn)) #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
 body:has(#ov.vn:not([hidden])) #toasts{top:calc(env(safe-area-inset-top,0px) + 46px)}
 body:has(#ov:not([hidden])) .toast{opacity:.94;font-size:12px}
+/* 命途图、来信、人物志、地图志 */
+.fate{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
+.fate-n{display:grid;grid-template-columns:52px 1fr;gap:2px 8px;align-items:baseline;padding:6px 8px;border-left:2px solid var(--line)}
+.fate-n.dim{opacity:.5}
+.fate-n .fv{font-size:11px;color:var(--dim)}
+.fate-n .fcs{grid-column:2;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.fc{font-style:normal;font-size:12px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--bone)}
+.fc.on{border-color:var(--gold);color:var(--gold);background:rgba(201,163,90,.12)}
+.fc.q{color:var(--dim);border-style:dashed}
+.letter{padding:8px 10px;margin:6px 0;border-radius:6px;background:var(--panel2);border:1px solid var(--line)}
+.letter p{margin:4px 0 0;line-height:1.7}
+.pplbook,.placebook{display:flex;flex-direction:column;gap:8px}
+.pp,.pl{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:start}
+.pp p,.pl p{margin:2px 0;line-height:1.6;font-size:13px}
+.pp-por{width:56px;height:56px;border-radius:6px;overflow:hidden;background:#0d0c09;border:1px solid var(--line);display:grid;place-items:center}
+.pp-por img,.pp-por>*{max-width:100%;max-height:100%}
+.pl canvas{width:56px;height:56px;border-radius:6px;border:1px solid var(--line);background:#0d0c09}
+/* 灵宠 */
+.pet{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:8px;margin:6px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.pet.on{border-color:var(--gold)}
+.pet-img{width:64px;height:64px;object-fit:contain;background:#0d0c09;border-radius:6px}
+.pet-bar{display:grid;grid-template-columns:32px 1fr 44px;gap:6px;align-items:center;font-size:12px;color:var(--dim);margin:3px 0}
+.pet-bar i{display:block;height:6px;border-radius:3px;background:#0d0c09;overflow:hidden}
+.pet-bar b{display:block;height:100%;background:var(--jade)}
+.pet-bar b.low{background:var(--bad)}
+.pet-bar em{font-style:normal;text-align:right}
+.pet-shop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 12px}
 
 </style>
 </head>
@@ -3232,8 +3259,8 @@ function startBattle(foes,opt){if(BT)return;opt=opt||{};const bgk=opt.bg!==undef
 function btScale(){const n=Math.min(3,BT.party.length),hk=[1,.38,.72,1][n],ak=[1,.8,.9,1][n];BT.foes.forEach(f=>{if(f.pk&&!f.pkd){f.pkd=1;f.hp*=hk;f.max*=hk;f.atk*=ak;}});
  BT.cpP=BT.party.reduce((t,a)=>t+cpOf(a.atk,a.max,a.crit),0);BT.cpE=BT.foes.reduce((t,f)=>t+cpOf(f.atk,f.max,0),0);}
 function btFit(){const st=$('#btStage'),cv=$('#btc');const f=fitCanvas(cv,st,260);Object.assign(BT,{W:f.W,H:f.H,k:f.k,dpr:f.dpr,offX:f.ox,offY:f.oy,cx:cv.getContext('2d')});}
-function btLayout(){const FP={1:[[.30,.6]],2:[[.22,.52],[.38,.7]],3:[[.16,.5],[.38,.58],[.22,.74]]},PP={1:[[.72,.8]],2:[[.64,.72],[.84,.82]],3:[[.60,.66],[.84,.72],[.70,.85]]};
- const fl=FP[Math.min(3,BT.foes.length)],pl=PP[Math.min(3,BT.party.length)];BT.foes.forEach((f,i)=>{const p=fl[i]||fl[0];f.bx=Math.round(BT.W*p[0]);f.by=Math.round(BT.H*p[1]);});BT.party.forEach((a,i)=>{const p=pl[i];a.bx=Math.round(BT.W*p[0]);a.by=Math.round(BT.H*p[1]);});}
+function btLayout(){const FP={1:[[.30,.6]],2:[[.22,.52],[.38,.7]],3:[[.16,.5],[.38,.58],[.22,.74]]},PP={1:[[.72,.8]],2:[[.64,.72],[.84,.82]],3:[[.60,.66],[.84,.72],[.70,.85]],4:[[.58,.64],[.82,.68],[.68,.82],[.90,.88]]};
+ const fl=FP[Math.min(3,BT.foes.length)],pl=PP[Math.min(4,BT.party.length)];BT.foes.forEach((f,i)=>{const p=fl[i]||fl[0];f.bx=Math.round(BT.W*p[0]);f.by=Math.round(BT.H*p[1]);});BT.party.forEach((a,i)=>{const p=pl[i];a.bx=Math.round(BT.W*p[0]);a.by=Math.round(BT.H*p[1]);});}
 function btSpr(a){const art=btPortrait(a);if(art)return art;if(a.jie)return cvMemo('jiecv',()=>{const c=jieCv();return btUp(c,1.4);});if(a.side==='p'){const fr=a.walk?[1,2][Math.floor(BT.t*8)%2]:0;return cvMemo('hbp|'+a.spr+'|'+fr,()=>btUp(chSpr(a.spr,1,fr,9),2));}
  return cvMemo('hbf|'+a.look+'|'+(a.boss?1:0)+'|'+(a.tint?1:0),()=>btUp(monCv(a.look,a.boss?1.5:1,a.tint,9),monIsHuman(a.look)?1.55:2));}
 // Reuse the transparent story portraits without changing source assets or map sprites.
@@ -11773,6 +11800,296 @@ playStory=function(id){const c=STORY.find(x=>x.id===id);
 /* 每读完一章新的主线，日子走一天 */
 STORY.forEach(c=>{if(!/^v\d+_|^(prologue|mock|ahe|dongtian|ratking|zhouleave|zhuji|exposed|hunted|caravan)$/.test(c.id))return;const a0=c.after;c.after=function(){try{if(!S.flags['td_'+c.id]){S.flags['td_'+c.id]=1;advanceDays(1,'story');}}catch(e){}return a0&&a0.apply(this,arguments);};});
 
+/* ================= 命途图 · 二周目 · 剧情战之印 · 来信 · 选择回馈 · 人物志与地图志 · 陪玩小游戏 =================
+   放在 game.js 之前；要动 VIEWS/ACT/S 的事情放进 LATE，由 game.js 在 start() 之前统一执行。
+   跨存档的记录（走过哪些路、读过哪些章、见过哪些画面）存在 localStorage 的 lingchao_meta，不进存档。 */
+const LATE=[];
+const META_KEY='lingchao_meta',NG_KEY='lingchao_ng';
+function metaGet(){try{return JSON.parse(localStorage.getItem(META_KEY)||'{}')||{};}catch(e){return {};}}
+function metaPut(m){try{localStorage.setItem(META_KEY,JSON.stringify(m));}catch(e){}}
+
+/* ---------- 命途图：岔路口 ---------- */
+const FATE_NODES=[
+ {v:1,k:'pill',n:'筑基丹给谁',get:()=>typeof v1Pill==='function'?v1Pill():'',o:{self:'自己吃了',zhou:'给了周烈',sell:'换了粮'}},
+ {v:1,k:'ahe',n:'阿禾的蓝线',get:()=>S.seen.includes('ahe')?(F('heScar')?'snake':'qi'):'',o:{qi:'散修为，渡灵气',snake:'下隐道猎蛇'}},
+ {v:4,k:'v4Pump',n:'信标那夜的水泵',o:{crank:'不停泵，转手摇电机',stop:'停两天泵'}},
+ {v:5,k:'v5Sample',n:'河边放水',o:{1:'停下，取第二碗水样',0:'清了口子接着放'}},
+ {v:7,k:'v7Drill',n:'演练',o:{1:'再练到两息',0:'三息够了'}},
+ {v:8,k:'v8Promise',n:'送人下山',o:{1:'连夜走',0:'先排舱位和时辰'}},
+ {v:9,k:'v9Risk',n:'五座药炉',o:{novel:'接进同一循环',early:'先查回收纹'}},
+ {v:10,k:'v10Zhao',n:'伏灯站的灯号',o:{0:'识破了',1:'没看出'}},
+ {v:11,k:'v11Fang',n:'丹方的去处',o:{san:'散炉',gong:'公院'}},
+ {v:12,k:'v12An',n:'旧案何时见光',o:{zhong:'鸣钟',chuan:'留船'}},
+ {v:13,k:'v13Qu',n:'最后去哪里',o:{an:'共岸',hai:'渡海',xiang:'归乡'}},
+ {v:13,k:'v13End',n:'终章',o:{deng:'万家灯火',shou:'守潮人',feng:'长风万里',qing:'归青石',bai:'白塔长明'}}
+];
+function fateVal(n){let v;try{v=n.get?n.get():S.flags[n.k];}catch(e){v='';}return v==null||v===''?'':String(v);}
+function volReached(){let m=0;S.seen.forEach(id=>{const r=/^v(\d+)_/.exec(id);if(r)m=Math.max(m,+r[1]);});return m;}
+function metaSync(){if(!S||!S.started)return;const m=metaGet();m.br=m.br||{};
+ FATE_NODES.forEach(n=>{const v=fateVal(n);if(v!==''&&n.o[v]){m.br[n.k]=m.br[n.k]||{};m.br[n.k][v]=1;}});
+ const rd=new Set(m.read||[]);S.seen.forEach(id=>rd.add(id));m.read=[...rd];
+ const cg=new Set(m.cg||[]);(S.cgSeen||[]).forEach(k=>cg.add(k));m.cg=[...cg];
+ m.vmax=Math.max(m.vmax||0,volReached());metaPut(m);}
+function fateHTML(){const m=metaGet(),br=m.br||{},vr=Math.max(volReached(),m.vmax||0);
+ const rows=FATE_NODES.map(n=>{const cur=fateVal(n),known=br[n.k]||{};
+  if(n.v>vr&&!Object.keys(known).length)return `<div class="fate-n dim"><span class="fv">第${cnNum(n.v)}卷</span><b>？？？</b></div>`;
+  const chips=Object.keys(n.o).map(k=>k===cur?`<i class="fc on">${esc(n.o[k])}</i>`:known[k]?`<i class="fc">${esc(n.o[k])}</i>`:`<i class="fc q">？？？</i>`).join('');
+  return `<div class="fate-n"><span class="fv">第${cnNum(n.v)}卷</span><b>${esc(n.n)}</b><div class="fcs">${chips}</div></div>`;}).join('');
+ const ends=Object.keys((br.v13End)||{}).length;
+ return `<p class="note">亮着的是这一世的选择；别的存档、别的一世走过的路也会记在这里。终章已见 ${ends}/5。</p><div class="fate">${rows}</div>${sealHTML()}${ngHTML()}`;}
+
+/* ---------- 二周目：带着记忆重来 ---------- */
+const ngMul=()=>1+.15*Math.min(3,S.ng||0);
+function ngHTML(){if(!F('v13done'))return '';return `<div class="row2"><div class="in"><div class="iname">带着记忆重来${S.ng?'<span class="lv">这是第 '+(S.ng+1)+' 世</span>':''}</div><div class="istat">在另一个空存档里重新开始：命途图、见过的画面都记得，读过的篇章可以快进，修为来得快一些。这一份存档原样留着。</div></div><button class="btn sm gold" data-act="ngStart">重来</button></div>`;}
+function ngStart(){let n=0;for(let i=1;i<=SLOTS;i++){if(i!==SLOT&&!slotInfo(i)){n=i;break;}}
+ if(!n){toast('三个存档位都满了。先在「存档」里删掉一个，再来。','bad');return;}
+ metaSync();modal(`<h3>带着记忆重来</h3><p>在存档 ${n} 开始新的一世。现在这一份存档原样留着，随时可以切回来。</p><p class="note">记得的：命途图、见过的画面；读过的篇章可以快进；这一世修为来得快一些。</p>`,
+  [{t:'开始',cls:'gold',fn:()=>{try{localStorage.setItem(NG_KEY,String((S.ng||0)+1));}catch(e){}switchSlot(n);}},{t:'再想想'}]);}
+{const ps0=playStory;playStory=function(id){
+  if(id==='prologue'&&!S.seen.includes('prologue')){let ng=0;try{ng=+localStorage.getItem(NG_KEY)||0;localStorage.removeItem(NG_KEY);}catch(e){}
+   if(ng>0){S.ng=ng;const m=metaGet();S.cgSeen=[...new Set([...(S.cgSeen||[]),...(m.cg||[])])];}}
+  const r=ps0.apply(this,arguments);
+  try{if(SC&&!SC.read&&(metaGet().read||[]).includes(id))SC.read=true;}catch(e){}
+  return r;};}
+{const aq0=addQi;addQi=function(x,quiet){if(S&&S.ng&&x>0)x*=ngMul();return aq0.call(this,x,quiet);};}
+
+/* ---------- 剧情战：可选目标、得印、输了可再来 ---------- */
+const GOALS={
+ '寄焰藤':{t:'一次火都不用，打赢',ok:m=>!m.fire},'护炉架':{t:'五回合内打赢',ok:m=>m.round<=5},
+ '负碑鼋':{t:'撑过去，没人倒下',ok:m=>m.alive},'晶背蛾':{t:'一道法术和符都不用，打赢',ok:m=>!m.skill},
+ '井下晶背蛾':{t:'一道法术和符都不用，打赢',ok:m=>!m.skill},'晶翼':{t:'四回合内打赢',ok:m=>m.round<=4},
+ '盲鳗':{t:'一次火都不用，打赢',ok:m=>!m.fire},'盐壳螯':{t:'一次火都不用，打赢',ok:m=>!m.fire},
+ '岩鬃獾':{t:'没人倒下',ok:m=>m.alive},'镜中的衡渡':{t:'六回合内打赢',ok:m=>m.round<=6},
+ '归相钉前':{t:'没人倒下',ok:m=>m.alive},'伏灯站':{t:'四回合内打赢',ok:m=>m.round<=4},
+ '折鳞舟':{t:'没人倒下',ok:m=>m.alive},'息衡外廊':{t:'一次火都不用，打赢',ok:m=>!m.fire},
+ '主槽':{t:'没人倒下',ok:m=>m.alive}
+};
+const GOAL_DEF={t:'六回合内打赢',ok:m=>m.round<=6};
+let RW_LAST=null,RW_RETRY=null;
+{const rb0=rwBattle;rwBattle=function(o){if(!o||!o.title)return rb0.apply(this,arguments);const g=GOALS[o.title]||GOAL_DEF;
+  const o2=Object.assign({},o,{rule:(o.rule?o.rule+' ':'')+'可选目标：'+g.t,
+   win:()=>{let extra='';try{const m=RW_LAST||{};S.seals=S.seals||{};if(!S.seals[o.title]&&g.ok(m)){S.seals[o.title]=1;extra='\n\n【得印：'+g.t+'。】';}}catch(e){}RW_RETRY=null;return (o.win?o.win():'')+extra;},
+   lose:()=>{RW_RETRY=o;return o.lose?o.lose():'';}});
+  return rb0.call(this,o2);};}
+{const bw0=btWin;btWin=async function(){try{if(BT)RW_LAST={round:BT.round,alive:BT.party.every(p=>p.alive||p.pet),fire:!!BT.mFire,skill:!!BT.mSkill};}catch(e){}return bw0.apply(this,arguments);};}
+{const es0=elStrike;elStrike=function(a,t,el){if(BT&&a&&a.side==='p'&&!a.pet&&el==='huo')BT.mFire=1;return es0.apply(this,arguments);};}
+{const bd0=btDo;btDo=async function(a,act){if(BT&&a&&a.key==='hero'&&act&&(act.type==='sk'||act.type==='fu')){BT.mSkill=1;if(act.sk&&act.sk.el==='huo')BT.mFire=1;if(act.type==='fu'&&act.k==='huo')BT.mFire=1;}return bd0.apply(this,arguments);};}
+{const rm0=rwMsg;rwMsg=function(h,t,bad){if(bad&&RW_RETRY){const o=RW_RETRY;RW_RETRY=null;save();
+  setTimeout(()=>{modal(`<h3>${esc(h)}</h3><p>${esc(t||'').replace(/\n/g,'<br>')}</p><p class="note">故事会照这样往下走。想换一个结果，可以再打一次。</p>`,[{t:'就这样'},{t:'再来一次',cls:'gold',fn:()=>{S.hpF=1;S.mpF=1;rwBattle(o);}}]);checkStory();},350);return;}
+  return rm0.apply(this,arguments);};}
+const SEAL_SHOP=[
+ {k:'gem',n:'换一颗三品宝石',c:2,fn:()=>gGem(null,3)},
+ {k:'book',n:'换一本没学过的功法',c:3,fn:()=>{const r=gBook();return r||' 能换的功法都学过了。';}},
+ {k:'food',n:'换五份碎灵核（灵宠食料）',c:1,fn:()=>{S.petFood=S.petFood||{};S.petFood.core=(S.petFood.core||0)+5;return ' 碎灵核 ×5。';}}
+];
+const sealCount=()=>Object.keys(S.seals||{}).length-(S.sealSpent||0);
+function sealHTML(){const got=Object.keys(S.seals||{});if(!got.length)return `<p class="note">剧情战里有「可选目标」，打出漂亮的赢法会得一枚印。</p>`;
+ return `<h3 class="sub">印 <small>得过 ${got.length} 枚 · 可用 ${sealCount()} 枚</small></h3><p class="note">${got.map(esc).join(' · ')}</p><div class="row">${SEAL_SHOP.map(s=>`<button class="btn sm ${sealCount()>=s.c?'gold':'ghost'}" data-act="sealBuy" data-arg="${s.k}" ${sealCount()>=s.c?'':'disabled'}>${s.n}（${s.c} 印）</button>`).join('')}</div>`;}
+function sealBuy(k){const s=SEAL_SHOP.find(x=>x.k===k);if(!s||sealCount()<s.c)return;S.sealSpent=(S.sealSpent||0)+s.c;const t=s.fn()||'';toast('用了 '+s.c+' 枚印。'+t,'big');save();render();}
+
+/* ---------- 等待的日子：来信 ---------- */
+const LETTERS={
+ 2:[{id:'l2a',f:'tie',t:'站里一切照旧。周烈夜里替人值班，白天还去搬水，我叫他睡一会儿，他说睡不着。你在坊市别乱花钱，也别太省，饿着肚子的人看不准东西。'},
+    {id:'l2b',f:'qin',t:'粥棚又添了两只锅。阿禾学会了数米，每天替我数一遍，数着数着就睡着了。天冷了，衣服要是破了，回来我给你补。'}],
+ 3:[{id:'l3a',f:'he',t:'我画了一张青石站的图，把你的铺位画在楼梯旁边。秦婶说画得不对，你的铺位在里面。我没改。你回来的时候看看是谁对。'},
+    {id:'l3b',f:'zhou',t:'站口的门修好了。有人问你去哪儿了，我说去雾港了。他们问雾港在哪儿，我也不知道。你回来画给我看。'}],
+ 4:[{id:'l4a',f:'qin',t:'铁叔的腿阴天还疼，他不让我说。你要是路上见到治腿的药，问问价钱就行，别买，买回来他又要骂你。'},
+    {id:'l4b',f:'zhou',t:'这几天来了一批新人，有个孩子不会说话，只会跟着人走。我把他交给秦婶了。你在外面，别逞强。'}],
+ 5:[{id:'l5a',f:'hong',t:'北线的路塌了一段，绕了两天。车上那包烤饼都硬了，我泡水吃完了。下一趟回来给你带新的。别等我吃饭。'},
+    {id:'l5b',f:'su',t:'我核了一条新水路，图上画的是错的，差了一个弯。改好的图附在后面。你那边的井水，记得先看颜色再喝。'}],
+ 6:[{id:'l6a',f:'qin',t:'坡上的新屋漏风，周烈拿旧被子堵上了。你们在山里，夜里冷，袜子穿两双。阿禾说她想跟着去，我没让。'},
+    {id:'l6b',f:'zhou',t:'有人说山里有一座古坊。你要是进去了，别乱摸东西。……我知道你会摸。摸之前先想一想。'}],
+ 7:[{id:'l7a',f:'he',t:'我量了赤梁下面那条沟，水比去年少了一指。图我给周烈了，他说看不懂，又说会挂在窑边。'},
+    {id:'l7b',f:'chuyi',t:'信房这几天很安静。我把窗边的灰擦了，看得见远处的山。你们那边要是下雪，替我看一眼。'}],
+ 8:[{id:'l8a',f:'qin',t:'听说你们要去很高的地方。高处风大，吃饭的时候背过身去。别跟我说你是修士不怕风，修士也会着凉。'},
+    {id:'l8b',f:'su',t:'天隙那一带，旧图上只画了半边。另外半边我问了三个人，三个人说的都不一样。你替我量一回，回来我们一起改。'}],
+ 9:[{id:'l9a',f:'zhou',t:'窑开了两口，烧出来的砖有一半是歪的。叶蘅说歪的也能用，垫在下面。你在回汀要是缺砖，跟我说。'},
+    {id:'l9b',f:'chuyi',t:'北山这边的灯，有两盏亮得慢了。陈默说是灵核碎得不匀，他拆开重装了一遍。我在旁边看着，没让他签字。'}],
+ 10:[{id:'l10a',f:'he',t:'北山多了几间屋，有一间画歪了，是小满画的。屋子没歪，是人画歪了。你回来看看就知道了。'},
+     {id:'l10b',f:'tie',t:'站里新来的孩子会削棋子了，削得比我好。你那把钝刀我替你收着，回来自己磨。'}],
+ 11:[{id:'l11a',f:'he',t:'青杉渡的井，我带着两个学徒量了三回。他们量的比我细。我没告诉他们，怕他们骄傲。'},
+     {id:'l11b',f:'zhou',t:'听说你在山谷里养伤。别急着练。我当年急着练，烧坏了一根手指，你看过的。'}],
+ 12:[{id:'l12a',f:'taoq',t:'谷里的鸡下了一窝蛋，许平章托人捎来的糖也到了。你的右足，阴天记得用热水泡。别拿逃命的法子吃饭。'},
+     {id:'l12b',f:'xchun',t:'炉子又漏了一回雨，我们没开炉，等它干了才开。陶医说我这回做对了。你回来的时候，我烧一炉给你看。'}],
+ 13:[{id:'l13a',f:'heq',t:'盐地开春又试了一回，长出来一小片。我用你磨的那把锄头，没坏。下回你来，田边有饭吃。'},
+     {id:'l13b',f:'xiao',t:'我把这几天的事都记下来了。纸不够，背面也写了。等你们回来，我念给你们听。不长。'}]
+};
+function nextMain(){for(const c of STORY){const r=/^v(\d+)_/.exec(c.id);if(!r||S.seen.includes(c.id))continue;let ok=false;try{ok=c.cond();}catch(e){}return {c,v:+r[1],ok};}return null;}
+function letterTick(){if(!S.started)return;const nm=nextMain();if(!nm||nm.ok)return;const last=S.flags.letterD;
+ if(last!=null&&daysAll()-last<7)return;if(last==null){S.flags.letterD=daysAll();return;}
+ const L=(LETTERS[nm.v]||[]).find(l=>!(S.letters||[]).includes(l.id));if(!L)return;
+ S.letters=S.letters||[];S.letters.push(L.id);S.flags.letterD=daysAll();try{if(BOND[L.f])aff(L.f,2);}catch(e){}
+ toast('收到一封信：'+(SPK[L.f]||'')+'。在卷宗里看。');}
+function letterHTML(){const ids=(S.letters||[]).slice().reverse();const all=Object.values(LETTERS).flat();
+ return ids.map(id=>all.find(l=>l.id===id)).filter(Boolean).map(l=>`<div class="letter"><b>${esc(SPK[l.f]||'')}</b><p>${esc(l.t)}</p></div>`).join('')||'<p class="empty">还没有来信。</p>';}
+
+/* ---------- 选择回馈：每三十天 ---------- */
+function feedTick(){if(!S.started)return;const last=S.flags.feedD;if(last==null){S.flags.feedD=daysAll();return;}
+ let k=Math.floor((daysAll()-last)/30);if(k<=0)return;k=Math.min(k,6);S.flags.feedD=last+30*Math.floor((daysAll()-last)/30);const msg=[];
+ for(let i=0;i<k;i++){
+  if(S.seen.includes('v11_8')&&F('v11Fang')==='san'){S.qiPills=(S.qiPills||0)+1;S.meds=(S.meds||0)+1;if(!i)msg.push('小椿的炉子送来聚气丹和伤药');}
+  if(S.seen.includes('v11_8')&&F('v11Fang')==='gong'){S.meds=(S.meds||0)+3;if(!i)msg.push('北山药院按月发来伤药');}
+  if(S.seen.includes('v10_21')&&F('v10Zhao')===0&&S.clan){const g=zsAt(maxZone(),3);S.stones+=g;if(!i)msg.push('赵笙替行社理的账，多出 '+fmt(g)+' 灵石');}}
+ if(msg.length)toast(msg.join('；')+'。');}
+{const ad0=advanceDays;advanceDays=function(n,why){const r=ad0.apply(this,arguments);try{letterTick();feedTick();}catch(e){console.error(e);}return r;};}
+
+/* ---------- 萧尘的一招 ---------- */
+{const ai0=btAI;btAI=function(a){if(a&&a.key==='xiao'&&!a.pet){const fs=BT.foes.filter(f=>f.alive);if(fs.length&&Math.random()<.4){a.el=a.el||'tu';const t=fs.reduce((m,f)=>f.hp>m.hp?f:m,fs[0]);return {type:'csk',n:'无名一刀',fx:'orb',pow:1.7,t};}}
+  return ai0.apply(this,arguments);};}
+
+/* ---------- 人物志与地图志 ---------- */
+const PEOPLE={
+ tie:'青石站的老站长，假腿，修什么都慢，修好的东西都很结实。',qin:'青石站的粥棚是她开的。谁饿着，她都看得出来。',
+ he:'青石站长大的孩子，后来拿起了绳尺，图上的线一条比一条准。',zhou:'青石站守门的人，斧头不离手，嘴上不说的事都放在心里。',
+ hong:'跑长线的车队头领，左腿怕冷，账记得比谁都清楚。',mo:'住在玉简里的三百年前的丹师，嘴硬，教东西从不藏。',
+ xiao:'七〇二号，萧尘。总有人记不住他的名字，他就一遍一遍地写。',su:'测绘的人，图上不能确定的地方宁可空着，也不乱画。',
+ cm:'修东西的人，手稳。签过的字后来都认了。',chuyi:'北山信房的人，旧名唐迟。后来开了一间修灯铺，左边那扇窗能开。',
+ ning:'天穹会的首领。救过很多人，也有自己的那几页纸要记。',dong:'穿白衣的人，带着粮来，也带着别的东西来。',
+ wuh:'猎宝人，在薄灵地底躺过两百多年。养鸦，手上的皮像冻坏的树皮。',xie:'太一旧人的残魂，住在一盏有人看守的灯里。',
+ heq:'回汀守田的女人，随身带一根木尺和一包盐。',lhd:'回汀守院的管事，端来的粥里盐放得很少。',
+ hengd:'收潮的人，手腕上系着三枚封在白环里的珠子。',mengq:'合收行的人，身量不高，双手干净，指根有茧。',
+ wenq:'苏绾的母亲，折星埠的裁缝。柜子里一直留着女儿的旧被子。',aying:'折星工坊里长大的姑娘，讲起护衣来眼睛发亮。',
+ sangf:'换风号的船主，图上不知道的地方，等下一处停泊再问。',duh:'换风号的船匠，嘴硬心软，护着船也护着人。',
+ xman:'北山的少年，知道盆放在哪儿。',taoq:'灰枫谷的丹医，裤脚上常沾着泥。不写包票。',
+ xupz:'筑基大圆满九年的修士，没结成丹，后来给孩子买了新鞋。',yans:'承衡司的署理，金丹后期。签过一张不该签的纸。',
+ qir:'息衡埠的抄录人，眼镜两条腿不一样长。弄坏一张，赔整册。',xchun:'青杉渡来的学徒，辨火慢，记字快，后来自己砌了炉。',
+ luoy:'邵平的妻子，在白榆台安了家，会补鞋。',liangl:'修理工，腿受过伤，儿子后来见到了。',yutan:'天隙悬台上的姑娘，带着药箱。',
+ qiw:'天隙的调度，不催人。',chengw:'跟着阿禾的少年，记数很快，写字很慢。'
+};
+const PLACES={shelter:['青石站','地铁站改成的避难所，后来搬到了坡上。'],metro:['废弃地铁站','青石站以北的隧道，积水里有东西在动。'],
+ overpass:['锈蚀高架','断裂的高架桥悬在半空。'],forest:['旧城妖林','人民公园疯长成的林子。'],port:['沉没港口','雾里有船灯。'],
+ lab:['坠星研究所','灵潮当天第一个坠落点。'],pit:['天坑','市中心塌出的深坑。'],core:['灵源核心','空气浓得像水。'],
+ starsea:['天外','云层之上，碎陆漂在暗青色里。'],sky:['天隙','云海之上的悬台。'],town:['路上的镇子','一路上经过的人家。'],
+ market:['坊市','丹铺、器铺、符箓铺都在这里。'],xianfu:['太一古坊','被山藏了三百年的地方。'],shanmen:['太一山门','山门不认人。'],
+ huifeng:['灰枫谷','没有山门的药谷。求结丹者先去洗手。'],xiheng:['息衡埠','只收船路旧簿的旧港。'],boshi:['薄石坡','港外背风的小坡。'],
+ guanchao:['观潮石堂','头顶悬着一条不是水的河。'],zhucao:['主槽','刻满供息人名字的长廊。'],xiaowu:['北山小屋','第三张桌挂在门后。'],
+ xiaoshe:['坡上校舍','墙上的粉笔字擦过很多遍。'],xinhai:['新岸','会漏潮雾的仓屋，远处有灯塔。'],baita_v3:['白塔','塔上装着调潮尺。']};
+let PPL_CACHE=null;
+function peopleSeen(){if(PPL_CACHE&&PPL_CACHE.n===S.seen.length)return PPL_CACHE.s;const s=new Set();
+ const walk=a=>(a||[]).forEach(l=>{if(Array.isArray(l)){if(l[0]&&l[0]!=='@')s.add(l[0]);}else if(l&&l.c)l.c.forEach(o=>walk(o.r));});
+ STORY.forEach(c=>{if(S.seen.includes(c.id))walk(c.lines);});PPL_CACHE={n:S.seen.length,s};return s;}
+function peopleHTML(){const s=peopleSeen();if(s.has('zero'))s.add('chuyi');const keys=Object.keys(PEOPLE).filter(k=>s.has(k));
+ if(!keys.length)return '<p class="empty">还没有记下谁。</p>';
+ return `<div class="pplbook">${keys.map(k=>{const por=(typeof PORTRAIT!=='undefined'&&PORTRAIT[k])?PORTRAIT[k]():sealPortrait(k);const deep=BOND[k]&&avOf(k)>=60&&BOND_DEEP[k];
+  return `<div class="pp"><div class="pp-por">${por}</div><div><b>${esc(SPK[k]||BOND[k]&&BOND[k].n||k)}</b><p>${esc(PEOPLE[k])}</p>${deep?'<p class="note">'+esc(deep)+'</p>':''}</div></div>`;}).join('')}</div><p class="note">记下 ${keys.length}/${Object.keys(PEOPLE).length} 人。</p>`;}
+const BOND_DEEP={hong:'她的账本里，你那一格描过很多遍。',zhou:'他不爱说，可每次你出门，他都在站口。',su:'她在图上给你留过一块空白，说等你回来自己画。',
+ xiao:'他的登记簿第一行，写的是你的名字。',mo:'他教你的，比他承认的多。',he:'她第一次拿起绳尺的时候，是你在旁边扶着。',chuyi:'她把手伸过来，让你剪指甲。'};
+function placesHTML(){const seenBg={};STORY.forEach(c=>{if(!S.seen.includes(c.id))return;const add=k=>{if(k&&!seenBg[k])seenBg[k]=c.title;};add(c.bg);(c.lines||[]).forEach(l=>{if(l&&!Array.isArray(l)&&l.bg)add(l.bg);});});
+ const keys=Object.keys(seenBg);if(!keys.length)return '<p class="empty">还没有去过哪里。</p>';
+ return `<div class="placebook">${keys.map(k=>{const P=PLACES[k];const t=seenBg[k];return `<div class="pl"><canvas data-scene="${k}"></canvas><div><b>${esc(P?P[0]:t.split('·').slice(1).join('·')||t)}</b><p>${esc(P?P[1]:'')}</p><p class="note">初见于「${esc(t)}」</p></div></div>`;}).join('')}</div>`;}
+
+/* ---------- 陪玩小游戏 ---------- */
+{const cb0=chatBtn;chatBtn=function(k){const L=cb0.apply(this,arguments);if(!L.length)return L;
+ if(k==='mo')L.push({t:'陪墨老下一盘',fn:()=>{const lv=avOf('mo')>=60?3:avOf('mo')>=25?2:1;openMini('gomoku',{lv,title:'和墨老下棋',onDone:w=>{aff('mo',w?3:1);toast(w?pick(['墨老：「这步还行。」','墨老：「……再来一盘。」']):pick(['墨老：「急什么。」','墨老：「看三步，再落子。」']));live();}});}});
+ if(k==='hong')L.push({t:'和红鹞押大小',fn:()=>openMini('sicbo',{lv:1,title:'车上押大小',onDone:w=>{if(w){aff('hong',2);toast('红鹞：「手气不错。今晚的饭你请。」');}else{aff('hong',1);advanceDays(1,'help');toast('输了。你替她卸了一天货。');}live();}})});
+ if(k==='he')L.push({t:'帮阿禾测水',fn:()=>openMini('memory',{lv:F('v5Sample')===1?1:2,title:'阿禾的测水',onDone:w=>{aff('he',w?3:1);if(w)S.flags.heMeasure=(S.flags.heMeasure||0)+1;toast(w?'读数对上了。阿禾在图上把那条线描实了。':'读数错了一格。阿禾说：「再量一次。」');live();}})});
+ return L;};}
+
+/* ---------- 卷宗与动作：game.js 定义好以后再接上 ---------- */
+LATE.push(()=>{
+ Object.assign(ACT,{ngStart:()=>ngStart(),sealBuy:a=>sealBuy(a)});
+ const sv0=VIEWS.story;VIEWS.story=()=>{metaSync();const h=sv0();
+  const extra=journalFold('fate','命途图',Object.keys(metaGet().br||{}).length+' 处岔路',fateHTML())
+   +journalFold('letters','来信',(S.letters||[]).length+' 封',letterHTML())
+   +journalFold('people','人物志',[...peopleSeen()].filter(k=>PEOPLE[k]).length+' 人',peopleHTML())
+   +journalFold('places','地图志','',placesHTML());
+  const i=h.lastIndexOf('</section>');return i>=0?h.slice(0,i)+extra+h.slice(i):h+extra;};
+ {const es=endStory;endStory=function(){const r=es.apply(this,arguments);try{metaSync();}catch(e){}return r;};}
+});
+
+/* ================= 灵宠 =================
+   第一卷鼠王一战以后，灰团跟你回站；之后在各区域打完一仗，偶尔会有幼崽探头，喂对了吃的三回就跟你走（每种一只）。
+   饱食按游戏日子掉，低于 30 就虚弱、不肯出战；不会死，也不会跑。筑基以后，出战的那只跟你进战斗。 */
+const PET_SP={
+ huitu:{n:'石皮鼠',look:'变异鼠',el:'tu',z:0,like:'grain',hate:'fruit',sk:'啃石',nm:'灰团',d:'地铁站里长大的小鼠，皮像碎石。认人，也认饭点。'},
+ yaer:{n:'灰鸦',look:'灰鸦群',el:'jin',z:1,like:'jerky',hate:'grain',sk:'啄甲',nm:'铜扣',d:'高架上的灰鸦，喜欢亮东西，会把你掉的扣子叼回来。'},
+ hu:{n:'灵狐',look:'狂化灵狐',el:'mu',z:2,like:'fruit',hate:'fish',sk:'缠藤',nm:'青尾',d:'妖林里的狐狸，尾尖带一点绿光。怕生，熟了以后很黏人。'},
+ xie:{n:'鬼面蟹',look:'鬼面蟹',el:'shui',z:3,like:'fish',hate:'jerky',sk:'吐泡',nm:'皱眉',d:'港口浅滩的小蟹，背壳的花纹像一张皱眉的脸。'},
+ jing:{n:'晶背兽',look:'晶背兽',el:'lei',z:4,like:'core',hate:'fish',sk:'放电',nm:'小闪',d:'坠星研究所附近的小兽，背上的晶簇会在打雷前发亮。'},
+ lang:{n:'赤焰狼',look:'赤焰狼',el:'huo',z:5,like:'jerky',hate:'fruit',sk:'焰咬',nm:'火炭',d:'天坑边的狼崽，身上比别的崽子热，冬天抱着很暖。'}
+};
+const PET_FOOD={grain:{n:'杂粮团',p:.4,xp:4,full:30},jerky:{n:'肉干',p:1,xp:6,full:35},fish:{n:'鱼干',p:1,xp:6,full:35},fruit:{n:'灵果',p:1.5,xp:7,full:30},core:{n:'碎灵核',p:4,xp:16,full:20}};
+const PET_MAX=15,PET_HUNGRY=30,PET_DAY=8;
+const petNeed=lv=>15+lv*10;
+const petStage=lv=>lv<5?'幼':lv<10?'少':'灵';
+function petNew(sp){return {sp,name:PET_SP[sp].nm,lv:1,xp:0,full:80,bond:10};}
+function petHas(sp){return (S.pets||[]).some(p=>p.sp===sp);}
+function petActive(){const P=S.pets||[];return P[S.petOn]||null;}
+function petGive(sp){S.pets=S.pets||[];if(petHas(sp))return null;const p=petNew(sp);S.pets.push(p);if(S.petOn==null||S.petOn<0)S.petOn=S.pets.length-1;return p;}
+/* 吃一口：返回 'hate' 'ok' 'like'，并处理成长 */
+function petEat(p,food){const sp=PET_SP[p.sp],F0=PET_FOOD[food];if(!sp||!F0)return null;if(food===sp.hate)return 'hate';
+ const like=food===sp.like;p.full=Math.min(100,p.full+F0.full);p.bond=Math.min(100,p.bond+(like?3:1));petXp(p,F0.xp*(like?2:1));return like?'like':'ok';}
+function petXp(p,x){p.xp+=x;let up=0;while(p.lv<PET_MAX&&p.xp>=petNeed(p.lv)){p.xp-=petNeed(p.lv);p.lv++;up++;}if(p.lv>=PET_MAX)p.xp=Math.min(p.xp,petNeed(p.lv));return up;}
+function petTick(days){(S.pets||[]).forEach(p=>{p.full=Math.max(0,p.full-PET_DAY*days);});
+ if(S.petAuto)(S.pets||[]).forEach(p=>{let guard=0;while(p.full<50&&guard++<6){const sp=PET_SP[p.sp];const f=[sp.like,'grain','jerky','fish','fruit','core'].find(k=>k!==sp.hate&&(S.petFood[k]||0)>0);if(!f)break;S.petFood[f]--;petEat(p,f);}});}
+const petCanFight=p=>!!p&&realmIdx()>=1&&p.full>=PET_HUNGRY;
+
+/* 日子往前走，肚子会饿 */
+{const ad0=advanceDays;advanceDays=function(n,why){const d0=daysAll();const r=ad0.apply(this,arguments);try{const d=daysAll()-d0;if(d>0&&S.pets&&S.pets.length){const a=petActive();const was=a&&a.full>=PET_HUNGRY;petTick(d);if(a&&was&&a.full<PET_HUNGRY)toast(a.name+'饿了，没力气跟你出门。去行囊里喂它。');}}catch(e){console.error(e);}return r;};}
+
+/* 战斗：筑基以后，出战的那只跟着 */
+{const mp0=mkParty;mkParty=function(){const P=mp0.apply(this,arguments);const p=petActive();if(!petCanFight(p))return P;
+  const st=stats(),sp=PET_SP[p.sp],k=.25+.025*p.lv;
+  P.push({key:'pet',pet:1,look:sp.look,spr:'pet',name:p.name,el:sp.el,max:st.hp*(.3+.025*p.lv),hp:st.hp*(.3+.025*p.lv),mmax:10,mp:10,atk:st.atk*k,def:st.def*.6,crit:.1,spd:13,
+   side:'p',alive:true,ox:0,oy:0,alpha:1,flash:0,buf:0,defd:false,walk:0});return P;};}
+{const ai0=btAI;btAI=function(a){if(a&&a.pet){const p=petActive(),sp=p&&PET_SP[p.sp];if(sp)a.el=sp.el;const fs=BT.foes.filter(f=>f.alive),ps=BT.party.filter(x=>x.alive);if(!fs.length)return {type:'def'};
+   const t=fs.reduce((m,f)=>f.hp<m.hp?f:m,fs[0]);
+   if(sp&&p.sp==='xie'&&ps.some(x=>x.hp<x.max*.5)&&Math.random()<.35)return {type:'cheal',n:sp.sk};
+   if(sp&&Math.random()<.3+.015*p.lv)return {type:'csk',n:sp.sk,fx:'orb',pow:1.3+.03*p.lv,t};
+   return {type:'atk',t};}
+  return ai0.apply(this,arguments);};}
+{const bs0=btSpr;btSpr=function(a){if(a&&a.pet)return cvMemo('petbt|'+a.look,()=>{const c=btUp(monCv(a.look,.8,null,9),1.6);const n=mkCv(c.width,c.height),x=n.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(c,0,0);n.ww=c.ww;n.hh=c.hh;return n;});return bs0.apply(this,arguments);};}
+
+/* 打赢以后：出战的灵宠长一点；野外偶尔遇到幼崽 */
+let PET_TAME_Q=null;
+{const bw0=btWin;btWin=async function(){try{if(BT){const p=petActive();if(p&&BT.party.some(x=>x.pet)){petXp(p,3);p.bond=Math.min(100,p.bond+1);}
+   const z=WD&&WD.M&&WD.M.kind!=='town'?WD.M.z:null;const story=BT.opt&&BT.opt.noFlee;
+   if(z!=null&&!story){const sp=Object.keys(PET_SP).find(k=>PET_SP[k].z===z&&k!=='huitu');if(sp&&!petHas(sp)&&Math.random()<((S.tame||{})[sp]?.3:.12))PET_TAME_Q=sp;}}}catch(e){console.error(e);}
+  const r=await bw0.apply(this,arguments);if(PET_TAME_Q){const sp=PET_TAME_Q;PET_TAME_Q=null;setTimeout(()=>{try{petTameAsk(sp);}catch(e){console.error(e);}},900);}return r;};}
+function petTameAsk(sp){if(!sp||petHas(sp)||BT)return;const s=PET_SP[sp];S.tame=S.tame||{};const prog=S.tame[sp]||0;
+ const have=Object.keys(PET_FOOD).filter(k=>(S.petFood[k]||0)>0);
+ const btns=have.map(k=>({t:'喂一块'+PET_FOOD[k].n,cls:k===s.like?'gold':'',fn:()=>petTameFeed(sp,k)}));btns.push({t:'不打扰它'});
+ modal(`<h3>${esc(s.n)}幼崽</h3><p>${prog?'又是那只'+esc(s.n)+'幼崽。它比上回靠得近了一点。':'仗打完，石缝后面探出一只'+esc(s.n)+'幼崽，盯着你的行囊看。'}</p><p class="note">${esc(s.d)}${have.length?'':'<br>你身上没有吃的。行囊里可以买灵宠食料。'}</p>`,btns);}
+function petTameFeed(sp,food){const s=PET_SP[sp];S.petFood[food]--;S.tame=S.tame||{};
+ if(food===s.hate){toast('它闻了闻，扭头钻回石缝里了。');save();return;}
+ S.tame[sp]=(S.tame[sp]||0)+(food===s.like?1.5:1);
+ if(S.tame[sp]>=3){const p=petGive(sp);delete S.tame[sp];save();modal(`<h3>${esc(s.n)}跟你走了</h3><p>它吃完最后一口，没有再躲，跟在你脚后。你叫它「${esc(p.name)}」。</p><p class="note">在行囊里能喂它、让它出战。</p>`,[{t:'好',cls:'gold',fn:()=>render()}]);}
+ else{toast('它吃了，往后退了两步，没有跑。下回在这里，也许还能碰见它。');save();}}
+
+/* 第一卷：鼠王之后，灰团跟你回站 */
+{const rk=STORY.find(c=>c.id==='ratking');if(rk&&Array.isArray(rk.lines))rk.lines.push(
+ ['','回站的路上，一只巴掌大的石皮鼠幼崽一直跟在你脚后。你停，它也停。'],
+ ['tie','（看了一眼）鼠王窝里掉出来的。养得活，就养着。'],
+ {fn:()=>{petGive('huitu');}},['','它叫灰团。吃杂粮，不吃果子。'],['','【灵宠：灰团。在行囊里喂它。筑基以后，它能跟你出战。】']);}
+
+/* 行囊页：灵宠 */
+const petImg=look=>cvMemo('petimg|'+look,()=>{const c=monCv(look,.9,null,9);const n=mkCv(c.width,c.height),x=n.getContext('2d');x.translate(c.width,0);x.scale(-1,1);x.drawImage(c,0,0);return n;}).toDataURL();
+function petHTML(){const P=S.pets||[];if(!P.length)return '';const fd=S.petFood||{};
+ return `<h2 class="sec">灵宠 <small>${realmIdx()>=1?'出战的那只跟你进战斗':'筑基以后，它能跟你出战'}</small></h2>
+ ${P.map((p,i)=>{const sp=PET_SP[p.sp];const on=S.petOn===i,hungry=p.full<PET_HUNGRY;
+  return `<div class="pet ${on?'on':''}"><img class="pet-img" src="${petImg(sp.look)}" alt=""><div class="pet-in"><div class="iname">${esc(p.name)}<span class="lv">${sp.n} · ${petStage(p.lv)} · ${p.lv} 级</span></div>
+   <div class="pet-bar"><span>饱食</span><i><b style="width:${p.full}%" class="${hungry?'low':''}"></b></i><em>${Math.round(p.full)}</em></div>
+   <div class="pet-bar"><span>成长</span><i><b style="width:${p.lv>=PET_MAX?100:Math.round(p.xp/petNeed(p.lv)*100)}%"></b></i><em>${p.lv>=PET_MAX?'满':Math.round(p.xp)+'/'+petNeed(p.lv)}</em></div>
+   <div class="istat">${hungry?'饿了，没力气，不肯出战。':''}喜欢${PET_FOOD[sp.like].n}，不吃${PET_FOOD[sp.hate].n}。招式「${sp.sk}」。亲近 ${p.bond}</div>
+   <div class="row">${Object.keys(PET_FOOD).filter(k=>(fd[k]||0)>0).map(k=>`<button class="btn sm ${k===sp.like?'gold':'ghost'}" data-act="petFeed" data-arg="${i}|${k}">喂${PET_FOOD[k].n}</button>`).join('')||'<span class="note">没有食料了。</span>'}
+   <button class="btn sm ${on?'':'ghost'}" data-act="petOn" data-arg="${i}">${on?'出战中':'让它出战'}</button></div></div></div>`;}).join('')}
+ <div class="pet-shop"><b>食料</b> ${Object.keys(PET_FOOD).map(k=>`<button class="btn sm ghost" data-act="petBuy" data-arg="${k}">${PET_FOOD[k].n} ×${fd[k]||0} · 买五份 ${fmt(zsAt(maxZone(),PET_FOOD[k].p*5))}</button>`).join('')}
+ <button class="btn sm ${S.petAuto?'gold':'ghost'}" data-act="petAuto">自动喂食：${S.petAuto?'开':'关'}</button></div>`;}
+function petFeedAct(arg){const [i,k]=String(arg).split('|');const p=(S.pets||[])[+i];if(!p||!(S.petFood[k]>0))return;
+ const r=petEat(p,k);if(r==='hate'){toast(p.name+'闻了闻，扭过头去。');return;}S.petFood[k]--;
+ const lv0=p.lv;toast(r==='like'?p.name+'吃得很香。':p.name+'吃了。');if(p.lv>lv0)toast(p.name+'长大了一些：'+p.lv+' 级。','big');save();render();}
+
+LATE.push(()=>{
+ Object.assign(ACT,{petFeed:a=>petFeedAct(a),petOn:a=>{S.petOn=+a;save();render();},
+  petBuy:k=>{const f=PET_FOOD[k];if(!f)return;const c=zsAt(maxZone(),f.p*5);if(S.stones<c){toast('灵石不够。','bad');return;}S.stones-=c;S.petFood[k]=(S.petFood[k]||0)+5;save();render();},
+  petAuto:()=>{S.petAuto=!S.petAuto;save();render();}});
+ const bv0=VIEWS.bag;VIEWS.bag=()=>petHTML()+bv0();
+});
+/* 已经走过鼠王那一章的存档：灰团补上（开局和切换存档都会经过 render） */
+function petGiftOld(){if(S&&S.started&&S.seen.includes('ratking')&&!petHas('huitu')&&!S.flags.petGift){S.flags.petGift=1;petGive('huitu');save();
+ setTimeout(()=>{try{modal('<h3>灰团</h3><p>站里的人说，鼠王一战以后，有只石皮鼠幼崽一直在你铺位底下打转，赶都赶不走。你叫它灰团。</p><p class="note">在行囊里能喂它。筑基以后，它能跟你出战。</p>',[{t:'好',cls:'gold'}]);}catch(e){}},1500);}}
+{const r0=render;render=function(){try{petGiftOld();}catch(e){}return r0.apply(this,arguments);};}
+
 /* ================= GAME ================= */
 const $=s=>document.querySelector(s);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -11818,7 +12135,7 @@ const UPS=[
 const SLOTS=3,SLOT_KEY='lingchao_slot';const slotKey=n=>n===1?'lingchao_save_v1':'lingchao_save_v1_s'+n;
 let SLOT=(()=>{try{const n=+localStorage.getItem(SLOT_KEY);return n>=1&&n<=SLOTS?n:1;}catch(e){return 1;}})();
 const SAVE_V=4;
-function fresh(){return {v:SAVE_V,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
+function fresh(){return {v:SAVE_V,pets:[],petOn:-1,petFood:{grain:3},petAuto:false,tame:{},seals:{},sealSpent:0,letters:[],ng:0,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
   gear:{w:null,a:null,j:null,r:null,f:null},bag:[],bossDown:[],kills:[0,0,0,0,0,0,0,0,0,0,0],abyss:0,karma:0,seen:[],pending:[],flags:{},visited:[0],
   expo:0,special:null,dt:{lv:0,slots:[]},rebirth:0,usePill:false,last:Date.now(),started:false,uid:1,taps:0,slain:0,hunts:0,
   pop:213,rep:{station:0,caravan:0,tq:0},q:{},seenEv:[],evClock:0,lastDaily:'',runs:0,meds:3,mps:1,hpF:1,mpF:1,btAuto:false,loc:'town',gems:{},books:{},learned:[],clan:null,omen:null,omenClock:0,mgW:{},raid:0,aff:{},affDay:{},giftDay:{},partner:null,sworn:[],
@@ -12392,6 +12709,7 @@ modal(`<h3>${esc(v.title)}</h3><h4>${esc(c.title)}</h4><p class="note">第 ${cha
 ACT.novelRead=a=>novelsLoad(()=>novelReader(+a||0));
 const _storyView0=VIEWS.story;VIEWS.story=()=>_storyView0()+causeHTML()+readerCard();
 window.claude?.hot?.snapshot?.(()=>({S}));
+LATE.forEach(f=>{try{f();}catch(e){console.error(e);}});
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
 if(location.hash==='#debug')window.__lc={STORY,QUESTS,BOND,sweepGo,sweepPick,partners,advanceDays,daysAll,mkParty,retreatApply,RETREATS,retreatCost,offline,timeTick,giftPick,novelReader,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 

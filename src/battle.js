@@ -42,8 +42,8 @@ function startBattle(foes,opt){if(BT)return;opt=opt||{};const bgk=opt.bg!==undef
 function btScale(){const n=Math.min(3,BT.party.length),hk=[1,.38,.72,1][n],ak=[1,.8,.9,1][n];BT.foes.forEach(f=>{if(f.pk&&!f.pkd){f.pkd=1;f.hp*=hk;f.max*=hk;f.atk*=ak;}});
  BT.cpP=BT.party.reduce((t,a)=>t+cpOf(a.atk,a.max,a.crit),0);BT.cpE=BT.foes.reduce((t,f)=>t+cpOf(f.atk,f.max,0),0);}
 function btFit(){const st=$('#btStage'),cv=$('#btc');const f=fitCanvas(cv,st,260);Object.assign(BT,{W:f.W,H:f.H,k:f.k,dpr:f.dpr,offX:f.ox,offY:f.oy,cx:cv.getContext('2d')});}
-function btLayout(){const FP={1:[[.30,.6]],2:[[.22,.52],[.38,.7]],3:[[.16,.5],[.38,.58],[.22,.74]]},PP={1:[[.72,.8]],2:[[.64,.72],[.84,.82]],3:[[.60,.66],[.84,.72],[.70,.85]]};
- const fl=FP[Math.min(3,BT.foes.length)],pl=PP[Math.min(3,BT.party.length)];BT.foes.forEach((f,i)=>{const p=fl[i]||fl[0];f.bx=Math.round(BT.W*p[0]);f.by=Math.round(BT.H*p[1]);});BT.party.forEach((a,i)=>{const p=pl[i];a.bx=Math.round(BT.W*p[0]);a.by=Math.round(BT.H*p[1]);});}
+function btLayout(){const FP={1:[[.30,.6]],2:[[.22,.52],[.38,.7]],3:[[.16,.5],[.38,.58],[.22,.74]]},PP={1:[[.72,.8]],2:[[.64,.72],[.84,.82]],3:[[.60,.66],[.84,.72],[.70,.85]],4:[[.58,.64],[.82,.68],[.68,.82],[.90,.88]]};
+ const fl=FP[Math.min(3,BT.foes.length)],pl=PP[Math.min(4,BT.party.length)];BT.foes.forEach((f,i)=>{const p=fl[i]||fl[0];f.bx=Math.round(BT.W*p[0]);f.by=Math.round(BT.H*p[1]);});BT.party.forEach((a,i)=>{const p=pl[i];a.bx=Math.round(BT.W*p[0]);a.by=Math.round(BT.H*p[1]);});}
 function btSpr(a){const art=btPortrait(a);if(art)return art;if(a.jie)return cvMemo('jiecv',()=>{const c=jieCv();return btUp(c,1.4);});if(a.side==='p'){const fr=a.walk?[1,2][Math.floor(BT.t*8)%2]:0;return cvMemo('hbp|'+a.spr+'|'+fr,()=>btUp(chSpr(a.spr,1,fr,9),2));}
  return cvMemo('hbf|'+a.look+'|'+(a.boss?1:0)+'|'+(a.tint?1:0),()=>btUp(monCv(a.look,a.boss?1.5:1,a.tint,9),monIsHuman(a.look)?1.55:2));}
 // Reuse the transparent story portraits without changing source assets or map sprites.

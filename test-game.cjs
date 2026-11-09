@@ -53,5 +53,13 @@ test('saves from SAVE_V=4 on are kept; older test saves are not read',()=>{run(s
   const o=run('hydrate(JSON.parse(JSON.stringify(save4)))');
   assert.equal(o.v,run('SAVE_V'));assert.equal(o.name,'林舟');assert.equal(o.stage,13);assert.equal(o.stones,777);assert.equal(JSON.stringify(o.seen),'["v10_21","v11_1"]');
   assert.equal(o.flags.v11Fang,'san');assert.equal(o.aff.hong,80);assert.equal(JSON.stringify(o.partners),'["hong"]');assert.equal(o.year,12);
-  assert.ok(Array.isArray(o.bag)&&o.gear&&typeof o.ups.tuna==='number','missing fields get defaults');});
+  assert.ok(Array.isArray(o.bag)&&o.gear&&typeof o.ups.tuna==='number','missing fields get defaults');
+  assert.ok(Array.isArray(o.pets)&&o.pets.length===0&&o.petFood.grain===3&&o.ng===0&&Array.isArray(o.letters),'new systems get defaults on old saves');});
+test('pets: liked food grows twice as fast, hated food is refused, hunger follows game days',()=>{run(section('const PET_SP=','/* 日子往前走'));
+  fresh();ctx.S.pets=[];ctx.S.petFood={grain:10,fruit:2};ctx.S.petOn=-1;run("petGive('huitu')");const p=ctx.S.pets[0];assert.equal(p.name,'灰团');assert.equal(ctx.S.petOn,0);
+  assert.equal(run("petEat(S.pets[0],'fruit')"),'hate');assert.equal(p.xp,0);
+  assert.equal(run("petEat(S.pets[0],'grain')"),'like');assert.equal(p.xp,8);assert.equal(p.full,100);
+  p.full=60;run('petTick(3)');assert.equal(p.full,36);run('petTick(10)');assert.equal(p.full,0);
+  ctx.S.petAuto=true;run('petTick(1)');assert.ok(p.full>=50,'auto feed tops up');assert.ok(ctx.S.petFood.fruit===2,'auto feed never uses hated food');
+  run('petXp(S.pets[0],9999)');assert.equal(p.lv,15);assert.equal(run("petGive('huitu')"),null);});
 console.log(`${checks} tests passed`);

@@ -43,7 +43,7 @@ const UPS=[
 const SLOTS=3,SLOT_KEY='lingchao_slot';const slotKey=n=>n===1?'lingchao_save_v1':'lingchao_save_v1_s'+n;
 let SLOT=(()=>{try{const n=+localStorage.getItem(SLOT_KEY);return n>=1&&n<=SLOTS?n:1;}catch(e){return 1;}})();
 const SAVE_V=4;
-function fresh(){return {v:SAVE_V,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
+function fresh(){return {v:SAVE_V,pets:[],petOn:-1,petFood:{grain:3},petAuto:false,tame:{},seals:{},sealSpent:0,letters:[],ng:0,name:'',gender:'m',stage:0,qi:0,stones:0,ups:{tuna:0,yinqi:0,yujian:0,jingang:0,juling:0,lianxi:0},pills:0,qiPills:3,yao:0,tox:0,layer:0,bnPass:-1,
   gear:{w:null,a:null,j:null,r:null,f:null},bag:[],bossDown:[],kills:[0,0,0,0,0,0,0,0,0,0,0],abyss:0,karma:0,seen:[],pending:[],flags:{},visited:[0],
   expo:0,special:null,dt:{lv:0,slots:[]},rebirth:0,usePill:false,last:Date.now(),started:false,uid:1,taps:0,slain:0,hunts:0,
   pop:213,rep:{station:0,caravan:0,tq:0},q:{},seenEv:[],evClock:0,lastDaily:'',runs:0,meds:3,mps:1,hpF:1,mpF:1,btAuto:false,loc:'town',gems:{},books:{},learned:[],clan:null,omen:null,omenClock:0,mgW:{},raid:0,aff:{},affDay:{},giftDay:{},partner:null,sworn:[],
@@ -617,6 +617,7 @@ modal(`<h3>${esc(v.title)}</h3><h4>${esc(c.title)}</h4><p class="note">第 ${cha
 ACT.novelRead=a=>novelsLoad(()=>novelReader(+a||0));
 const _storyView0=VIEWS.story;VIEWS.story=()=>_storyView0()+causeHTML()+readerCard();
 window.claude?.hot?.snapshot?.(()=>({S}));
+LATE.forEach(f=>{try{f();}catch(e){console.error(e);}});
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
 if(location.hash==='#debug')window.__lc={STORY,QUESTS,BOND,sweepGo,sweepPick,partners,advanceDays,daysAll,mkParty,retreatApply,RETREATS,retreatCost,offline,timeTick,giftPick,novelReader,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
