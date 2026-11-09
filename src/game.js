@@ -471,7 +471,7 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).
  <h2 class="sec">新的篇章 <small>${fresh.length?'待看 '+fresh.length+' 段':'暂无新剧情'}</small></h2>
  ${fresh.length?['主线剧情','支线剧情'].map((label,i)=>{const chapters=fresh.filter(ch=>!!ch.side===!!i);return chapters.length?'<h3 class="sub">'+label+'</h3>'+chapters.map(chapterHTML).join(''):'';}).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
  ${journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
- ${journalFold('rw','江湖人物志',rwSum(),rwHTML())}
+ ${Object.keys(RW).length?journalFold('rw','江湖人物志',rwSum(),rwHTML()):''}
  ${journalFold('cg','画卷',(S.cgSeen||[]).length+'/'+Object.keys(CG).length,cgHTML())}
  ${journalFold('yinguo','因果簿',(S.seeds||[]).filter(x=>!x.fired).length+' 颗种子在路上',yinguoHTML())}
  ${journalFold('relations','缘分与声望','人物与势力',relations)}

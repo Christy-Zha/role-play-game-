@@ -12,6 +12,8 @@ const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','
  'rj1','rj2','rj3','rj4','rj5','rj6','rj7','rj8','rj9','rj10','rj11','rj_end','rv2','rv3','rv4','rv5','rv6','rv7',
  'b_hong1','b_hong2','b_hong3','b_zhou1','b_su1','b_su2','b_su3','b_ning1','b_ning2','b_ning3','b_zero1','b_mo1','b_cm1','b_cm2','b_cm3','b_man1','b_man2']);
 for(let i=STORY.length-1;i>=0;i--){const c=STORY[i];if(CANON_OFF.has(c.id)||/^rw_/.test(c.id))STORY.splice(i,1);}
+/* 江湖人物线整批撤下以后，入口也一起收掉：只留还在剧情里的篇章，否则「叙话」会指向不存在的章节 */
+for(const k in RW){RW[k]=RW[k].filter(ch=>STORY.some(c=>c.id===ch.id));if(!RW[k].length)delete RW[k];}
 /* 兼容：旧系统里还有不少「看过某章才开」的判断，走到卷宗里对应的那一章时，替它记上 */
 const CANON_ALIAS={v1_caravan:['caravan'],v2_10:[],v3_4:['zero']};
 STORY.forEach(c=>{const al=CANON_ALIAS[c.id];if(!al||!al.length)return;const a0=c.after;c.after=function(){al.forEach(x=>{if(!S.seen.includes(x))S.seen.push(x);});return a0&&a0.apply(this,arguments);};});

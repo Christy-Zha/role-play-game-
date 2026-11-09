@@ -11485,6 +11485,8 @@ const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','
  'rj1','rj2','rj3','rj4','rj5','rj6','rj7','rj8','rj9','rj10','rj11','rj_end','rv2','rv3','rv4','rv5','rv6','rv7',
  'b_hong1','b_hong2','b_hong3','b_zhou1','b_su1','b_su2','b_su3','b_ning1','b_ning2','b_ning3','b_zero1','b_mo1','b_cm1','b_cm2','b_cm3','b_man1','b_man2']);
 for(let i=STORY.length-1;i>=0;i--){const c=STORY[i];if(CANON_OFF.has(c.id)||/^rw_/.test(c.id))STORY.splice(i,1);}
+/* 江湖人物线整批撤下以后，入口也一起收掉：只留还在剧情里的篇章，否则「叙话」会指向不存在的章节 */
+for(const k in RW){RW[k]=RW[k].filter(ch=>STORY.some(c=>c.id===ch.id));if(!RW[k].length)delete RW[k];}
 /* 兼容：旧系统里还有不少「看过某章才开」的判断，走到卷宗里对应的那一章时，替它记上 */
 const CANON_ALIAS={v1_caravan:['caravan'],v2_10:[],v3_4:['zero']};
 STORY.forEach(c=>{const al=CANON_ALIAS[c.id];if(!al||!al.length)return;const a0=c.after;c.after=function(){al.forEach(x=>{if(!S.seen.includes(x))S.seen.push(x);});return a0&&a0.apply(this,arguments);};});
@@ -12618,7 +12620,7 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).
  <h2 class="sec">新的篇章 <small>${fresh.length?'待看 '+fresh.length+' 段':'暂无新剧情'}</small></h2>
  ${fresh.length?['主线剧情','支线剧情'].map((label,i)=>{const chapters=fresh.filter(ch=>!!ch.side===!!i);return chapters.length?'<h3 class="sub">'+label+'</h3>'+chapters.map(chapterHTML).join(''):'';}).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
  ${journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
- ${journalFold('rw','江湖人物志',rwSum(),rwHTML())}
+ ${Object.keys(RW).length?journalFold('rw','江湖人物志',rwSum(),rwHTML()):''}
  ${journalFold('cg','画卷',(S.cgSeen||[]).length+'/'+Object.keys(CG).length,cgHTML())}
  ${journalFold('yinguo','因果簿',(S.seeds||[]).filter(x=>!x.fired).length+' 颗种子在路上',yinguoHTML())}
  ${journalFold('relations','缘分与声望','人物与势力',relations)}
