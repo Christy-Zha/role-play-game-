@@ -19,8 +19,8 @@ assert.equal(t.CHAPTER_SCENE_KEYS.size,20);
 assert.notDeepEqual(t.CHAPTER_ENEMIES['白脊鲛'],t.CHAPTER_ENEMIES['白脊幼鲛']);
 console.log('PASS full game initialization; 16 named portraits, 20 scenes, 12 story CG and named enemy atlas mappings');
 const thirdFiles=[...t.THIRD_SCENE_KEYS].map(k=>'scene_'+k+'.jpg');
-for(const key of new Set([...Object.values(t.THIRD_PORTRAITS),'mo_lamp','xie_lamp']))thirdFiles.push('por_'+key+'.png');
-for(const key of new Set(Object.values(t.THIRD_ENEMIES)))thirdFiles.push('enemy_'+key+'.png');
+for(const key of new Set([...Object.values(t.THIRD_PORTRAITS),'mo_lamp','xie_lamp']))thirdFiles.push('por_'+key+'.webp');
+for(const key of new Set(Object.values(t.THIRD_ENEMIES)))thirdFiles.push('enemy_'+key+'.webp');
 for(const key of ['jiedan','chudeng','xuanhe','lalang','duanling','end_deng','end_feng','end_shou','end_qing','end_bai']){assert.ok(t.CG[key]);thirdFiles.push('cg_'+key+'.jpg');}
 assert.equal(thirdFiles.length,31);
 for(const file of thirdFiles)assert.ok(fs.existsSync(__dirname+'/art/'+file),'Missing '+file);

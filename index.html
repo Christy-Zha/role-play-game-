@@ -7257,7 +7257,7 @@ function requestThirdArt(key,ext){
 const _thirdSceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){if(THIRD_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _thirdSceneCanvas(key,w,h);};
 const _thirdBtBg=btBg;btBg=function(key,w,h){if(THIRD_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _thirdBtBg(key,w,h);};
 const THIRD_PORTRAITS={taoq:'taoq',yans:'yans',xupz:'xupz',qir:'qir',xchun:'xchun',yaoj:'yaoj',yaod:'yaoj'};
-function thirdPortrait(key){return `<img class="porimg" src="art/por_${key}.png" alt="">`;}
+function thirdPortrait(key){return `<img class="porimg" src="art/por_${key}.webp" alt="">`;}
 Object.entries(THIRD_PORTRAITS).forEach(([key,file])=>{PORTRAIT[key]=()=>thirdPortrait(file);});
 const _thirdMo=PORTRAIT.mo,_thirdXie=PORTRAIT.xie;
 PORTRAIT.mo=()=>S.seen.includes('v11_10')?thirdPortrait('mo_lamp'):_thirdMo();
@@ -7265,7 +7265,7 @@ PORTRAIT.xie=()=>S.seen.includes('v11_10')?thirdPortrait('xie_lamp'):(_thirdXie?
 const THIRD_ENEMIES={'晏枢':'yans','乌衡':'wuh2','冻息叶':'dongxi','主槽守卫':'zhucao','持杖的守卫':'zhucao'};
 const _thirdBtPortrait=btPortrait;btPortrait=function(a){
  const key=a.side==='e'&&THIRD_ENEMIES[a.n||a.name];if(!key)return _thirdBtPortrait.apply(this,arguments);
- requestThirdArt('enemy_'+key,'png');const im=ART_IMG['enemy_'+key];if(!im)return _thirdBtPortrait.apply(this,arguments);
+ requestThirdArt('enemy_'+key,'webp');const im=ART_IMG['enemy_'+key];if(!im)return _thirdBtPortrait.apply(this,arguments);
  const h=Math.round(Math.max(40,Math.min(BT.H*.40,BT.W*.25)));
  return cvMemo('third-enemy|'+key+'|'+h,()=>{const cv=mkCv(h*2,h*2),x=cv.getContext('2d');cv.ww=h;cv.hh=h;const s=Math.min(cv.width/im.width,cv.height/im.height);x.drawImage(im,(cv.width-im.width*s)/2,cv.height-im.height*s,im.width*s,im.height*s);return cv;});
 };
