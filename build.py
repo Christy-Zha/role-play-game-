@@ -2,7 +2,9 @@ import pathlib
 ROOT=pathlib.Path(__file__).resolve().parent
 src=ROOT/'src'
 css=(src/'style.css').read_text(encoding='utf-8')
-js='(function(){\n'+'\n'.join((src/f).read_text(encoding='utf-8') for f in ['art.js','pixel.js','story.js','art2.js','hd.js','items.js','story2.js','events.js','quests.js','content2.js','bond.js','branch.js','world.js','battle.js','sweep.js','minigame.js','clan.js','surprise.js','sfx.js','art3.js','art4.js','elements.js','craft.js','fate.js','jianghu.js','renwu.js','renjian.js','zongmen.js','boss.js','rival.js','ceremony.js','vol1.js','vol2.js','vol3.js','chart.js','vol4.js','vol5.js','vol6.js','vol7.js','vol8.js','vol9.js','vol10.js','vol11.js','vol12.js','vol13.js','after.js','canon.js','timeline.js','meta.js','pets.js','xuhua.js','fun.js','game.js'])+'\n})();'
+# Three.js（3D 工具库，MIT 协议）单独放一个 <script>，在游戏代码之前加载
+three='<script>\n'+(src/'vendor'/'three.min.js').read_text(encoding='utf-8')+'\n</script>\n'
+js='(function(){\n'+'\n'.join((src/f).read_text(encoding='utf-8') for f in ['art.js','pixel.js','story.js','art2.js','hd.js','items.js','story2.js','events.js','quests.js','content2.js','bond.js','branch.js','world.js','battle.js','sweep.js','minigame.js','clan.js','surprise.js','sfx.js','art3.js','art4.js','elements.js','craft.js','fate.js','jianghu.js','renwu.js','renjian.js','zongmen.js','boss.js','rival.js','ceremony.js','vol1.js','vol2.js','vol3.js','chart.js','vol4.js','vol5.js','vol6.js','vol7.js','vol8.js','vol9.js','vol10.js','vol11.js','vol12.js','vol13.js','after.js','canon.js','timeline.js','meta.js','pets.js','xuhua.js','fun.js','stage3d.js','game.js'])+'\n})();'
 body='''<div id="app">
   <header class="top">
     <div class="who"><div class="nm" id="hName"></div><div class="rl" id="hRealm"></div></div>
@@ -26,7 +28,7 @@ body='''<div id="app">
 <div id="ov" hidden></div>
 '''
 fonts='<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap">\n'
-art='<title>灵潮修仙录</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'+fonts+'<style>\n'+css+'\n</style>\n'+body+'<script>\n'+js+'\n</script>\n'
+art='<title>灵潮修仙录</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'+fonts+'<style>\n'+css+'\n</style>\n'+body+three+'<script>\n'+js+'\n</script>\n'
 (ROOT/'build'/'lingchao_artifact.html').parent.mkdir(exist_ok=True);(ROOT/'build'/'lingchao_artifact.html').write_text(art,encoding='utf-8')
 head='''<!doctype html>
 <html lang="zh-CN">
@@ -41,6 +43,6 @@ head='''<!doctype html>
 <title>灵潮修仙录</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="art/icon-180.png">
-'''+fonts+'<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}\n'+css+'\n</style>\n</head>\n<body>\n'+body+'<script>\n'+js+'\n</script>\n</body>\n</html>\n'
+'''+fonts+'<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}\n'+css+'\n</style>\n</head>\n<body>\n'+body+three+'<script>\n'+js+'\n</script>\n</body>\n</html>\n'
 (ROOT/'index.html').write_text(head,encoding='utf-8')
 print('ok',len(art))
