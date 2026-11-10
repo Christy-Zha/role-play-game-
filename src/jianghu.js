@@ -263,6 +263,8 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9&&R+1<=STAGES[canonCap()].r?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
   if(un&&sk&&Math.random()<.4)g.m={t:'挑战'+SECTS[sk].n,a:'sect'};}
  const E=S.path?ENDS[PATHS[S.path].end]:null;g.l=E&&!(S.endings||[]).includes(PATHS[S.path].end)?{t:'道果「'+E.n+'」',sub:E.cond,a:'ends'}:(S.xf||0)<5?{t:'寻找仙府残图 '+(S.xf||0)+'/5',sub:'散落在拍卖行、深渊、隐秘的洞府和人心里',a:'ends'}:{t:'登上江湖榜首（现'+(jhRank()>100?'在榜外':'第 '+jhRank()+' 位')+'）',a:'rank'};
+ /* 正史里没有旧道途、仙府残图、江湖榜：远期目标改成境界的下一扇门 */
+ if(typeof CANON_CAP!=='undefined'&&!S.path){const cp=canonCap();g.l={t:F('qingSan')?'这一世，走到筑基为止':cp>=20?'化神的门还关着':cp>=16?'元婴的门还关着':'结丹',sub:'修为攒满了也不会浪费',a:'cult'};}
  return g;}
 function goalsHTML(){const g=goals();return `<button class="goalbar" data-act="goals"><span class="gs">近</span>${esc(g.s.t)}</button>`;}
 function goalsOpen(){const g=goals(),row=(k,n,o)=>`<div class="row2 goal"><div class="gk">${n}</div><div class="in"><div class="iname">${esc(o.t)}</div>${o.sub?`<div class="istat">${esc(o.sub)}</div>`:''}</div><button class="btn sm" data-gl="${o.a}">去</button></div>`;

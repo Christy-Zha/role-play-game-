@@ -4896,6 +4896,8 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9&&R+1<=STAGES[canonCap()].r?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
   if(un&&sk&&Math.random()<.4)g.m={t:'挑战'+SECTS[sk].n,a:'sect'};}
  const E=S.path?ENDS[PATHS[S.path].end]:null;g.l=E&&!(S.endings||[]).includes(PATHS[S.path].end)?{t:'道果「'+E.n+'」',sub:E.cond,a:'ends'}:(S.xf||0)<5?{t:'寻找仙府残图 '+(S.xf||0)+'/5',sub:'散落在拍卖行、深渊、隐秘的洞府和人心里',a:'ends'}:{t:'登上江湖榜首（现'+(jhRank()>100?'在榜外':'第 '+jhRank()+' 位')+'）',a:'rank'};
+ /* 正史里没有旧道途、仙府残图、江湖榜：远期目标改成境界的下一扇门 */
+ if(typeof CANON_CAP!=='undefined'&&!S.path){const cp=canonCap();g.l={t:F('qingSan')?'这一世，走到筑基为止':cp>=20?'化神的门还关着':cp>=16?'元婴的门还关着':'结丹',sub:'修为攒满了也不会浪费',a:'cult'};}
  return g;}
 function goalsHTML(){const g=goals();return `<button class="goalbar" data-act="goals"><span class="gs">近</span>${esc(g.s.t)}</button>`;}
 function goalsOpen(){const g=goals(),row=(k,n,o)=>`<div class="row2 goal"><div class="gk">${n}</div><div class="in"><div class="iname">${esc(o.t)}</div>${o.sub?`<div class="istat">${esc(o.sub)}</div>`:''}</div><button class="btn sm" data-gl="${o.a}">去</button></div>`;
@@ -12855,6 +12857,7 @@ V14({t:'门缝',g:'缝',bg:'xiaowu',hint:'后日过去一阵子：潮的声音�
  ['mo','潮退的那些年，门是自己关上的。如今潮从更远处回来，它又自己开了一道缝。'],
  ['mo','开了缝，不等于该走。把萧尘叫来。等他到了，我把当年的事说给你们听。'],
  ['','那夜以后，金丹没再顶得那样急。像是知道外面有一扇门，便安心等着。'],
+ ['','【玉简最深处裂开一道缝。墨老说，那是太一留下的门，门后是元婴，三百多年没人走过去。】'],
  ['','【金丹之上，那扇门开了一道缝。修为攒满以后，可以冲击元婴。】']
 ],after:()=>{S.flags.yyOpen=1;}});
 
@@ -12877,6 +12880,7 @@ V14({t:'旧名录',g:'录',hint:'萧尘到了以后：墨老要说当年的事',
  ['','信里夹着一张短笺，是晏枢的字。他早已不坐那张最高的椅子，仍替息衡看潮。'],
  ['','短笺只有两行：我没走这条路，是因为那些年的潮不够。不是因为我没看过那一页。'],
  ['mo','（灰影在灯里坐得很直）他倒是说了实话。'],
+ ['','【门背后刻满了名字：大字是结过婴的人，小字是替他们付了寿数的人。】'],
  ['xiao','门开了缝。你走不走？怎么走？'],
  ['',()=>S.stage>=17?'丹田里的元婴睁着眼，像也在等你回话。':'缝里的凉气又涨上来，金丹跟着一顶，像在等你回话。'],
  {c:[
@@ -12911,9 +12915,9 @@ V14({t:'雷下',g:'雷',bg:'leijie',st:17,hint:'修为攒满，渡过元婴的�
    ['hong','看什么。你倒是一根没白。']],
   mate:[
    ['','{m}在门外守了三年。你出来时，{m}先没说话，把你的手按住，确认是热的。'],
-   ['hong','（车队路过，在院门口探头）醒了？那我这趟的货，总算不用替你签收了。']],
+   ['hong','（路过院门，探进头来）醒了？那我这趟的货，总算不用替你签收了。']],
   friend:[
-   ['hong','（在院门口跳下车）醒了？三年，我替你签收了二十七回货。'],
+   ['hong','（风尘仆仆地进了院门）醒了？三年，我替你签收了二十七回货。'],
    ['','她鬓边多了几根白。你看了一眼，她就把帽子扣上了。']],
   bai:[
    ['','扶你的是药院的学徒。他说你在后屋坐了三年，墨老每天让他添一回灯油。'],
@@ -12964,7 +12968,7 @@ V14({t:'第二个自己',g:'影',bg:'guanchao',st:18,hint:'元婴稳到中期',l
  ['mo','后来，就成了拿别人的，补自己的。'],
  YW({
   friend:[
-   ['hong','（听了个尾巴，把账本一合）你要是敢往我身上添一年，我就把你从车上扔下去。'],
+   ['hong','（听了个尾巴，把账本一合）你要是敢往我身上添一年，我就把你扔出门去。'],
    ['hong','我的岁数是我的。短一点，也是我的。']],
   bai:[
    ['','你往白榆台写了一封信，写了三遍。最后只问她，腿阴天还疼不疼。'],
@@ -12989,12 +12993,15 @@ V14({t:'门后',g:'门',bg:'dongtian',st:20,hint:'元婴走到大圆满',lines:[
  ['','你走回第一道门。门背后那面墙，还是一整面的名字。'],
  YL({
   zi:[
+   ['','【这面墙上，没有再添一个小字。】'],
    ['','你在最后一行，用和小字一样大的字，刻下自己的名字。'],
    ['','底下留了一大片空白。往后若有人替你付了什么，得写在这里。看得见，才算数。']],
   gong:[
+   ['','【门的做法，连同那些名字，传出去了。】'],
    ['','萧尘的抄本，在息衡给人看了三年。来问的人很多，还没有人走到门前。'],
    ['','你在墙上添了一行：不借寿，也过得去。慢一点，疼一点，过得去。']],
   huan:[
+   ['','【那些名字，一个一个回到了各家。】'],
    ['','墙上那些小字，有一半已经找着了家。墨老让你在每个找着的名字旁边，点一个小点。'],
    ['','不是红的，是墨的。']]
  }),
@@ -13032,6 +13039,8 @@ CAUSE.push(
 /* 旧版「问道」收起：元婴不再弹选道途的框，境界神通里也不列它。存档里已有的 S.path 不动，只是不再显示 */
 pathAsk=function(){};
 REALM_UNLOCK[3]=(REALM_UNLOCK[3]||[]).filter(u=>u[0]!=='问道');
+/* 读完一章日子走一天：timeline.js 只包了加载时已有的章节，第十四卷加载得晚，这里补上 */
+STORY.forEach(c=>{if(!/^v14_/.test(c.id))return;const a0=c.after;c.after=function(){try{if(!S.flags['td_'+c.id]){S.flags['td_'+c.id]=1;advanceDays(1,'story');}}catch(e){}return a0&&a0.apply(this,arguments);};});
 /* ---------- 第十四卷 · 结束 ---------- */
 
 /* ================= 好玩度改造：秘境闯关、流派共鸣、要点阅读、异宝提示 =================
@@ -13971,7 +13980,7 @@ VIEWS.story=()=>{const act=QUESTS.filter(q=>['on','ready'].includes(qSt(q.id))).
     ${st==='ready'?`<button class="btn sm gold" data-act="goTalk" data-arg="${q.npc}">交付</button>`:qZone(q)>=0?`<button class="btn sm ghost" data-act="goz" data-arg="${qZone(q)}" ${zoneUnlocked(qZone(q))?'':'disabled'}>前往</button>`:q.obj.type==='fight'?`<button class="btn sm red" data-act="home">回站</button>`:q.obj.type==='game'?`<button class="btn sm gold" data-act="qgame" data-arg="${q.id}">挑战</button>`:''}</div>`;}).join(''):'<p class="empty">在青石站走走，和大家聊聊。头上有「!」的人有事相托，「?」的人在等你回话。</p>'}
  <h2 class="sec">新的篇章 <small>${fresh.length?'待看 '+fresh.length+' 段':'暂无新剧情'}</small></h2>
  ${fresh.length?['主线剧情','支线剧情'].map((label,i)=>{const chapters=fresh.filter(ch=>!!ch.side===!!i);return chapters.length?'<h3 class="sub">'+label+'</h3>'+chapters.map(chapterHTML).join(''):'';}).join(''):'<p class="empty">继续修炼与探索，新故事会在这里出现。</p>'}
- ${journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
+ ${(typeof CANON_CAP!=='undefined'&&!S.path)?'':journalFold('ends','道途与道果',(S.path?PATHS[S.path].n+' · ':'')+'已证 '+(S.endings||[]).length+'/6',endsHTML())}
  ${Object.keys(RW).length?journalFold('rw','江湖人物志',rwSum(),rwHTML()):''}
  ${journalFold('cg','画卷',(S.cgSeen||[]).length+'/'+Object.keys(CG).length,cgHTML())}
  ${journalFold('yinguo','因果簿',(S.seeds||[]).filter(x=>!x.fired).length+' 颗种子在路上',yinguoHTML())}
