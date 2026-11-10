@@ -21,8 +21,8 @@ const CL_STORY={
 const CL_SUR='林陈李王张赵周吴郑孙沈苏顾陆叶宋江许韩冯';const CL_GIV=['青','远','宁','川','安','禾','砚','晚','舟','白','岚','石','乔','一','言','星','溪','柏','衡','野'];
 function clanHydrate(c){c=Object.assign({name:'无名',fame:0,mem:[],bld:{},store:0,medT:0,medS:0,log:[],evClock:0,last:Date.now()},c);c.bld=Object.assign({ci:1,tian:0,dan:0,qi:0,jing:0,wu:0},c.bld);return c;}
 const tianRate=lv=>Math.ceil(zsAt(maxZone(),.6)*lv*(S.clan&&S.clan.mem.some(m=>m.sid==='qian'&&!m.gone)?1.2:1));
-const danEvery=lv=>Math.max(8*60,(60-lv*5)*60);
-const clCap=()=>3+S.clan.bld.ci*2;
+let danEvery=lv=>Math.max(8*60,(60-lv*5)*60);
+let clCap=()=>3+S.clan.bld.ci*2;
 const clBuildMax=k=>k==='ci'?10:Math.min(10,S.clan.bld.ci+1);
 const clCost=(k,lv)=>Math.ceil(CL_BLD[k].base*Math.pow(2.25,lv));
 function clanBonus(){const c=S.clan;if(!c)return {atk:0,def:0,idle:0};return {atk:c.bld.wu*.04,def:c.bld.wu*.04,idle:c.bld.jing*.06};}
@@ -30,7 +30,7 @@ function clLog(t){const c=S.clan;c.log.unshift({t,at:Date.now()});c.log.length=M
 const clRank=m=>m.lv+m.apt*3;
 const clZones=()=>ZORD.filter(z=>zoneUnlocked(z));
 const clDiff=(z,t)=>ZORD.indexOf(z)*4+t*3+2;
-const clP=(m,z,t)=>Math.max(.08,Math.min(.96,.55+(clRank(m)-clDiff(z,t))*.06));
+let clP=(m,z,t)=>Math.max(.08,Math.min(.96,.55+(clRank(m)-clDiff(z,t))*.06));
 const clLevel=()=>{const f=S.clan.fame;return f>=800?'名门望族':f>=300?'一方豪族':f>=100?'新兴行社':f>=30?'小有名气':'寒门初立';};
 function clanSync(){const c=S.clan;if(!c)return;for(const id in CL_STORY){const D=CL_STORY[id];if(c.mem.some(m=>m.sid===id))continue;if(!safe(D.cond))continue;
   c.mem.push({id:S.uid++,sid:id,name:D.name,k:D.k,role:D.role,apt:D.apt,lv:D.lv,exp:0,busy:null,spy:D.spy||0});clLog(D.name+'加入了行社。');toast(D.name+' 加入了'+c.name+'。');}}

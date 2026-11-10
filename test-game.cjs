@@ -62,4 +62,53 @@ test('pets: liked food grows twice as fast, hated food is refused, hunger follow
   p.full=60;run('petTick(3)');assert.equal(p.full,36);run('petTick(10)');assert.equal(p.full,0);
   ctx.S.petAuto=true;run('petTick(1)');assert.ok(p.full>=50,'auto feed tops up');assert.ok(ctx.S.petFood.fruit===2,'auto feed never uses hated food');
   run('petXp(S.pets[0],9999)');assert.equal(p.lv,15);assert.equal(run("petGive('huitu')"),null);});
+/* 支线「社约」（kaizong.js）：解锁、声望门槛、题匾只加一次声望、旧存档、改名迁移、三条社约加成 */
+{run("var STORY=[],SPK={},ZORD=[0,1,2],clLog=t=>{(S.clan.log=S.clan.log||[]).unshift(t);},news=()=>{},sfx=()=>{},yearName=y=>'灵潮'+y+'年';");
+ run(section('function clanHydrate(','const tianRate'));run(section('let danEvery=','const clBuildMax'));run(section('const clRank=','const clLevel'));
+ run(section('/* ================= 支线 · 社约','/* ---------- 社约 · 结束'));}
+const ks=id=>run("STORY.find(c=>c.id==='"+id+"')");
+function ksSave(o){fresh();Object.assign(ctx.S,{stage:16,seen:['v2_18','v11_9','ks_1','ks_2','ks_3'],pending:[],sworn:[],dao:{zong:0}},o||{});if(ctx.S.clan)ctx.S.clan=run('clanHydrate')(ctx.S.clan);}
+test('社约: ks_1 opens after 此身 with a clan; no clan hides it; 归青石 low realm still opens',()=>{
+  ksSave({seen:['v2_18','v11_9'],clan:{name:'青石行社',fame:5}});assert.equal(ks('ks_1').cond(),true);assert.equal(ks('ks_2').cond(),false);
+  ksSave({seen:['v2_18','v11_1'],clan:{name:'青石行社',fame:5}});assert.equal(ks('ks_1').cond(),false);
+  ksSave({seen:['v2_18','v11_9']});assert.equal(ks('ks_1').cond(),false);assert.equal(ks('ks_1').gone(),true);
+  ksSave({seen:['v2_18','v11_9','after_qing'],stage:3,flags:{qingSan:1,qingFrom:16},clan:{name:'青石行社',fame:5}});assert.equal(ks('ks_1').cond(),true,'散丹后仍可读');});
+test('社约: chapter 4 needs fame 100 unless already founded',()=>{
+  ksSave({clan:{name:'青石行社',fame:99}});assert.equal(ks('ks_4').cond(),false);assert.ok(/现 99，要 100/.test(ks('ks_4').hint));
+  ctx.S.clan.fame=100;assert.equal(ks('ks_4').cond(),true);ctx.S.seen.pop();assert.equal(ks('ks_4').cond(),false,'要先读 ks_3');});
+test('社约: naming founds once, renames to 青石门, +50 fame and 宗门 +3 only once',()=>{
+  ksSave({clan:{name:'青石行社',fame:100},flags:{kzYue:'men'}});assert.equal(ks('ks_4').lines,run('KS4_NEW'));
+  ks('ks_4').after();ks('ks_4').after();run('ksNameModal()');const b1=ctx.buttons;run('ksNameModal()');const b2=ctx.buttons;
+  assert.equal(b1.map(b=>b.t).join(),'青石宗,青石门,青石派');assert.ok(!b1.some(b=>/再等/.test(b.t)),'没有「再等等」');
+  b1[1].fn();b2[0].fn();b1[2].fn();const c=ctx.S.clan;
+  assert.equal(c.name,'青石门');assert.equal(c.zong,1);assert.equal(c.zongY,3);assert.equal(c.fame,150);assert.equal(ctx.S.dao.zong,3);assert.equal(ctx.S.flags.kzNew,1);assert.equal(ctx.S.flags.kzFame,1);
+  ctx.buttons=null;run('ksNameModal()');assert.equal(ctx.buttons,null,'立派后不再弹题匾');
+  ks('ks_4').after();assert.equal(c.fame,150);assert.equal(c.name,'青石门');assert.equal(ks('ks_4').lines,run('KS4_NEW'),'重读仍是新立版本');
+  c.zong=0;run("ksFound('青石宗')");assert.equal(c.fame,150,'声望只加一次');assert.equal(ctx.S.dao.zong,3);
+  assert.equal(run("ksFound('别的名字')"),false);
+  const h=run('zongHTML()');assert.ok(h.includes('青石宗 · 门派')&&h.includes('门不上锁')&&!/弟子|继承人|宗主|掌门/.test(h));});
+test('社约: old founded save keeps its name and fame, reads the 「匾早挂好了」 version below fame 100',()=>{
+  ksSave({clan:{name:'青石宗',fame:20,zong:1,zongY:8},flags:{kzYue:'lu'}});const c=ctx.S.clan;
+  assert.equal(ks('ks_4').cond(),true);assert.equal(ks('ks_4').lines,run('KS4_OLD'));
+  ks('ks_4').after();ctx.buttons=null;run('ksNameModal()');assert.equal(ctx.buttons,null);
+  assert.equal(c.name,'青石宗');assert.equal(c.fame,20);assert.equal(ctx.S.dao.zong,0);assert.ok(!ctx.S.flags.kzNew&&!ctx.S.flags.kzFame);
+  ctx.S.flags.kzYue=undefined;assert.ok(run('zongHTML()').includes('社约还空着'));
+  ksSave({clan:{name:'青石行社',fame:120},seen:['v2_18','v11_9','ks_1','ks_2','ks_3','ks_4']});assert.ok(run('zongHTML()').includes('题匾'),'弹窗关掉后行社页还能题匾');});
+test('社约: 青石行社宗/门/派 migrate to 青石宗/门/派 on load, idempotent, nothing else touched',()=>{
+  const H=c=>run('clanHydrate')(c);
+  for(const k of '宗门派'){const c=H(H({name:'青石行社'+k,fame:77,zong:1,zongY:9}));assert.equal(c.name,'青石'+k);assert.equal(c.fame,77);assert.equal(c.zongY,9);}
+  for(const n of ['青石行社','青石行社宗主','我家宗','青石宗'])assert.equal(H({name:n}).name,n);
+  const o=run("hydrate({v:4,name:'x',clan:{name:'青石行社门',fame:3,zong:1}})");assert.equal(o.clan.name,'青石门');assert.equal(o.clan.fame,3);});
+test('社约: the three effects are exact and only after founding',()=>{
+  ksSave({clan:{name:'青石门',fame:150,bld:{ci:2}},flags:{kzYue:'men'}});const m={lv:1,apt:1},P=()=>run('clP')(m,0,0);
+  const p0=P();ctx.S.clan.zong=1;assert.ok(Math.abs(P()-p0-.05)<1e-9);const big={lv:99,apt:5};assert.equal(run('clP')(big,0,0),.96,'上限仍 0.96');
+  ctx.S.flags.kzYue='lu';assert.ok(Math.abs(P()-p0)<1e-9);assert.equal(run('danEvery(2)'),50*60*.9);assert.equal(run('danEvery(20)'),8*60*.9);
+  assert.equal(run('clCap()'),7);ctx.S.flags.kzYue='ming';assert.equal(run('clCap()'),8);assert.equal(run('danEvery(2)'),50*60);ctx.S.clan.zong=0;assert.equal(run('clCap()'),7);});
+test('社约: every speaker has a name and the text stays in-world',()=>{
+  const seen=new Set(),txt=[];const walk=L=>(L||[]).forEach(x=>{if(Array.isArray(x)){seen.add(x[0]);txt.push(typeof x[1]==='string'?x[1]:'');}else if(x&&x.c)x.c.forEach(c=>{txt.push(c.t);walk(c.r);});});
+  for(const id of ['ks_1','ks_2','ks_3'])walk(ks(id).lines);walk(run('KS4_NEW'));walk(run('KS4_OLD'));
+  const src=section('/* ================= 支线 · 社约','/* ---------- 社约 · 结束');for(const m of src.matchAll(/\['([a-z0-9]+)','/g))seen.add(m[1]);
+  const lines=code.split('\n').filter(l=>/SPK/.test(l));for(const k of seen){if(k===''||k==='@')continue;assert.ok(lines.some(l=>new RegExp('[{,]'+k+":'").test(l)),'SPK 缺 '+k);}
+  assert.ok(!/玩家|系统|解锁|宗主|掌门|弟子|继承人/.test(txt.join('')+src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm,'').replace(/hint:'[^']*'/g,'')));
+  assert.ok(!/\['he'/.test(src),'阿禾不亲自到场');});
 console.log(`${checks} tests passed`);
