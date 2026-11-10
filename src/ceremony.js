@@ -11,7 +11,7 @@ const REALM_UNLOCK={
  9:[['斩道','战斗神通：斩去敌人一成半生命']],
  10:[['玄仙之躯','寿元近乎无尽']],11:[['金仙不朽','诸法加身']],12:[['太乙','万法归一']],13:[['大罗','跳出三界']]
 };
-const BT_YEARS=[0,1,3,10,20,30,50,80,100,150,200,300,500,800];
+const BT_YEARS=[0,1,3,3,20,30,50,80,100,150,200,300,500,800];
 const OMEN_TXT=['','灵雨三日，站外的枯树抽出了新芽','紫气东来三万里，城中百鸟惊飞','元婴出世之时，月亮在白天升了起来','天地失色，方圆百里的灵气倒卷而来','虚空裂开一道缝，又缓缓合上','你的影子在云海上站成了一座山','天降金莲，落地不散','九天雷云散尽，天门洞开','仙乐自天外来','星河倒悬','诸天寂静','万道齐鸣','三界同震'];
 function unlockList(r){return (REALM_UNLOCK[r]||[]);}
 function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <small>每个大境界都会带来新的能力</small></h2><div class="unl">${Object.keys(REALM_UNLOCK).filter(k=>+k<=STAGES[canonCap()].r).map(k=>{const r=+k,got=R>=r;return `<div class="u ${got?'got':''}"><b>${REALMS[r]}</b><span>${unlockList(r).map(u=>u[0]).join(' · ')}</span></div>`;}).join('')}<div class="u"><b>……</b><span>再往上的路，还看不清。</span></div></div>`;}
@@ -53,7 +53,7 @@ function ceremony(old,r,yrs,L,done){const nw=stats(),el=$('#cer')||(()=>{const d
   <p class="cer-o">天地异象 · ${OMEN_TXT[r]||'天地共鸣'}</p>
   <div class="cer-box"><div class="cjs">${row('攻',old.atk,nw.atk)}${row('防',old.def,nw.def)}${row('血',old.hp,nw.hp)}</div>
   <div class="cer-u">${unlockList(r).map(u=>`<div><b>解锁 · ${u[0]}</b><small>${u[1]}</small></div>`).join('')}<div><b>寿元 · ${lifeText(myLife())}</b><small>当前 ${S.age} 岁</small></div></div>
-  ${yrs?`<div class="cer-y"><b>突破历练 ${yrs} 年 · ${yearName()}</b>${imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
+  ${yrs?`<div class="cer-y"><b>突破历练 ${yrs} 年 · ${yearName()}</b>${r===3?'<p>这三年，潮涨过两回，又退了。来找你的人，都留了字。</p>':imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
   <button class="btn gold" id="cerOk">出关</button></div>`;
  CER={t:0,last:performance.now(),r,bolts:[],parts:[],flash:0};const cv=$('#cerCv');
  const fit=()=>{const dpr=Math.min(2,devicePixelRatio||1);cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;CER.dpr=dpr;};fit();

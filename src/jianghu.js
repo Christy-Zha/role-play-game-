@@ -56,7 +56,7 @@ const fuPrice=k=>Math.ceil(zsAt(maxZone(),{lei:2,huo:1.6,ding:2.4,hu:1.8,po:2}[k
 function qiStock(){const d=dayKey();if(S.qiS&&S.qiS.day===d)return S.qiS.L;const z=maxZone();S.qiS={day:d,L:[0,1,2].map(i=>{const it=mkItem(z,true,{r:i===2?3:2,slot:pick(SLOT5)});return {it,p:Math.ceil(it.sell*(i===2?6:4))};})};return S.qiS.L;}
 function aucStock(){const d=dayKey();if(S.auc&&S.auc.day===d)return S.auc.L;const L=[],z=maxZone(),rv=()=>{const P=S.ppl.filter(p=>p.alive&&p.known&&p.st>=0&&!p.fr);return P.length?pick(P).id:null;};
  if((S.xf||0)<5&&!F('xf_auc'))L.push({k:'xf',n:'一卷残破的古图',d:'上面画着一座看不懂的山。卖家说是从废城里挖出来的',p:zsAt(z,30)});
- const fl=Object.keys(FORMS).filter(f=>!S.forms.includes(f)&&f!=='jiugong');if(fl.length)L.push({k:'form',f:pick(fl),n:'阵图',d:'',p:zsAt(z,40)});
+ const fl=Object.keys(FORMS).filter(f=>!S.forms.includes(f));if(fl.length)L.push({k:'form',f:pick(fl),n:'阵图',d:'',p:zsAt(z,40)});
  L.push({k:'item',n:'传世之兵',d:'仙品之上，有传说的气息',p:zsAt(z,70)});if(L.length<3)L.push({k:'gem',n:'绝品宝石',d:'',p:zsAt(z,35)});
  L.forEach(l=>{l.rv=rv();l.max=Math.ceil(l.p*(1.25+Math.random()*1.1));l.cur=l.p;l.st=0;if(l.k==='form'){l.n='阵图 ·《'+FORMS[l.f].n+'》';l.d=FORMS[l.f].d;}});S.auc={day:d,L:L.slice(0,3)};return S.auc.L;}
 function aucBid(i,pct){const l=aucStock()[i];if(!l||l.st)return;const bid=Math.ceil(l.cur*(1+pct));if(S.stones<bid){toast('灵石不够','bad');return;}const rv=P_(l.rv);
@@ -256,17 +256,17 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
  else if(injOn())g.s={t:'重伤未愈：'+injLeft()+' 天',a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>12?'修为已满：元婴的门还关着':'修为已满：结金丹还缺一味药'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>16?'修为已满：化神的门还关着':canonCap()>12?'修为已满：元婴的门还关着':'修为已满：结金丹还缺一味药'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
  else{const b=S.bnt&&S.bnt.day===dayKey()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
- if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};
+ if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};
  else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9&&R+1<=STAGES[canonCap()].r?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
   if(un&&sk&&Math.random()<.4)g.m={t:'挑战'+SECTS[sk].n,a:'sect'};}
  const E=S.path?ENDS[PATHS[S.path].end]:null;g.l=E&&!(S.endings||[]).includes(PATHS[S.path].end)?{t:'道果「'+E.n+'」',sub:E.cond,a:'ends'}:(S.xf||0)<5?{t:'寻找仙府残图 '+(S.xf||0)+'/5',sub:'散落在拍卖行、深渊、隐秘的洞府和人心里',a:'ends'}:{t:'登上江湖榜首（现'+(jhRank()>100?'在榜外':'第 '+jhRank()+' 位')+'）',a:'rank'};
  return g;}
 function goalsHTML(){const g=goals();return `<button class="goalbar" data-act="goals"><span class="gs">近</span>${esc(g.s.t)}</button>`;}
 function goalsOpen(){const g=goals(),row=(k,n,o)=>`<div class="row2 goal"><div class="gk">${n}</div><div class="in"><div class="iname">${esc(o.t)}</div>${o.sub?`<div class="istat">${esc(o.sub)}</div>`:''}</div><button class="btn sm" data-gl="${o.a}">去</button></div>`;
- modal(`<h3>目标</h3>${row('s','近',g.s)}${row('m','中',g.m)}${row('l','远',g.l)}<p class="note">${yearName()} · 年岁 ${S.age}/${lifeText(myLife())} · ${jhRank()>100?'江湖榜外':'江湖榜第 '+jhRank()} · ${S.path?PATHS[S.path].n:'道途未定'}</p>`,[{t:'好',cls:'ghost'}]);
+ modal(`<h3>目标</h3>${row('s','近',g.s)}${row('m','中',g.m)}${row('l','远',g.l)}<p class="note">${yearName()} · 年岁 ${S.age}/${lifeText(myLife())} · ${jhRank()>100?'江湖榜外':'江湖榜第 '+jhRank()}</p>`,[{t:'好',cls:'ghost'}]);
  $('#ov').querySelectorAll('[data-gl]').forEach(b=>b.onclick=()=>{$('#ov').hidden=true;$('#ov').innerHTML='';goalGo(b.dataset.gl);});}
 function goalGo(a){if(a==='story'||a==='ends'){TAB='story';render();}else if(a==='cult'){TAB='cult';render();}else if(a==='world'){TAB='world';render();}else if(a==='root')openRootTest();else if(a==='fate')fateCheck();else if(a==='path')pathAsk();else if(['bounty','sect','rank'].includes(a))jhOpen(a);}
 

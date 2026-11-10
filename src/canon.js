@@ -4,11 +4,12 @@
    境界停在筑基大圆满，金丹留给第十一卷。 */
 let CANON_CAP=12;
 /* 金丹：第十一卷抱元丹的药力化开以后，上限放到金丹大圆满 */
-const canonCap=()=>F('qingSan')?12:F('v11Dan')?16:12;
-function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>12?'元婴的门还关着。金丹的路先走稳：修为攒满了也不会浪费。':'要结金丹，还缺一味药。顺着卷宗里的路走下去，自然会碰上。修为攒满了也不会浪费。';}
+/* 元婴：第十四卷「门缝」读完（yyOpen），上限放到元婴圆满；散过丹的人始终是筑基 */
+const canonCap=()=>F('qingSan')?12:F('yyOpen')?20:F('v11Dan')?16:12;
+function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>16?'化神的门还关着。元婴的路先走稳：修为攒满了也不会浪费。':canonCap()>12?'元婴的门还关着。金丹的路先走稳：修为攒满了也不会浪费。':'要结金丹，还缺一味药。顺着卷宗里的路走下去，自然会碰上。修为攒满了也不会浪费。';}
 const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','locust','jindan','ningxuan','canju','zero','zhoufate','fallen','suwan','finale','tianmen','feisheng',
  'neigui','xinghai','tianting','guixu','cmsis','tw1','tw2','tw3','motest_a','motest_b','motest_c','zhounight_a','zhounight_b','zhounight_c','he_root','he_scar','hong_road','hong_sold',
- 'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root',
+ 'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root','h_soul',
  'rj1','rj2','rj3','rj4','rj5','rj6','rj7','rj8','rj9','rj10','rj11','rj_end','rv2','rv3','rv4','rv5','rv6','rv7',
  'b_hong1','b_hong2','b_hong3','b_zhou1','b_su1','b_su2','b_su3','b_ning1','b_ning2','b_ning3','b_zero1','b_mo1','b_cm1','b_cm2','b_cm3','b_man1','b_man2']);
 for(let i=STORY.length-1;i>=0;i--){const c=STORY[i];if(CANON_OFF.has(c.id)||/^rw_/.test(c.id))STORY.splice(i,1);}
@@ -188,7 +189,7 @@ STORY.push({id:'lizu',title:'青石·行社挂牌',g:'社',bg:'shelter',cond:()=
 {const z6=STORY.find(c=>c.id==='z6');if(z6)z6.lines=[['','空气浓得像水。每呼吸一口，丹田都在发烫。'],['','碎石悬在半空，绕着一道通天的光柱慢慢转动。'],['mo','这里的灵气不是长出来的，是被什么东西往下压出来的。别待太久。']];}
 
 /* ---------- 境界上限：筑基大圆满 ---------- */
-{const _ni=nextInfo;nextInfo=function(){const o=_ni();CANON_CAP=canonCap();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||(CANON_CAP>12?'元婴':'第十一卷');o.capped=true;}return o;};}
+{const _ni=nextInfo;nextInfo=function(){const o=_ni();CANON_CAP=canonCap();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||(CANON_CAP>16?'化神':CANON_CAP>12?'元婴':'第十一卷');o.capped=true;}return o;};}
 BOND_PERK_FIX:{const bp0=bondPerk;bondPerk=k=>k==='zero'?((S.sworn||[]).includes('zero')?'初一战斗中攻击 +20%':''):bp0(k);}
 if(typeof NPCS!=='undefined'){if(NPCS.hong)NPCS.hong.name='红鹞';if(NPCS.zero)NPCS.zero.name='初一';if(NPCS.ning)NPCS.ning.unlock=()=>false;if(NPCS.zhou)NPCS.zhou.unlock=()=>S.seen.includes('v1_caravan');if(NPCS.shen)NPCS.shen.unlock=()=>S.seen.includes('v2_10');if(NPCS.qian)NPCS.qian.unlock=()=>S.seen.includes('v2_6');if(NPCS.gui)NPCS.gui.unlock=()=>false;if(NPCS.man)NPCS.man.unlock=()=>false;}
 /* 旧委托里和卷宗冲突的（阿禾妈妈的白旗船、给零号起名、陈默的妹妹、星海天庭……）撤下 */

@@ -111,4 +111,61 @@ test('社约: every speaker has a name and the text stays in-world',()=>{
   const lines=code.split('\n').filter(l=>/SPK/.test(l));for(const k of seen){if(k===''||k==='@')continue;assert.ok(lines.some(l=>new RegExp('[{,]'+k+":'").test(l)),'SPK 缺 '+k);}
   assert.ok(!/玩家|系统|解锁|宗主|掌门|弟子|继承人/.test(txt.join('')+src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm,'').replace(/hint:'[^']*'/g,'')));
   assert.ok(!/\['he'/.test(src),'阿禾不亲自到场');});
+/* 第十四卷「叩门」（vol14.js）：上限、出现条件、归青石隐藏、问道收起、元婴跳 3 年、收尾奖励只发一次、h_soul 撤下、九宫八卦阵能买 */
+{run("var CAUSE=[],TL_JUMP={},REALM_UNLOCK={3:[['元神出窍',''],['元婴不灭',''],['问道','']]},pathAsk=()=>{globalThis.asked=1;},rwFlush=()=>{},isPartner=k=>(S.partners||[]).includes(k),partners=()=>S.partners||[];BOND.zhou={n:'周烈'};");
+ run(section('const PACE_D=','function paceLeft('));run(section('const canonCap=','const CANON_OFF='));run(section('const v6Love=','\n'));run(section('const HL=','\n'));run(section('const v13Mate=','\n'));
+ run(section('/* ================= 第十四卷·叩门','/* ---------- 第十四卷 · 结束'));}
+const v14=n=>run("STORY.find(c=>c.id==='v14_"+n+"')");
+function v14Save(o){fresh();Object.assign(ctx.S,{stage:16,seen:['v13_12','after_deng'],pending:[],partners:[],daysAll:500,flags:{v1:1,v11Dan:1,v13End:'deng',afterD:460}},o||{});}
+test('第十四卷: cap 16 before 门缝, 20 after, 归青石 stays 12; capMsg and 化神 gate at cap 20',()=>{
+  v14Save();assert.equal(run('canonCap()'),16);assert.ok(run('capMsg()').startsWith('元婴的门还关着'));
+  v14('1').after();assert.equal(ctx.S.flags.yyOpen,1);assert.equal(run('canonCap()'),20);assert.ok(run('capMsg()').startsWith('化神的门还关着'));
+  ctx.S.flags.qingSan=1;assert.equal(run('canonCap()'),12);
+  run("var CANON_CAP=12,nextInfo=()=>({});");run(section('{const _ni=nextInfo;','BOND_PERK_FIX'));
+  v14Save({stage:20,flags:{v11Dan:1,yyOpen:1}});const o=run('nextInfo()');assert.equal(o.gate,'化神');assert.equal(o.capped,true);
+  v14Save({stage:16,flags:{v11Dan:1}});assert.equal(run('nextInfo()').gate,'元婴');});
+test('第十四卷: 门缝 needs the ending, its 后日 and 30 days after; old 后日 without a timestamp is not blocked',()=>{
+  v14Save();assert.equal(v14('1').cond(),true);assert.equal(v14('1').gone(),false);
+  v14Save({daysAll:489});assert.equal(v14('1').cond(),false,'不到 30 天');
+  v14Save({seen:['v13_12']});assert.equal(v14('1').cond(),false,'后日没读');
+  v14Save({seen:['v13_12','after_shou']});assert.equal(v14('1').cond(),false,'别的结局的后日不算');
+  v14Save();delete ctx.S.flags.afterD;assert.equal(v14('1').cond(),true,'旧存档没有 afterD 也能开');
+  for(const e of ['feng','shou','bai']){v14Save({seen:['v13_12','after_'+e]});ctx.S.flags.v13End=e;assert.equal(v14('1').cond(),true,e);}
+  v14Save({seen:['v11_9'],flags:{v1:1,v11Dan:1}});for(let i=1;i<=5;i++){assert.equal(v14(i).cond(),false);assert.equal(v14(i).gone(),true,'没走到终章不进未解锁篇章');}});
+test('第十四卷: 归青石 never sees the volume and keeps cap 12',()=>{
+  v14Save({stage:2,seen:['v13_12','after_qing'],flags:{v1:1,v11Dan:1,v13End:'qing',qingSan:1,qingFrom:16,afterD:0,yyOpen:1}});
+  for(let i=1;i<=5;i++){assert.equal(v14(i).gone(),true);assert.equal(v14(i).cond(),false);}assert.equal(run('canonCap()'),12);});
+test('第十四卷: chapters chain and need 元婴 17 / 18 / 20',()=>{
+  v14Save({seen:['v13_12','after_deng','v14_1']});assert.equal(v14('2').cond(),true);assert.equal(v14('3').cond(),false);
+  ctx.S.seen.push('v14_2');assert.equal(v14('3').cond(),false,'金丹读不到雷下');ctx.S.stage=17;assert.equal(v14('3').cond(),true);
+  ctx.S.seen.push('v14_3');assert.equal(v14('4').cond(),false);ctx.S.stage=18;assert.equal(v14('4').cond(),true);
+  ctx.S.seen.push('v14_4');ctx.S.stage=19;assert.equal(v14('5').cond(),false);ctx.S.stage=20;assert.equal(v14('5').cond(),true);
+  ctx.S.seen=['v13_12','after_deng','v14_1','v14_2'];ctx.S.stage=20;assert.equal(v14('4').cond(),false,'要先读前一章');
+  assert.equal(run('TL_JUMP.v14_2'),5);assert.equal(JSON.stringify(run("STORY.filter(c=>/^v14_/.test(c.id)).map(c=>c.title.split('·')[0])")),JSON.stringify(Array(5).fill('叩门')));});
+test('第十四卷: finishing reward is given once; 因果录 has the 第十四卷 lines',()=>{
+  v14Save({stage:20,stones:1000});v14('5').after();assert.equal(ctx.S.stones,1400);assert.equal(ctx.S.flags.v14done,1);v14('5').after();assert.equal(ctx.S.stones,1400,'重读不再发');
+  ctx.S.flags.yyLu='gong';const c=run('CAUSE').filter(x=>x.v===14).map(x=>x.f()).filter(Boolean);assert.equal(c.length,2);assert.ok(c[0].includes('抄了出去'));});
+test('第十四卷: 问道 is gone (no popup, not in 境界神通), 元婴 advances 3 years, ceremony shows the fixed line',()=>{
+  globalThis.asked=0;run('pathAsk()');assert.equal(globalThis.asked,0);assert.ok(!run('REALM_UNLOCK[3]').some(u=>u[0]==='问道'));assert.equal(run('REALM_UNLOCK[3]').length,2);
+  run(section('const BT_YEARS=','const OMEN_TXT'));assert.equal(run('BT_YEARS[3]'),3);
+  assert.ok(section('function ceremony(','id="cerOk"').includes("r===3?'<p>这三年，潮涨过两回，又退了。来找你的人，都留了字。</p>'"));
+  assert.ok(!code.includes('元婴问道'),'目标栏不再推荐问道');assert.ok(code.includes("canonCap()>16?'修为已满：化神的门还关着'"));});
+test('第十四卷: h_soul is off canon and 九宫八卦阵 can come from the 阵图 at the market',()=>{
+  const m=/const CANON_OFF=new Set\(\[([\s\S]*?)\]\)/.exec(code);assert.ok(m[1].includes("'h_soul'"));
+  run("var FORMS={jiugong:{n:'九宫八卦阵',d:'x'}},mkItem=()=>({});");run(section('function aucStock(','function aucBid('));
+  fresh();Object.assign(ctx.S,{forms:[],xf:5,ppl:[],flags:{}});assert.ok(run('aucStock()').some(l=>l.k==='form'&&l.f==='jiugong'));
+  ctx.S.auc=null;ctx.S.forms=['jiugong'];assert.ok(!run('aucStock()').some(l=>l.k==='form'),'学过就不再卖');});
+test('第十四卷: who-is-there branches, {m} replaced, every speaker named, text stays in-world',()=>{
+  const W=k=>{v14Save({partners:k==='love'?['hong']:k==='mate'?['zhou']:[]});if(k==='bai')ctx.S.flags.v13End='bai';return run('yyWho()');};
+  assert.equal(W('love'),'love');assert.equal(W('mate'),'mate');assert.equal(W('friend'),'friend');ctx.S.partners=['hong'];assert.equal(run('yyWho()'),'love');ctx.S.flags.v13End='bai';assert.equal(run('yyWho()'),'bai','白塔长明不看道侣');
+  v14Save({partners:['zhou']});const blk=run("STORY.find(c=>c.id==='v14_3').lines.find(l=>l&&l.fn&&/yyWho/.test(String(l.fn)))");
+  run('var SC={q:[]}');blk.fn();const q=run('SC.q');assert.ok(q.length&&!JSON.stringify(q).includes('{m}')&&JSON.stringify(q).includes('周烈'));run('SC=null');
+  const src=section('/* ================= 第十四卷·叩门','/* ---------- 第十四卷 · 结束'),seen=new Set();for(const x of src.matchAll(/^\s*\['([a-z0-9@]*)',/gm))seen.add(x[1]);
+  const lines=code.split('\n').filter(l=>/SPK/.test(l));for(const k of seen){if(k===''||k==='@')continue;assert.ok(lines.some(l=>new RegExp('[{,]'+k+":'").test(l)),'SPK 缺 '+k);}
+  const txt=src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm,'').replace(/hint:'[^']*'/g,'');assert.ok(!/玩家|系统|解锁|等级|原稿|改编|小说|后台|刷新|现实|同步|强制|宗主|掌门|弟子|继承人|红姐/.test(txt));
+  /* 白塔长明：开头和「谁在身边」那几段里，红鹞都不开口 */
+  const bai=run('V14_OPEN.bai');assert.ok(bai.length>5&&!bai.some(l=>Array.isArray(l)&&l[0]==='hong'),'白塔开头红鹞不开口');
+  v14Save({partners:['hong']});ctx.S.flags.v13End='bai';run('var SC={q:[]}');
+  for(const n of [3,4])run("STORY.find(c=>c.id==='v14_"+n+"')").lines.filter(l=>l&&l.fn&&/yyWho/.test(String(l.fn))).forEach(l=>l.fn());
+  const qb=run('SC.q');run('SC=null');assert.ok(qb.length>=7&&!qb.some(l=>Array.isArray(l)&&l[0]==='hong'),'白塔分支红鹞不开口');});
 console.log(`${checks} tests passed`);

@@ -4689,7 +4689,7 @@ const fuPrice=k=>Math.ceil(zsAt(maxZone(),{lei:2,huo:1.6,ding:2.4,hu:1.8,po:2}[k
 function qiStock(){const d=dayKey();if(S.qiS&&S.qiS.day===d)return S.qiS.L;const z=maxZone();S.qiS={day:d,L:[0,1,2].map(i=>{const it=mkItem(z,true,{r:i===2?3:2,slot:pick(SLOT5)});return {it,p:Math.ceil(it.sell*(i===2?6:4))};})};return S.qiS.L;}
 function aucStock(){const d=dayKey();if(S.auc&&S.auc.day===d)return S.auc.L;const L=[],z=maxZone(),rv=()=>{const P=S.ppl.filter(p=>p.alive&&p.known&&p.st>=0&&!p.fr);return P.length?pick(P).id:null;};
  if((S.xf||0)<5&&!F('xf_auc'))L.push({k:'xf',n:'一卷残破的古图',d:'上面画着一座看不懂的山。卖家说是从废城里挖出来的',p:zsAt(z,30)});
- const fl=Object.keys(FORMS).filter(f=>!S.forms.includes(f)&&f!=='jiugong');if(fl.length)L.push({k:'form',f:pick(fl),n:'阵图',d:'',p:zsAt(z,40)});
+ const fl=Object.keys(FORMS).filter(f=>!S.forms.includes(f));if(fl.length)L.push({k:'form',f:pick(fl),n:'阵图',d:'',p:zsAt(z,40)});
  L.push({k:'item',n:'传世之兵',d:'仙品之上，有传说的气息',p:zsAt(z,70)});if(L.length<3)L.push({k:'gem',n:'绝品宝石',d:'',p:zsAt(z,35)});
  L.forEach(l=>{l.rv=rv();l.max=Math.ceil(l.p*(1.25+Math.random()*1.1));l.cur=l.p;l.st=0;if(l.k==='form'){l.n='阵图 ·《'+FORMS[l.f].n+'》';l.d=FORMS[l.f].d;}});S.auc={day:d,L:L.slice(0,3)};return S.auc.L;}
 function aucBid(i,pct){const l=aucStock()[i];if(!l||l.st)return;const bid=Math.ceil(l.cur*(1+pct));if(S.stones<bid){toast('灵石不够','bad');return;}const rv=P_(l.rv);
@@ -4889,17 +4889,17 @@ function goals(){const ni=nextInfo(),R=realmIdx(),g={};
  if(pend)g.s={t:'新篇章：'+pend.title,a:'story'};else if(S.fateQ.length)g.s={t:'有人在等你',a:'fate'};else if(ready)g.s={t:'交付委托：'+ready.title,a:'story'};
  else if(!S.root&&S.stage>=3)g.s={t:'测灵根，定下你的流派',a:'root'};
  else if(injOn())g.s={t:'重伤未愈：'+injLeft()+' 天',a:'cult'};
- else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>12?'修为已满：元婴的门还关着':'修为已满：结金丹还缺一味药'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
+ else if(S.qi>=req(S.stage)&&!ni.final)g.s=ni.gate?{t:ni.capped?(F('qingSan')?'修为已满：这一世到筑基为止':canonCap()>16?'修为已满：化神的门还关着':canonCap()>12?'修为已满：元婴的门还关着':'修为已满：结金丹还缺一味药'):ni.wuG?'感悟不足 '+(S.wu||0)+'/'+ni.wuG+'：去交委托、经历奇遇':ni.fs?(ni.gate===RJ_GATE?'走完「人间篇」':'走完主线「灵源」'):'击败「'+ni.gate+'」，打开瓶颈',a:'world'}:{t:'灵气已满，去突破'+(ni.major?'大境界':''),a:'cult'};
  else{const b=S.bnt&&S.bnt.day===dayKey()?S.bnt.L.filter(x=>x.done).length:0;g.s=b<3&&S.stage>=6?{t:'今日悬赏 '+b+'/3',a:'bounty'}:{t:'历练：'+ZONES[maxZone()].n+' · 灵气 '+Math.floor(S.qi/req(S.stage)*100)+'%',a:'world'};}
  const nr=REALMS[Math.min(R+1,REALMS.length-1)],un=REALM_UNLOCK[R+1];
- if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};else if(R>=3&&!S.path)g.m={t:'元婴问道：选择你的道途',a:'path'};
+ if(R>=2&&!S.natal)g.m={t:'祭炼本命法宝',a:'cult'};
  else{const sk=SECT_ORD.find(k=>!sectBeat(k)&&S.stage>=SECTS[k].st-4);g.m=un&&R<9&&R+1<=STAGES[canonCap()].r?{t:'突破'+nr+'：解锁「'+un[0][0]+'」',a:'cult'}:{t:'丹道：'+DAN_RANK[danRank()].n,a:'cult'};
   if(un&&sk&&Math.random()<.4)g.m={t:'挑战'+SECTS[sk].n,a:'sect'};}
  const E=S.path?ENDS[PATHS[S.path].end]:null;g.l=E&&!(S.endings||[]).includes(PATHS[S.path].end)?{t:'道果「'+E.n+'」',sub:E.cond,a:'ends'}:(S.xf||0)<5?{t:'寻找仙府残图 '+(S.xf||0)+'/5',sub:'散落在拍卖行、深渊、隐秘的洞府和人心里',a:'ends'}:{t:'登上江湖榜首（现'+(jhRank()>100?'在榜外':'第 '+jhRank()+' 位')+'）',a:'rank'};
  return g;}
 function goalsHTML(){const g=goals();return `<button class="goalbar" data-act="goals"><span class="gs">近</span>${esc(g.s.t)}</button>`;}
 function goalsOpen(){const g=goals(),row=(k,n,o)=>`<div class="row2 goal"><div class="gk">${n}</div><div class="in"><div class="iname">${esc(o.t)}</div>${o.sub?`<div class="istat">${esc(o.sub)}</div>`:''}</div><button class="btn sm" data-gl="${o.a}">去</button></div>`;
- modal(`<h3>目标</h3>${row('s','近',g.s)}${row('m','中',g.m)}${row('l','远',g.l)}<p class="note">${yearName()} · 年岁 ${S.age}/${lifeText(myLife())} · ${jhRank()>100?'江湖榜外':'江湖榜第 '+jhRank()} · ${S.path?PATHS[S.path].n:'道途未定'}</p>`,[{t:'好',cls:'ghost'}]);
+ modal(`<h3>目标</h3>${row('s','近',g.s)}${row('m','中',g.m)}${row('l','远',g.l)}<p class="note">${yearName()} · 年岁 ${S.age}/${lifeText(myLife())} · ${jhRank()>100?'江湖榜外':'江湖榜第 '+jhRank()}</p>`,[{t:'好',cls:'ghost'}]);
  $('#ov').querySelectorAll('[data-gl]').forEach(b=>b.onclick=()=>{$('#ov').hidden=true;$('#ov').innerHTML='';goalGo(b.dataset.gl);});}
 function goalGo(a){if(a==='story'||a==='ends'){TAB='story';render();}else if(a==='cult'){TAB='cult';render();}else if(a==='world'){TAB='world';render();}else if(a==='root')openRootTest();else if(a==='fate')fateCheck();else if(a==='path')pathAsk();else if(['bounty','sect','rank'].includes(a))jhOpen(a);}
 
@@ -5923,7 +5923,7 @@ const REALM_UNLOCK={
  9:[['斩道','战斗神通：斩去敌人一成半生命']],
  10:[['玄仙之躯','寿元近乎无尽']],11:[['金仙不朽','诸法加身']],12:[['太乙','万法归一']],13:[['大罗','跳出三界']]
 };
-const BT_YEARS=[0,1,3,10,20,30,50,80,100,150,200,300,500,800];
+const BT_YEARS=[0,1,3,3,20,30,50,80,100,150,200,300,500,800];
 const OMEN_TXT=['','灵雨三日，站外的枯树抽出了新芽','紫气东来三万里，城中百鸟惊飞','元婴出世之时，月亮在白天升了起来','天地失色，方圆百里的灵气倒卷而来','虚空裂开一道缝，又缓缓合上','你的影子在云海上站成了一座山','天降金莲，落地不散','九天雷云散尽，天门洞开','仙乐自天外来','星河倒悬','诸天寂静','万道齐鸣','三界同震'];
 function unlockList(r){return (REALM_UNLOCK[r]||[]);}
 function shenHTML(){const R=realmIdx();return `<h2 class="sec">境界神通 <small>每个大境界都会带来新的能力</small></h2><div class="unl">${Object.keys(REALM_UNLOCK).filter(k=>+k<=STAGES[canonCap()].r).map(k=>{const r=+k,got=R>=r;return `<div class="u ${got?'got':''}"><b>${REALMS[r]}</b><span>${unlockList(r).map(u=>u[0]).join(' · ')}</span></div>`;}).join('')}<div class="u"><b>……</b><span>再往上的路，还看不清。</span></div></div>`;}
@@ -5965,7 +5965,7 @@ function ceremony(old,r,yrs,L,done){const nw=stats(),el=$('#cer')||(()=>{const d
   <p class="cer-o">天地异象 · ${OMEN_TXT[r]||'天地共鸣'}</p>
   <div class="cer-box"><div class="cjs">${row('攻',old.atk,nw.atk)}${row('防',old.def,nw.def)}${row('血',old.hp,nw.hp)}</div>
   <div class="cer-u">${unlockList(r).map(u=>`<div><b>解锁 · ${u[0]}</b><small>${u[1]}</small></div>`).join('')}<div><b>寿元 · ${lifeText(myLife())}</b><small>当前 ${S.age} 岁</small></div></div>
-  ${yrs?`<div class="cer-y"><b>突破历练 ${yrs} 年 · ${yearName()}</b>${imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
+  ${yrs?`<div class="cer-y"><b>突破历练 ${yrs} 年 · ${yearName()}</b>${r===3?'<p>这三年，潮涨过两回，又退了。来找你的人，都留了字。</p>':imp.length?imp.map(n=>`<p>${esc(sub(n.t))}</p>`).join(''):'<p>江湖上风平浪静。</p>'}</div>`:''}</div>
   <button class="btn gold" id="cerOk">出关</button></div>`;
  CER={t:0,last:performance.now(),r,bolts:[],parts:[],flash:0};const cv=$('#cerCv');
  const fit=()=>{const dpr=Math.min(2,devicePixelRatio||1);cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;CER.dpr=dpr;};fit();
@@ -11537,11 +11537,12 @@ const AFTER_GIFT={
    境界停在筑基大圆满，金丹留给第十一卷。 */
 let CANON_CAP=12;
 /* 金丹：第十一卷抱元丹的药力化开以后，上限放到金丹大圆满 */
-const canonCap=()=>F('qingSan')?12:F('v11Dan')?16:12;
-function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>12?'元婴的门还关着。金丹的路先走稳：修为攒满了也不会浪费。':'要结金丹，还缺一味药。顺着卷宗里的路走下去，自然会碰上。修为攒满了也不会浪费。';}
+/* 元婴：第十四卷「门缝」读完（yyOpen），上限放到元婴圆满；散过丹的人始终是筑基 */
+const canonCap=()=>F('qingSan')?12:F('yyOpen')?20:F('v11Dan')?16:12;
+function capMsg(){if(F('qingSan'))return '灵气薄了。散过一次丹，这一世的路走到筑基为止。修为攒满了也不会浪费。';return canonCap()>16?'化神的门还关着。元婴的路先走稳：修为攒满了也不会浪费。':canonCap()>12?'元婴的门还关着。金丹的路先走稳：修为攒满了也不会浪费。':'要结金丹，还缺一味药。顺着卷宗里的路走下去，自然会碰上。修为攒满了也不会浪费。';}
 const CANON_OFF=new Set(['caravan','qichi','qiansan','xiaoman','port','guishi','locust','jindan','ningxuan','canju','zero','zhoufate','fallen','suwan','finale','tianmen','feisheng',
  'neigui','xinghai','tianting','guixu','cmsis','tw1','tw2','tw3','motest_a','motest_b','motest_c','zhounight_a','zhounight_b','zhounight_c','he_root','he_scar','hong_road','hong_sold',
- 'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root',
+ 'li_home','li_lost','zero_ghost','zhou_grave','zhou_flame','su_duel','h_he','h_modis','h_sects','h_xianfu','h_root','h_soul',
  'rj1','rj2','rj3','rj4','rj5','rj6','rj7','rj8','rj9','rj10','rj11','rj_end','rv2','rv3','rv4','rv5','rv6','rv7',
  'b_hong1','b_hong2','b_hong3','b_zhou1','b_su1','b_su2','b_su3','b_ning1','b_ning2','b_ning3','b_zero1','b_mo1','b_cm1','b_cm2','b_cm3','b_man1','b_man2']);
 for(let i=STORY.length-1;i>=0;i--){const c=STORY[i];if(CANON_OFF.has(c.id)||/^rw_/.test(c.id))STORY.splice(i,1);}
@@ -11721,7 +11722,7 @@ STORY.push({id:'lizu',title:'青石·行社挂牌',g:'社',bg:'shelter',cond:()=
 {const z6=STORY.find(c=>c.id==='z6');if(z6)z6.lines=[['','空气浓得像水。每呼吸一口，丹田都在发烫。'],['','碎石悬在半空，绕着一道通天的光柱慢慢转动。'],['mo','这里的灵气不是长出来的，是被什么东西往下压出来的。别待太久。']];}
 
 /* ---------- 境界上限：筑基大圆满 ---------- */
-{const _ni=nextInfo;nextInfo=function(){const o=_ni();CANON_CAP=canonCap();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||(CANON_CAP>12?'元婴':'第十一卷');o.capped=true;}return o;};}
+{const _ni=nextInfo;nextInfo=function(){const o=_ni();CANON_CAP=canonCap();if(S.stage>=CANON_CAP&&!o.final){o.gate=o.gate||(CANON_CAP>16?'化神':CANON_CAP>12?'元婴':'第十一卷');o.capped=true;}return o;};}
 BOND_PERK_FIX:{const bp0=bondPerk;bondPerk=k=>k==='zero'?((S.sworn||[]).includes('zero')?'初一战斗中攻击 +20%':''):bp0(k);}
 if(typeof NPCS!=='undefined'){if(NPCS.hong)NPCS.hong.name='红鹞';if(NPCS.zero)NPCS.zero.name='初一';if(NPCS.ning)NPCS.ning.unlock=()=>false;if(NPCS.zhou)NPCS.zhou.unlock=()=>S.seen.includes('v1_caravan');if(NPCS.shen)NPCS.shen.unlock=()=>S.seen.includes('v2_10');if(NPCS.qian)NPCS.qian.unlock=()=>S.seen.includes('v2_6');if(NPCS.gui)NPCS.gui.unlock=()=>false;if(NPCS.man)NPCS.man.unlock=()=>false;}
 /* 旧委托里和卷宗冲突的（阿禾妈妈的白旗船、给零号起名、陈默的妹妹、星海天庭……）撤下 */
@@ -12772,6 +12773,266 @@ zongFound=function(){if(S.clan&&!S.clan.zong&&S.seen.includes('ks_4'))ksNameModa
 /* ---------- 读档：旧版立宗留下的「青石行社宗/门/派」改成「青石宗/门/派」，只改名字 ---------- */
 {const o=clanHydrate;clanHydrate=function(c){c=o(c);const m=/^青石行社([宗门派])$/.exec(c.name||'');if(m)c.name='青石'+m[1];return c;};}
 /* ---------- 社约 · 结束 ---------- */
+
+/* ================= 第十四卷·叩门 =================
+   接在万家灯火、长风万里、守潮人、白塔长明的「后日」之后；归青石（散丹）这一轮不走这条路。
+   第一章读完设 yyOpen，境界上限放到元婴圆满（20）；第二章选择 yyLu（zi 自己付 / gong 抄出去 / huan 先还名字）。 */
+const YY_END=['deng','feng','shou','bai'];
+const yyE=()=>F('v13End');
+const yyGone=()=>!!F('qingSan')||!YY_END.includes(yyE());          // 归青石、还没走到终章：都不进「未解锁篇章」
+const yyStart=()=>S.seen.includes('v13_12')&&S.seen.includes('after_'+yyE())&&daysAll()-(S.flags.afterD||0)>=30;
+const V14_IDS=[];
+function V14(o){const prev=V14_IDS.length?V14_IDS[V14_IDS.length-1]:null,id='v14_'+(V14_IDS.length+1);V14_IDS.push(id);
+ const gap=o.gap||0,st=o.st||0;
+ STORY.push({id,pk:'v14',pg:gap,title:'叩门·'+o.t,g:o.g,bg:o.bg||'dongtian',lines:o.lines,hint:o.hint||'',gone:yyGone,
+  cond:()=>F('v1')&&!yyGone()&&(prev?S.seen.includes(prev):yyStart())&&paceOk('v14',gap)&&S.stage>=st,
+  after:()=>{S.flags.v14y=S.year;S.flags.v14d=daysAll();try{o.after&&o.after();}catch(e){console.error(e);}save();rwFlush(0);}});}
+/* 按结局换一段 */
+const YE=o=>({fn:()=>SC.q.unshift(...(o[yyE()]||o.deng))});
+/* 按「谁在身边」换一段：bai 单独写；和红鹞走到一起的 love；另有道侣的 mate（{m} 换成道侣名字）；只是同行的 friend */
+const yyWho=()=>yyE()==='bai'?'bai':v6Love()?'love':v13Mate()?'mate':'friend';
+const YW=o=>({fn:()=>{const m=v13Mate();const L=(o[yyWho()]||o.friend).map(l=>Array.isArray(l)?l.map(x=>typeof x==='string'?x.replace(/\{m\}/g,m):x):l);SC.q.unshift(...L);}});
+/* 按第二章的选择换一段 */
+const YL=o=>({fn:()=>SC.q.unshift(...(o[F('yyLu')]||o.zi))});
+/* 出关、回家时的场景 */
+const yyHome=()=>({deng:'xiaowu',feng:'xinhai',shou:'yaopu',bai:'yaopu'}[yyE()]||'xiaowu');
+
+/* 一 · 门缝：四种开头，汇成一条 */
+const V14_OPEN={
+ deng:[
+  {bg:'xiaowu'},
+  ['','入秋那晚，北山两处药炉的火苗，同时往北偏了一指。屋里没有风。'],
+  ['','你在灯下合药。丹田里的金丹忽然往外一顶，像有什么在里面敲壳。'],
+  ['','药匙掉进炉灰。你按住小腹，那一下又来了，比心跳慢，比心跳重。'],
+  ['hong',HL('（从里屋出来，手里还捏着账本）脸怎么白了？坐下，我去倒水。','（在门口卸最后一筐料）脸怎么白了？先坐，料我自己搬。')],
+  ['','第二天，青杉渡的信到了。小椿说炉子昨夜自己熄过一回，炉衬没坏，火像被什么吸走了。'],
+  ['he','（抱着新测的水图进门）北边的潮线又抬了。抬得不急，可不是我们这一片的潮。'],
+  ['mo','（灯里）把玉简拿出来。别等它顶第三回。']
+ ],
+ feng:[
+  {bg:'xinhai'},
+  ['','新岸的第四个秋天，夜海又亮了。不是往年的淡紫，是一种很深的青，从远处一层层推过来。'],
+  ['','你正给那个渔家孩子讲潮里银，丹田里的金丹往外一顶，像有什么在里面敲壳。'],
+  ['','孩子吓得把药秤抱在怀里。你扶着柜台站稳，说没事，是潮。'],
+  ['','这句话，你自己也不全信。'],
+  ['hong',HL('（从船上跑上来，鞋都没换）老领航说，这种青，他爷爷那辈都没见过。……你怎么了？','（从船上下来，鞋都没换）老领航说，这种青他爷爷那辈都没见过。……你脸色不对。')],
+  ['','墨老的瓷灯摆在药坊最高一格。他跟着船过来以后，天天嫌这里潮。今夜他一句也没嫌。'],
+  ['mo','把玉简拿出来。别等它顶第三回。']
+ ],
+ shou:[
+  {bg:'xiheng'},
+  ['','又是雨夜，侧门又被敲响。还是息衡值守班那个年轻人，这回手里攥着三张潮势图。'],
+  ['','你接过图的那一刻，丹田里的金丹往外一顶，像有什么在里面敲壳。'],
+  ['','三张图，潮线一张比一张高。起头都不在八港，在更远、图上画不到的地方。'],
+  ['@','（按着小腹，把图还给他）你们班长怎么断的？'],
+  ['','他说班长断不了，只让他来问一句。又说班长让他记住：只问，不请你回去。'],
+  ['@','回去告诉他，这不是槽的事。先别动闸，每个时辰的数都记下来。'],
+  ['hong',HL('（把你那件刚晾干的外衣又递过来）要回青石找墨老？我去问最早一班船。','（倚在门边）要回青石找墨老？最早一班船，我替你问。')],
+  ['','墨老的瓷灯在青石药院的窗边。天一亮，你就上了船。']
+ ],
+ bai:[
+  {bg:'baita_v3'},
+  ['','白塔立起来的第十五个冬天，塔顶的调潮尺在夜里自己转了半圈。'],
+  ['','你正在审一份请领。丹田里的金丹往外一顶，像有什么在里面敲壳，笔在纸上拖出一道。'],
+  ['','值夜的人跑上来报：各处潮讯都说无事，只有尺子不对。'],
+  ['','你看着尺针。它指的不是八港，是比八港更远的地方。'],
+  ['','请领上那一道墨还在。你没叫人换纸，在旁边写了一行：此处是我手抖，不是批语。'],
+  ['','墨老早就从塔里迁回了药院。你很久没有下塔了。'],
+  ['','这一回，你没派人去请。你揣着玉简，自己走下了那几百级台阶。']
+ ]
+};
+V14({t:'门缝',g:'缝',bg:'xiaowu',hint:'后日过去一阵子：潮的声音变了',lines:[
+ YE(V14_OPEN),
+ {bg:'dongtian'},
+ ['','玉简摊在桌上。照脉的光沿炉庭的旧路走了一圈，停在最里面那面墙上。'],
+ ['','那面墙你看过许多回，一向是实的。今夜它中间裂开一道缝，细得像头发。'],
+ ['','缝里透出来的不是火，是凉气。和你丹田里那一下，是同一种顶法。'],
+ ['mo','（灯里的灰影往前探了探，很久才开口）……它还在。'],
+ ['@','这是什么？'],
+ ['mo','太一管它叫门。门那边，是元婴。'],
+ ['mo','三百多年，没有人从这儿走过去。不是没人想。'],
+ ['','他没往下说，你也没问。缝里的凉气一阵阵往外渗，跟着远处的潮，一涨一落。'],
+ ['mo','潮退的那些年，门是自己关上的。如今潮从更远处回来，它又自己开了一道缝。'],
+ ['mo','开了缝，不等于该走。把萧尘叫来。等他到了，我把当年的事说给你们听。'],
+ ['','那夜以后，金丹没再顶得那样急。像是知道外面有一扇门，便安心等着。'],
+ ['','【金丹之上，那扇门开了一道缝。修为攒满以后，可以冲击元婴。】']
+],after:()=>{S.flags.yyOpen=1;}});
+
+/* 二 · 旧名录：门背后那面墙 */
+V14({t:'旧名录',g:'录',hint:'萧尘到了以后：墨老要说当年的事',lines:[
+ ['','过了几日，萧尘到了，带着他抄记用的小册。墨老让你把玉简再打开一回。'],
+ ['','门缝比上回宽了一点。照脉的光探进去，照出门背后一整面刻满字的墙。'],
+ ['xiao','（凑近看了很久）是名字。上面一列大的，下面一串小的。'],
+ ['mo','大的，是结婴的人。小的，是替他们付账的人。'],
+ ['','大字不多，十几行。每一行底下，小字少则三五个，多的排满半面墙。'],
+ ['xiao','小字旁边还记着数。三年，五年，十一年……'],
+ ['mo','寿数。过门要挨雷，雷劈开的那一部分，从这些名字里补。这叫借寿。'],
+ ['mo','借够了，过了雷，大字旁边点一个红点。借不够，人倒在门里，丹送回炉里，给下一个人烧。这叫归炉。'],
+ ['mo','等不及、又不敢的，把自己封起来睡，等潮回来再试。这叫封藏。'],
+ ['','你顺着墙往下找。最后一个点了红点的大字，被人用刀刮掉了。底下那串小字，一个也没刮。'],
+ ['@','刮掉的这个，是谁？'],
+ ['mo','我很小的时候，见过他一回背影。后来太一没人再提他。……这些小的，有几个在我那七十一人里。南院的。'],
+ ['','又过三日，戚容的回信到了。她照你抄去的纹样，在息衡旧库里翻出一册承衡司藏的结婴法门。'],
+ ['','法门里一个名字也没有，只有一句：供寿之人，可自下陆息土取用。'],
+ ['','信里夹着一张短笺，是晏枢的字。他早已不坐那张最高的椅子，仍替息衡看潮。'],
+ ['','短笺只有两行：我没走这条路，是因为那些年的潮不够。不是因为我没看过那一页。'],
+ ['mo','（灰影在灯里坐得很直）他倒是说了实话。'],
+ ['xiao','门开了缝。你走不走？怎么走？'],
+ ['',()=>S.stage>=17?'丹田里的元婴睁着眼，像也在等你回话。':'缝里的凉气又涨上来，金丹跟着一顶，像在等你回话。'],
+ {c:[
+  {t:'这面墙上，不再添一个小字。我自己付。',k:2,fx:{flags:{yyLu:'zi'},aff:{mo:3}},r:[
+   ['mo','你自己付的，也是账。过门的人，少说要在里面坐三年。那三年，得有人等。'],
+   ['@','那就把等的人，也算进账里。']]},
+  {t:'把门的做法抄出去，连这些名字一起。',k:2,fx:{flags:{yyLu:'gong'},aff:{xiao:4}},r:[
+   ['xiao','（翻开小册）名字我来抄。一个也不刮。'],
+   ['','抄本后来送去了息衡，和那册法门放在同一格。戚容在封皮上写：两册须同看。']]},
+  {t:'先把这些名字送回各家。门，晚些再推。',k:1,fx:{flags:{yyLu:'huan'},aff:{mo:4}},r:[
+   ['mo','（很久没出声）……南院那几个，我知道该往哪里送。'],
+   ['','那个月，你写了十九封信。回信陆续到了，有一封只写了一句：原来他在那儿。']]}
+ ]},
+ ['','门缝没有因为谁的回答变宽，也没有变窄。'],
+ ['',()=>S.stage>=17?'门你已经推开过一回。这一回，你知道门背后写着什么了。':'你把玉简合上。往后的路，只剩你自己的修为，和要落下来的雷。']
+]});
+
+/* 三 · 雷下：要真的结成元婴（S.stage>=17） */
+V14({t:'雷下',g:'雷',bg:'leijie',st:17,hint:'修为攒满，渡过元婴的雷',lines:[
+ ['','第四道雷落下来的时候，你听见门缝里「咔」地响了一声。'],
+ ['','然后你就在门里了。里面很空，墙上一个名字也没有。'],
+ ['','只有一个很小的人，坐在你丹田的位置。长着你的脸，闭着眼。'],
+ ['','它睁眼的那一刻，你在外面也睁开了眼。'],
+ {fn:()=>SC.q.unshift({bg:yyHome()})},
+ ['','出关那天，月亮在白天升了起来。'],
+ ['','门外的树高了一截。檐下多了一个燕子窝，是你没见过的。'],
+ ['','你想站起来。第一下没站稳，膝盖磕在了门槛上。'],
+ YW({
+  love:[
+   ['hong','（一把托住你胳膊）三年。账我替你记着，一天没落。'],
+   ['','她鬓边的白，比你闭眼前多了一指。你看了很久，她把头偏开。'],
+   ['hong','看什么。你倒是一根没白。']],
+  mate:[
+   ['','{m}在门外守了三年。你出来时，{m}先没说话，把你的手按住，确认是热的。'],
+   ['hong','（车队路过，在院门口探头）醒了？那我这趟的货，总算不用替你签收了。']],
+  friend:[
+   ['hong','（在院门口跳下车）醒了？三年，我替你签收了二十七回货。'],
+   ['','她鬓边多了几根白。你看了一眼，她就把帽子扣上了。']],
+  bai:[
+   ['','扶你的是药院的学徒。他说你在后屋坐了三年，墨老每天让他添一回灯油。'],
+   ['','桌上压着三封信，一年一封，从白榆台寄来。信封上写的是你的名字，没写官衔。'],
+   ['','你拆开最早那一封。只有一行：听说你下塔了。好。']]
+ }),
+ ['mo','（灯里）三百多年。……墙上这一回，一个小字也没添。'],
+ YL({
+  zi:[['','四道雷，没有一道分到别人头上。可那三年，是别人替你过的。']],
+  gong:[['','萧尘那份抄本，三年里被人借去看了七回。有人看完来问：不借寿，真过得去？']],
+  huan:[['','你闭关前寄出的那些信，回信堆满了门边的筐。有一封里夹着一颗糖，说是南院的人当年爱吃的。']]
+ }),
+ ['','你伸手去端桌上那碗水，手抖得厉害。不是没力气，是力气太多，你还不会拿。'],
+ ['','窗外有人喊你的名字。你应了一声，声音比你想的大，惊飞了檐下的鸟。'],
+ ['','元婴结成了。它很小，很安静。你却觉得身体里多了一个人，还没学会和他一起走路。'],
+ ['','你在门槛上坐下来，等手不抖了，再去端那碗水。']
+]});
+
+/* 四 · 第二个自己：元婴中期（S.stage>=18） */
+V14({t:'第二个自己',g:'影',bg:'guanchao',st:18,hint:'元婴稳到中期',lines:[
+ ['','元婴稳到中期以后，你开始听见太多东西。'],
+ ['','隔三条街，有个孩子在哭。她娘在灶边叹了口气。你都听得见。'],
+ ['','夜里闭上眼，头顶像悬着一条河。明明暗暗的灵气从极远处流过来，你分得清每一股。'],
+ ['','那是你在息衡看台上见过的潮。如今不用天窗，它就在你眼皮里面。'],
+ ['','有一夜你醒来，发现自己站在屋外，低头看着床上那个睡着的人。'],
+ ['','那是你。比你以为的老一点，眉心皱着，像在梦里还在算账。'],
+ ['','你回到身子里，出了一身冷汗。元婴在丹田里坐着，若无其事。'],
+ ['mo','（灯里）出窍了？它想出去看，你得教它回来。不能让它教你。'],
+ ['','更难的是另一样：你开始看得见人身上的灯。'],
+ ['','不是真的灯。是每个人还剩多少年月，在你眼里成了一点亮。有的旺，有的已经很低。'],
+ YW({
+  love:[
+   ['','红鹞坐在桌边对账。她那一点亮不低，也不旺，比你的短得多。'],
+   ['','你看得太久了。她抬头，问你她脸上是不是有灰。']],
+  mate:[
+   ['','{m}那一点亮还很稳。红鹞来送货，她那一点，比你记得的低了一截。'],
+   ['','你看得太久了。红鹞抹了一把脸，问你上面是不是有灰。']],
+  friend:[
+   ['','红鹞来送货。她那一点亮不低，也不旺，比你的短得多。'],
+   ['','你看得太久了。她抹了一把脸，问你上面是不是有灰。']],
+  bai:[
+   ['','药院里替你添灯油的那个学徒，灯很旺。你松了一口气，又说不出为什么要松这口气。'],
+   ['','白榆台太远，你看不见红鹞那一点亮。你对自己说，这样也好。']]
+ }),
+ ['mo','你在想门墙上那套法子，能不能倒过来用。'],
+ ['@','……能吗？'],
+ ['mo','能。借寿的线，本来两头都通。太一最早，也是这么想的：拿自己的，补别人的。'],
+ ['mo','后来，就成了拿别人的，补自己的。'],
+ YW({
+  friend:[
+   ['hong','（听了个尾巴，把账本一合）你要是敢往我身上添一年，我就把你从车上扔下去。'],
+   ['hong','我的岁数是我的。短一点，也是我的。']],
+  bai:[
+   ['','你往白榆台写了一封信，写了三遍。最后只问她，腿阴天还疼不疼。'],
+   ['','回信很快：疼。别寄药，我自己买得起。']]
+ }),
+ ['','那一夜，你没有出窍。你学着闭上眼，不去看任何人的灯。'],
+ ['','看得见，不等于要伸手。元婴在丹田里慢慢坐稳了，像也听懂了这一句。']
+]});
+
+/* 五 · 门后：元婴圆满（S.stage>=20） */
+V14({t:'门后',g:'门',bg:'dongtian',st:20,hint:'元婴走到大圆满',lines:[
+ ['','元婴走到大圆满那天，你又一次走进炉庭最里面。'],
+ ['','门后那间空屋子，你已经很熟了。今天你看见，屋子另一头还有一道门。'],
+ ['','那道门没有缝。摸上去是冷的，冷得很远，像隔着一整片海。'],
+ ['mo','（灯里，很久）太一的书上，那一头只写了两个字：化神。'],
+ ['mo','再往后，书就烧了。是谁烧的，我不知道。'],
+ {bg:'guanchao'},
+ ['','你把手贴在门上。门后不是潮，是潮来的那个地方。'],
+ ['','悬陆之外还有更远的岸。界隙一道连着一道，像一串没人走过的台阶。'],
+ ['','你没有推。'],
+ {bg:'dongtian'},
+ ['','你走回第一道门。门背后那面墙，还是一整面的名字。'],
+ YL({
+  zi:[
+   ['','你在最后一行，用和小字一样大的字，刻下自己的名字。'],
+   ['','底下留了一大片空白。往后若有人替你付了什么，得写在这里。看得见，才算数。']],
+  gong:[
+   ['','萧尘的抄本，在息衡给人看了三年。来问的人很多，还没有人走到门前。'],
+   ['','你在墙上添了一行：不借寿，也过得去。慢一点，疼一点，过得去。']],
+  huan:[
+   ['','墙上那些小字，有一半已经找着了家。墨老让你在每个找着的名字旁边，点一个小点。'],
+   ['','不是红的，是墨的。']]
+ }),
+ ['mo','你走到这里，也只是走到这里。别让人把你写成大字。'],
+ ['@','我知道。门后还有门。'],
+ {fn:()=>SC.q.unshift({bg:{deng:'xiaowu',feng:'xinhai',shou:'xiheng',bai:'baita_v3'}[yyE()]||'xiaowu'})},
+ YE({
+  deng:[
+   ['','回到北山，第三张桌上的菜还热着。'],
+   ['mo','（灯里）把热菜放近一点。']],
+  feng:[
+   ['','新岸的夜海又亮了，还是那种很深的青。'],
+   ['hong',HL('（从船头回过身）看完了？那就下来吃饭。','（在船头喊）看完了？下来吃饭，凉了可不等你。')]],
+  shou:[
+   ['','回到住处，侧门上那张写着急诊地址的纸还贴着，边角卷了。'],
+   ['','你把它抚平，没有换新的。']],
+  bai:[
+   ['','你回到塔上，把今夜的值夜交给了下一班。'],
+   ['','那一夜，你没有等每一份请领都盖完印。']]
+ }),
+ ['','元婴在丹田里睁着眼，望着那道没有缝的门。'],
+ ['','化神的门还关着。这一回，你不急。']
+],after:()=>{S.flags.v14done=1;
+  /* 收尾：一笔灵石 + 小框，只给一次（重读这一章不再发） */
+  if(!F('v14Gift')){S.flags.v14Gift=1;const g=zsAt(maxZone(),40);S.stones+=g;
+   setTimeout(()=>{try{modal(`<h3>第十四卷 · 叩门</h3><p>元婴走到了头。化神的门还关着。</p><p class="note">灵石 +${fmt(g)}</p>`,[{t:'好',cls:'gold'}]);}catch(_){}} ,400);}}});
+
+/* 萧尘赶来要几天 */
+TL_JUMP.v14_2=5;
+/* 因果录 */
+CAUSE.push(
+ {v:14,f:()=>F('yyLu')==='zi'?'你说，门背后那面墙上，不再添一个小字。':F('yyLu')==='gong'?'你把门的做法连同墙上的名字，一起抄了出去。':F('yyLu')==='huan'?'你先把墙上的名字，一个个送回了各家。':null},
+ {v:14,f:()=>F('v14done')?'元婴走到了头。化神的门还关着。':null}
+);
+/* 旧版「问道」收起：元婴不再弹选道途的框，境界神通里也不列它。存档里已有的 S.path 不动，只是不再显示 */
+pathAsk=function(){};
+REALM_UNLOCK[3]=(REALM_UNLOCK[3]||[]).filter(u=>u[0]!=='问道');
+/* ---------- 第十四卷 · 结束 ---------- */
 
 /* ================= 好玩度改造：秘境闯关、流派共鸣、要点阅读、异宝提示 =================
    放在 game.js 之前加载。这里只定义函数、替换函数，不在加载时读写存档。 */
