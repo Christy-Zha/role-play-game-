@@ -101,6 +101,9 @@ function bnFight(){const ni=nextInfo();if(!ni.bn||S.qi<needQ()||BT)return;if(inj
 /* 修炼节奏（第一至第十卷：炼气一层 → 筑基大圆满）
    亲自历练一趟（约三天）≈ 本境界两成半修为；扫荡同价但灵脉会枯；闭关最省事，但同样的日子只有历练的五分之一左右。 */
 const QI_BATTLE=.02;
+/* 深渊馈赠：只在一趟深渊里有效的临时加成，不进存档 */
+const RUN={atk:0,def:0,hp:0,crit:0,stone:0,qi:0,n:0,names:[]};
+const runReset=()=>{Object.assign(RUN,{atk:0,def:0,hp:0,crit:0,stone:0,qi:0,n:0,names:[]});};
 const qiRetreat=d=>req(S.stage)*.04*Math.pow(d,.75)*Math.min(3,idleRate()/(.5*Math.pow(1.17,S.stage)))*(S.path==='yin'?1.3:1);
 const idleRate=()=>(.5+.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb()*(F('taiyi')?1.25:1)*(1+(S.learned.includes('julingp')?.15:0)+clanBonus().idle+(partners().length?.1+.1*partners().length:0)+((S.sworn||[]).includes('mo')?.1:0))*omenMul('qi')*(injOn()?.6:1);
 const tapGain=()=>(1+.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb()*omenMul('qi');
@@ -121,7 +124,7 @@ function gearAff(){const A={};for(const k of SLOT5){const it=S.gear[k];if(!it)co
 function stats(){const g=Math.pow(1.19,S.stage)*rb()*(1+.12*STAGES[S.stage].r),u=S.ups,A=gearAff(),cb=clanBonus();
   let atk=8*g*(1+.12*u.yujian),hp=60*g*(1+.12*u.jingang),def=3*g*(1+.12*u.jingang),crit=.08;
   for(const k of SLOT5){const it=S.gear[k];if(it){atk+=it.atk||0;def+=it.def||0;hp+=it.hp||0;crit+=it.crit||0;}}
-  atk*=1+(A.atkP||0)+cb.atk;def*=1+(A.defP||0)+cb.def;hp*=1+(A.hpP||0);crit+=A.critA||0;
+  atk*=1+(A.atkP||0)+cb.atk+RUN.atk;def*=1+(A.defP||0)+cb.def+RUN.def;hp*=1+(A.hpP||0)+RUN.hp;crit+=(A.critA||0)+RUN.crit;
   if(S.karma<=-3)crit+=.07;return {atk,hp,def,crit:Math.min(crit,.75),heal:S.karma>=3?.45:.35,ls:A.ls||0,cd:A.cd||0,spd:A.spd||0,mp:A.mp||0,pen:Math.min(.6,A.pen||0),mreg:A.mreg||0,dr:Math.min(.6,A.dr||0),luck:A.luck||0,dodge:Math.min(.4,A.dodge||0),healP:A.healP||0,regen:A.regen||0};}
 const GATE=r1=>r1<=8?Math.min(r1-1,6):r1===9?'fs':r1===10?8:r1===11?9:10;
 function nextInfo(){const s=S.stage;if(s>=LAST)return {final:true};
@@ -285,7 +288,7 @@ const sub=t=>String(t).replaceAll('{name}',S.name).replaceAll('{bro}',bro());
 let SC=null;
 /* 读剧情：文字速度、自动播放、回顾 */
 const VN_SPD={slow:45,mid:28,fast:12,now:0},VN_SPDN={slow:'慢',mid:'中',fast:'快',now:'瞬'};
-const VN=(()=>{let o={spd:'mid',auto:false};try{Object.assign(o,JSON.parse(localStorage.getItem('lingchao_vn')||'{}'));}catch(e){}return o;})();
+const VN=(()=>{let o={spd:'mid',auto:false,brief:true};try{Object.assign(o,JSON.parse(localStorage.getItem('lingchao_vn')||'{}'));}catch(e){}return o;})();
 function vnSave(){try{localStorage.setItem('lingchao_vn',JSON.stringify(VN));}catch(e){}}
 /* 没有立绘的人物：印章式头像 */
 function sealPortrait(k){const n=(SPK[k]||BOND[k]&&BOND[k].n||'?').replace(/[（(].*$/,'');const ch=n.length>2?n.slice(-2):n;let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))%360;
@@ -298,12 +301,13 @@ function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;if(SC
   SC={id,ch,q:ch.lines.slice(),typing:null,full:'',choice:false,bg:ch.bg,log:[],read:S.seen.includes(id),skipArm:false};
   const ov=$('#ov');ov.hidden=false;ov.className='vn';
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="port l hide" id="pL"></div><div class="port r hide" id="pR"></div>
-   <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
+   <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.brief?' on':''}" id="stBrief" aria-pressed="${VN.brief}" aria-label="速读：连续的旁白只留第一句">速读</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
    <div class="st-box"><div class="st-s" id="stS" hidden></div><div class="st-x" id="stX"></div><div class="st-more" id="stM">▾</div></div></div>`;
   requestAnimationFrame(()=>{if(SC)paintTo($('#vbg'),SC.bg);});
   $('#stSkip').onclick=e=>{e.stopPropagation();if(!SC.read&&!SC.skipArm){SC.skipArm=true;e.target.textContent='再点跳过未读';setTimeout(()=>{if(SC&&SC.skipArm){SC.skipArm=false;const b=$('#stSkip');if(b)b.textContent='跳过';}},2500);return;}skipStory();};
   $('#stLog').onclick=e=>{e.stopPropagation();vnLog();};
   $('#stSpd').onclick=e=>{e.stopPropagation();const ks=Object.keys(VN_SPD);VN.spd=ks[(ks.indexOf(VN.spd)+1)%ks.length];vnSave();e.target.textContent=VN_SPDN[VN.spd];};
+  $('#stBrief').onclick=e=>{e.stopPropagation();VN.brief=!VN.brief;vnSave();e.target.classList.toggle('on',VN.brief);e.target.setAttribute('aria-pressed',VN.brief);toast(VN.brief?'速读：连续的旁白只留第一句，全文在「回顾」里':'已关闭速读');};
   $('#stAuto').onclick=e=>{e.stopPropagation();VN.auto=!VN.auto;vnSave();e.target.classList.toggle('on',VN.auto);e.target.setAttribute('aria-pressed',VN.auto);if(VN.auto&&SC&&!SC.typing&&!SC.choice)vnAutoNext();};
   $('#stIn').onclick=()=>{if(!SC||SC.choice||SC.logOpen)return;clearTimeout(SC.autoT);if(SC.typing){finishType();return;}nextLine();};
   nextLine();}
@@ -318,9 +322,10 @@ function nextLine(){for(;;){if(!SC.q.length)return endStory();const L=SC.q[0];
     if(!Array.isArray(L)&&L.fx&&!L.c){SC.q.shift();applyFx(L.fx);continue;}
     if(!Array.isArray(L)&&L.fn){SC.q.shift();try{L.fn();}catch(e){}continue;}
     if(!Array.isArray(L)&&L.game){SC.q.shift();const G=L.game;SC.choice=true;$('#stM').hidden=true;openMini(G.k,{lv:G.lv,title:G.title,story:1,stake:G.stake,onDone:w=>{SC.choice=false;if(w&&G.winFx)applyFx(G.winFx);if(!w&&G.loseFx)applyFx(G.loseFx);SC.q=((w?G.win:G.lose)||[]).concat(SC.q);nextLine();}});return;}
-    if(Array.isArray(L)&&typeof L[1]==='function'&&!L[1]()){SC.q.shift();continue;}break;}
-  const L=SC.q.shift();if(!Array.isArray(L)&&L.c)return showChoices(L.c);
-  const spk=L[0];const name=spk==='@'?S.name:(SPK[spk]||'');const tx=sub(typeof L[1]==='function'?L[1]():L[1]);
+    if(Array.isArray(L)&&typeof L[1]==='function'&&!L[1]()){SC.q.shift();continue;}
+    if(Array.isArray(L)&&VN.brief&&L[0]===''&&SC.lastNarr&&typeof L[1]==='string'&&L[1].length>14&&L[1][0]!=='【'){SC.q.shift();SC.log.push(['',sub(L[1])]);continue;}break;}
+  const L=SC.q.shift();if(!Array.isArray(L)&&L.c){SC.lastNarr=false;return showChoices(L.c);}
+  const spk=L[0];SC.lastNarr=(spk==='');const name=spk==='@'?S.name:(SPK[spk]||'');const tx=sub(typeof L[1]==='function'?L[1]():L[1]);
   const s=$('#stS'),x=$('#stX');s.textContent=name;s.hidden=!name;s.className='st-s'+(['zero','hong','tq','sx','zhou2'].includes(spk)?' cin':spk==='@'?' gold':'');
   x.className='st-x'+(name?'':' narr');x.textContent='';$('#stM').hidden=true;showPortrait(spk||null);
   SC.full=tx;SC.log.push([name,tx]);let i=0;clearInterval(SC.typing);
@@ -619,7 +624,7 @@ const _storyView0=VIEWS.story;VIEWS.story=()=>_storyView0()+causeHTML()+readerCa
 window.claude?.hot?.snapshot?.(()=>({S}));
 LATE.forEach(f=>{try{f();}catch(e){console.error(e);}});
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
-if(location.hash==='#debug')window.__lc={STORY,QUESTS,BOND,sweepGo,sweepPick,partners,advanceDays,daysAll,mkParty,retreatApply,RETREATS,retreatCost,offline,timeTick,giftPick,novelReader,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
+if(location.hash==='#debug')window.__lc={boonPick,RUN,stats,STORY,QUESTS,BOND,sweepGo,sweepPick,partners,advanceDays,daysAll,mkParty,retreatApply,RETREATS,retreatCost,offline,timeTick,giftPick,novelReader,needQ,stName,addQi,nextInfo,refine,bnFight,sceneCanvas,cultScene,ZONE_SCN,LIFE,lifeOf,myLife,pLife,lifeText,lifeSync,ageCheck,hydrate,STAGES,btSpr,btClose,ART_IMG,get S(){return S;},set S(v){S=v;},WD,get BT(){return BT;},ACT,playStory,playEvent,checkStory,RW,rwNext,rwTalk,personTalk,P_,mgEnd,farmStart,gameDay,dateName,chatBtn,myCP,refA,smJoin,smTaskDo,smPromote,smTasks,dbFight,dbYear,giftGive,GIFT_PILLS,wuNeed,oneYear:()=>oneYear(),render,jTick,save,npcTalk,startBattle,mkEnemy,goZone,goTown,wEncounter,btCmdTap,mkCustom,openMini,farmStart,guiShop,enterRift,mkUnique,mkItem,clRecruit,openClanFound,clanHydrate,clSend,get FARM(){return FARM;},pplInit,simYears,closedGo,sectFight,jhOpen,goMarket,openRootTest,pickRoot,breakthrough,startJie,ceremony,natalForge,brewOpen,disRecruit,fatePlay,playEnding,soulOut,flyToggle,goalsOpen,bntFight,xfGet,learnForm,pathAsk,STORY,EVENTS,stats,get SC(){return SC;}};
 
 function cultMore(){const R=realmIdx();return `${daoHTML()}${injOn()?`<div class="banner"><div class="t">重伤未愈<small>吐纳 -40%、生命 -20%，冲关不得。还要 ${injLeft()+' 天'}。</small></div></div>`:''}
  <h2 class="sec">灵根 · 流派 <small>${rootName()}</small></h2>${S.root?`<p class="note">${ROOTS[S.root].d}${S.root2?'；'+ROOTS[S.root2].d:''}<br>流派：${ROOTS[S.root].tip}</p>

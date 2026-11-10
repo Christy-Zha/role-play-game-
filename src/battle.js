@@ -168,8 +168,8 @@ function btFoeDie(e){S.slain++;
 
 /* ---------- 结算 ---------- */
 async function btWin(){BT.phase='end';btSetCmd('','idle');await bwait(550);if(!BT)return;sfx('win');
- if(BT.opt.jie){const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btResult('渡劫成功',['九道雷光散尽，云开见日。','你身上的旧伤，被雷火一并烧去了。'],'gold','破境',()=>{const o=BT.opt;btClose();o.onWin&&o.onWin();});return;}let st=0;const L=[],lk=1+stats().luck,lootM=lk*omenMul('loot');let nIt=0;BT.foes.forEach(f=>st+=f.stones||0);st=Math.ceil(st*lk*omenMul('stone'));S.stones+=st;
- STREAK++;const stk=BT.opt.farm?0:Math.min(.5,.1*(STREAK-1));const qi=req(S.stage)*QI_BATTLE*(1+stk)*(BT.opt.farm&&FARM?zYield(FARM.z):1)*omenMul('bqi')*BT.foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);addQi(qi,true);L.push('灵石 +'+fmt(st),'灵气 +'+(qi<10?qi.toFixed(1):fmt(qi)));if(stk>0)L.push('连斩 ×'+STREAK+'，灵气多得 '+Math.round(stk*100)+'%');
+ if(BT.opt.jie){const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btResult('渡劫成功',['九道雷光散尽，云开见日。','你身上的旧伤，被雷火一并烧去了。'],'gold','破境',()=>{const o=BT.opt;btClose();o.onWin&&o.onWin();});return;}let st=0;const L=[],lk=1+stats().luck,lootM=lk*omenMul('loot');let nIt=0;BT.foes.forEach(f=>st+=f.stones||0);st=Math.ceil(st*lk*omenMul('stone')*(1+RUN.stone));S.stones+=st;
+ STREAK++;const stk=BT.opt.farm?0:Math.min(.5,.1*(STREAK-1));const qi=req(S.stage)*QI_BATTLE*(1+stk)*(1+RUN.qi)*(BT.opt.farm&&FARM?zYield(FARM.z):1)*omenMul('bqi')*BT.foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);addQi(qi,true);L.push('灵石 +'+fmt(st),'灵气 +'+(qi<10?qi.toFixed(1):fmt(qi)));if(stk>0)L.push('连斩 ×'+STREAK+'，灵气多得 '+Math.round(stk*100)+'%');
  if(BT.uniq){const u=BT.uniq;if(S.bag.length<BAG_MAX){S.bag.push(u);L.push(`<span class="r-chuan"><span class="iname">传说 · ${u.n}</span></span>`);}else{S.stones+=u.sell;L.push(u.n+'（行囊已满，已换成灵石）');}}
  const MD={};BT.foes.forEach(f=>{const o=matDrops(f);for(const k in o){MD[k]=(MD[k]||0)+o[k];S.mats[k]=(S.mats[k]||0)+o[k];}});if(Object.keys(MD).length)L.push(matLine(MD));
  BT.foes.forEach(f=>{if(f.special==='zhou'||f.noLoot)return;const fz=Math.max(0,f.z||0);let gp=Math.random()<(f.boss?.35:f.elite?.15:.04)*lootM;if(f.boss){S.pity.gem=(S.pity.gem||0)+1;if(S.pity.gem>=5)gp=true;}if(gp){if(f.boss)S.pity.gem=0;L.push(gGem(null,gemTierFor(fz)).trim());}if(f.boss&&Math.random()<.06*lootM){L.push(gBook().trim());}
@@ -177,7 +177,7 @@ async function btWin(){BT.phase='end';btSetCmd('','idle');await bwait(550);if(!B
   if(Math.random()<(f.boss?.6:.07)){S.meds++;L.push('疗伤药 +1');}});
  BT.loot.forEach(t=>L.push(esc(t)));const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;
  if(BT.opt.farm&&FARM){FARM.st+=st;FARM.qi+=qi;FARM.items+=nIt;S.hpF=Math.min(1,S.hpF+.2);S.mpF=Math.min(1,S.mpF+.2);save();farmResult(L);return;}
- save();btResult('战斗胜利',L,'gold','继续',()=>{const o=BT.opt;btClose();o.onWin&&o.onWin();});}
+ save();btResult('战斗胜利',L,'gold','继续',()=>{const o=BT.opt;btClose();o.onWin&&o.onWin();if(!o.farm&&!o.story&&STREAK>0&&STREAK%3===0)setTimeout(()=>boonPick(null,'灵潮馈赠 · 连斩 ×'+STREAK),350);});}
 function farmResult(L){/* 连战：不停顿，直接下一场；点「收手」则打完这一场停下 */
  if(FARM.z===7)FARM.floors=(FARM.floors||0)+1;btClose();if(FARM.stop)farmEnd();else farmNext();}
 let FARM=null;

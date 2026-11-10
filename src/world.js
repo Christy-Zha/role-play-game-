@@ -128,9 +128,9 @@ function wLoad(M,st){WD.M=M;const P=mkEnt({kind:'player',c:st[0],r:st[1],spd:4.4
 function followers(){const L=[{k:'mo'}];if(WD.M&&WD.M.kind!=='town'){if(F('zeroSaved')&&qDone('zero1'))L.push({k:'zero'});if(qDone('zhou1'))L.push({k:'zhou'});}
  return L.map((f,i)=>mkEnt(Object.assign({kind:'fol',c:WD.P.x,r:WD.P.y,idx:i+1},f)));}
 function wFade(fn){const f=$('#wfade');if(!f){fn();return;}f.classList.add('on');setTimeout(()=>{try{fn();}finally{setTimeout(()=>f.classList.remove('on'),60);}},260);}
-function goTown(defeat){WD.prev=null;STREAK=0;const doit=()=>{S.hpF=1;S.mpF=1;S.loc='town';wLoad(buildTown(),defeat?[13,5]:[24,3]);const t=$('#travel');if(t)t.hidden=true;if(defeat)setTimeout(()=>toast('你被抬回了青石站，伤已经养好了。'),300);save();};
+function goTown(defeat){WD.prev=null;STREAK=0;runReset();const doit=()=>{S.hpF=1;S.mpF=1;S.loc='town';wLoad(buildTown(),defeat?[13,5]:[24,3]);const t=$('#travel');if(t)t.hidden=true;if(defeat)setTimeout(()=>toast('你被抬回了青石站，伤已经养好了。'),300);save();};
  if(TAB!=='world'){TAB='world';render();doit();}else wFade(doit);}
-function goZone(z){if(!zoneUnlocked(z))return;WD.prev=null;STREAK=0;advanceDays(1,'trip');wFade(()=>{S.loc='z'+z;wLoad(z===7?buildAbyss():buildZone(z),z===7?[6,9]:[2,2]);const t=$('#travel');if(t)t.hidden=true;
+function goZone(z){if(!zoneUnlocked(z))return;WD.prev=null;STREAK=0;runReset();advanceDays(1,'trip');wFade(()=>{S.loc='z'+z;wLoad(z===7?buildAbyss():buildZone(z),z===7?[6,9]:[2,2]);const t=$('#travel');if(t)t.hidden=true;
   if(!S.visited.includes(z))S.visited.push(z);checkStory();save();});}
 function wTravel(){if(TAB!=='world'){TAB='world';render();}const t=$('#travel');if(!t)return;t.innerHTML=travelHTML();t.hidden=false;requestAnimationFrame(()=>{drawTravel();const sc=t.querySelector('.travel-scroll'),cur=t.querySelector('.tsp.cur');if(sc&&cur)sc.scrollTop=Math.max(0,cur.offsetTop-sc.clientHeight/2);});}
 
@@ -161,8 +161,28 @@ function wEncounter(e){const M=WD.M,z=M.z,P=WD.P;P.path=[];P.act=null;let foes;
  else{foes=[mobOf(z,e.look,e.elite)];const ex=z===0?(Math.random()<.45?1:0):1+(Math.random()<.35?1:0);for(let i=0;i<ex;i++)foes.push(mobOf(z,pick(ZONES[z].mobs)));if(foes.length>1)foes.forEach(f=>{f.hp*=.72;f.max=f.hp;f.atk*=.66;});}
  startBattle(foes,{z,noFlee:!!e.boss,onWin:()=>{e.dead=true;if(e.boss)finishZone(e);},onFlee:()=>{e.stun=3;P.inv=2.5;}});}
 function mobOf(z,look,elite){const e=mkEnemy(z,false);e.look=look;e.n=look;if(elite){e.hp*=1.8;e.max=e.hp;e.atk*=1.3;e.stones*=3;e.elite=true;e.n='狂暴'+look;}return e;}
+/* 深渊馈赠：每破一层三选一，只在这一趟里有效；离开深渊就清零 */
+const BOONS=[
+ {n:'锋锐',d:'攻击 +12%',f:()=>{RUN.atk+=.12;}},
+ {n:'厚土',d:'防御 +15%',f:()=>{RUN.def+=.15;}},
+ {n:'蕴灵',d:'生命上限 +15%',f:()=>{RUN.hp+=.15;}},
+ {n:'疾风',d:'暴击率 +6%',f:()=>{RUN.crit+=.06;}},
+ {n:'财运',d:'这一趟灵石 +25%',f:()=>{RUN.stone+=.25;}},
+ {n:'悟道',d:'这一趟战斗灵气 +20%',f:()=>{RUN.qi+=.2;}},
+ {n:'回春',d:'立刻恢复全部生命和灵力',f:()=>{S.hpF=1;S.mpF=1;}}
+];
+function boonPick(after,title){
+ const pool=BOONS.slice().sort(()=>Math.random()-.5).slice(0,3);
+ const el=document.createElement('div');el.className='boon-ov';
+ el.style.cssText='position:fixed;inset:0;z-index:999;background:rgba(5,4,10,.86);display:flex;flex-direction:column;justify-content:center;gap:12px;padding:24px;';
+ el.innerHTML='<div style="text-align:center;color:#e3b862;font-size:22px;letter-spacing:6px">'+(title||'深渊馈赠')+'</div><div style="text-align:center;color:#9fb3ad;font-size:13px;margin-bottom:6px">选一份。只在这一趟出行里有效，回站或离开就消散</div>'
+  +pool.map((b,i)=>'<button class="btn gold" data-i="'+i+'" style="padding:14px 10px;font-size:16px"><b>'+b.n+'</b><br><small style="opacity:.85">'+b.d+'</small></button>').join('')
+  +(RUN.names.length?'<div style="text-align:center;color:#8aa;font-size:12px;margin-top:6px">已获得：'+RUN.names.join('、')+'</div>':'');
+ document.body.appendChild(el);
+ el.querySelectorAll('button').forEach(bt=>{bt.onclick=()=>{const b=pool[+bt.dataset.i];b.f();RUN.n++;RUN.names.push(b.n);el.remove();toast('获得「'+b.n+'」· '+b.d);after&&after();};});
+}
 function finishZone(e){const M=WD.M,z=M.z;
- if(e.abyss){toast('深渊第 '+S.abyss+' 层已破，更深处的守关者醒了。','big');setTimeout(()=>{if(WD.M===M){abyssGuard(M);wHud();}},900);save();return;}
+ if(e.abyss){toast('深渊第 '+S.abyss+' 层已破，更深处的守关者醒了。','big');setTimeout(()=>{if(WD.M===M)boonPick(()=>{if(WD.M===M){abyssGuard(M);wHud();}});},900);save();return;}
  advanceDays(2,'trip');const bonus=zsAt(z,8);S.stones+=bonus;qProgress('run',{z});EVZ=z;const item=chance(.6)?gItem(rollRar(true)):'';
  modal(`<h3>探索完成</h3><p>你击败了「${ZONES[z].boss}」，走到了「${ZONES[z].n}」的尽头。</p><p>通关奖励：灵石 <b>${fmt(bonus)}</b>${item?'<br>'+item:''}</p><p>从入口的光圈可以离开，或者继续在这里清剿妖兽。</p>`,
   [{t:'继续',cls:'gold',fn:()=>{const p=S.pending.find(id=>{const c=STORY.find(x=>x.id===id);return c&&!c.side;});if(p)playStory(p);}}],ZONE_SCN[z]);save();}
