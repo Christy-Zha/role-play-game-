@@ -90,7 +90,7 @@ function buildZone(z){const D=ZDEF[z],W=24,H=24,M=newMap('zone',z,W,H,D.g[0]);Ob
  for(let i=0;i<2;i++){const s=spot((c,r)=>on(c,r)&&far(c,r,start,5),3);if(s){M.trap.add(K(s[0],s[1]));M.g[gi(M,s[0],s[1])]=trapType(z);taken.delete(K(s[0],s[1]));}}
  if(F('metGui')&&Math.random()<.22){const s=spot(null,3);if(s)M.ents.push(mkEnt({kind:'npc',k:'gui',c:s[0],r:s[1],dir:1,name:'鬼手'}));}
  if(maxZone()>=2&&Math.random()<.12){const s=spot(null,3);if(s)M.ents.push(mkEnt({kind:'npc',k:'jianke',c:s[0],r:s[1],dir:1,ev:'jianke',name:'无名剑客'}));}
- if(S.flags.mapClue||Math.random()<.16){const s=spot(off,3);if(s){addProp(M,s[0],s[1],'portal',{blocks:false,rift:1,lab:'裂隙',act:()=>enterRift()});M.lights.push({c:s[0],r:s[1],rad:40,h:4,col:'rgba(200,120,255,.35)'});delete S.flags.mapClue;}}
+ if(S.flags.mapClue||S.bossDown.includes(z)||Math.random()<.16){const s=spot(off,3);if(s){addProp(M,s[0],s[1],'portal',{blocks:false,rift:1,lab:'裂隙',act:()=>enterRift()});M.lights.push({c:s[0],r:s[1],rad:40,h:4,col:'rgba(200,120,255,.35)'});delete S.flags.mapClue;}}
  const nE=Math.round((6+Math.min(z,4))*(omenOn('chao')?1.6:1));for(let i=0;i<nE;i++){const s=spot((c,r)=>far(c,r,start,5),3);if(!s)break;const look=pick2(R,ZONES[z].mobs);M.ents.push(mkEnt({kind:'foe',look,c:s[0],r:s[1],home:s,elite:R()<.15,spd:1.4}));}
  propLights(M);M.props.forEach(p=>{if(p.type==='spark')M.lights.push({c:p.c,r:p.r,rad:34,h:10,col:p.gold?'rgba(227,184,98,.35)':'rgba(143,214,181,.35)'});if(p.type==='portal')M.lights.push({c:p.c,r:p.r,rad:40,h:4,col:'rgba(143,214,181,.3)'});});
  let lv=0;for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(M.g[gi(M,c,r)]==='lava'&&lv++<70&&(c+r)%2===0)M.lights.push({c,r,rad:30,h:0,col:'rgba(255,110,40,.22)'});

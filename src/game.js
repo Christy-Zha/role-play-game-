@@ -279,7 +279,7 @@ function jTake(i){const o=S.dt.slots[i];if(!o||o.left>0)return;S.dt.slots.splice
   render();save();}
 /* ---------- 剧情 ---------- */
 function checkStory(quiet){for(const ch of STORY){if(S.seen.includes(ch.id)||S.pending.includes(ch.id))continue;
-  let ok=false;try{ok=ch.cond();}catch(e){}if(ok){S.pending.push(ch.id);if(!quiet&&S.started){if(ch.side&&!SC&&!BT&&OV_FREE())playStory(ch.id);else toast((ch.side?'':'新剧情：')+ch.title,'观看',()=>playStory(ch.id));}}}
+  let ok=false;try{ok=ch.cond();}catch(e){}if(ok){S.pending.push(ch.id);if(!quiet&&S.started){if(ch.side&&shortCh(ch)&&!SC&&!BT&&OV_FREE())playStory(ch.id);else toast((ch.side?'':'新剧情：')+ch.title,'观看',()=>playStory(ch.id));}}}
   dotUpdate();}
 const OV_FREE=()=>$('#ov').hidden;
 function dotUpdate(){$('#dotStory').hidden=!S.pending.some(id=>{const c=STORY.find(x=>x.id===id);return c&&!c.side;});stationDot();}
@@ -301,13 +301,13 @@ function playStory(id){const ch=STORY.find(c=>c.id===id);if(!ch||BT)return;if(SC
   SC={id,ch,q:ch.lines.slice(),typing:null,full:'',choice:false,bg:ch.bg,log:[],read:S.seen.includes(id),skipArm:false};
   const ov=$('#ov');ov.hidden=false;ov.className='vn';
   ov.innerHTML=`<canvas class="vbg" id="vbg"></canvas><div class="port l hide" id="pL"></div><div class="port r hide" id="pR"></div>
-   <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.brief?' on':''}" id="stBrief" aria-pressed="${VN.brief}" aria-label="速读：连续的旁白只留第一句">速读</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
+   <div class="inner" id="stIn"><div class="st-top"><span class="tt">${ch.title}</span><span class="st-tools"><button class="st-skip" id="stLog" aria-label="回顾">回顾</button><button class="st-skip" id="stSpd" aria-label="文字速度">${VN_SPDN[VN.spd]}</button><button class="st-skip${VN.brief?' on':''}" id="stBrief" aria-pressed="${VN.brief}" aria-label="阅读方式：要点或全文">${VN.brief?'要点':'全文'}</button><button class="st-skip${VN.auto?' on':''}" id="stAuto" aria-pressed="${VN.auto}">自动</button><button class="st-skip" id="stSkip">${S.seen.includes(id)?'快进':'跳过'}</button></span></div><div class="st-sp"></div><div class="st-choices" id="stC"></div>
    <div class="st-box"><div class="st-s" id="stS" hidden></div><div class="st-x" id="stX"></div><div class="st-more" id="stM">▾</div></div></div>`;
   requestAnimationFrame(()=>{if(SC)paintTo($('#vbg'),SC.bg);});
   $('#stSkip').onclick=e=>{e.stopPropagation();if(!SC.read&&!SC.skipArm){SC.skipArm=true;e.target.textContent='再点跳过未读';setTimeout(()=>{if(SC&&SC.skipArm){SC.skipArm=false;const b=$('#stSkip');if(b)b.textContent='跳过';}},2500);return;}skipStory();};
   $('#stLog').onclick=e=>{e.stopPropagation();vnLog();};
   $('#stSpd').onclick=e=>{e.stopPropagation();const ks=Object.keys(VN_SPD);VN.spd=ks[(ks.indexOf(VN.spd)+1)%ks.length];vnSave();e.target.textContent=VN_SPDN[VN.spd];};
-  $('#stBrief').onclick=e=>{e.stopPropagation();VN.brief=!VN.brief;vnSave();e.target.classList.toggle('on',VN.brief);e.target.setAttribute('aria-pressed',VN.brief);toast(VN.brief?'速读：连续的旁白只留第一句，全文在「回顾」里':'已关闭速读');};
+  $('#stBrief').onclick=e=>{e.stopPropagation();VN.brief=!VN.brief;vnSave();e.target.classList.toggle('on',VN.brief);e.target.setAttribute('aria-pressed',VN.brief);e.target.textContent=VN.brief?'要点':'全文';toast(VN.brief?'要点：只读开头、选择前后和结尾，全文都在「回顾」里':'全文：一句不落地读');};
   $('#stAuto').onclick=e=>{e.stopPropagation();VN.auto=!VN.auto;vnSave();e.target.classList.toggle('on',VN.auto);e.target.setAttribute('aria-pressed',VN.auto);if(VN.auto&&SC&&!SC.typing&&!SC.choice)vnAutoNext();};
   $('#stIn').onclick=()=>{if(!SC||SC.choice||SC.logOpen)return;clearTimeout(SC.autoT);if(SC.typing){finishType();return;}nextLine();};
   nextLine();}
@@ -323,9 +323,9 @@ function nextLine(){for(;;){if(!SC.q.length)return endStory();const L=SC.q[0];
     if(!Array.isArray(L)&&L.fn){SC.q.shift();try{L.fn();}catch(e){}continue;}
     if(!Array.isArray(L)&&L.game){SC.q.shift();const G=L.game;SC.choice=true;$('#stM').hidden=true;openMini(G.k,{lv:G.lv,title:G.title,story:1,stake:G.stake,onDone:w=>{SC.choice=false;if(w&&G.winFx)applyFx(G.winFx);if(!w&&G.loseFx)applyFx(G.loseFx);SC.q=((w?G.win:G.lose)||[]).concat(SC.q);nextLine();}});return;}
     if(Array.isArray(L)&&typeof L[1]==='function'&&!L[1]()){SC.q.shift();continue;}
-    if(Array.isArray(L)&&VN.brief&&L[0]===''&&SC.lastNarr&&typeof L[1]==='string'&&L[1].length>14&&L[1][0]!=='【'){SC.q.shift();SC.log.push(['',sub(L[1])]);continue;}break;}
-  const L=SC.q.shift();if(!Array.isArray(L)&&L.c){SC.lastNarr=false;return showChoices(L.c);}
-  const spk=L[0];SC.lastNarr=(spk==='');const name=spk==='@'?S.name:(SPK[spk]||'');const tx=sub(typeof L[1]==='function'?L[1]():L[1]);
+    if(Array.isArray(L)&&VN.brief&&vnKeySkip(L)){SC.q.shift();SC.log.push([L[0]==='@'?S.name:(SPK[L[0]]||''),sub(typeof L[1]==='function'?L[1]():L[1])]);continue;}break;}
+  const L=SC.q.shift();if(!Array.isArray(L)&&L.c){SC.lastNarr=false;SC.after=0;return showChoices(L.c);}
+  const spk=L[0];SC.lastNarr=(spk==='');SC.shown=(SC.shown||0)+1;SC.after=(SC.after??99)+1;const name=spk==='@'?S.name:(SPK[spk]||'');const tx=sub(typeof L[1]==='function'?L[1]():L[1]);
   const s=$('#stS'),x=$('#stX');s.textContent=name;s.hidden=!name;s.className='st-s'+(['zero','hong','tq','sx','zhou2'].includes(spk)?' cin':spk==='@'?' gold':'');
   x.className='st-x'+(name?'':' narr');x.textContent='';$('#stM').hidden=true;showPortrait(spk||null);
   SC.full=tx;SC.log.push([name,tx]);let i=0;clearInterval(SC.typing);
@@ -350,7 +350,7 @@ function endStory(){const ch=SC.ch;clearInterval(SC.typing);if(!S.seen.includes(
   if(S.special&&(ch.id==='ratking'||ch.id==='exposed')){TAB='world';if(WD.M&&WD.M.kind!=='town')setTimeout(()=>goTown(),300);else WD.M=null;}
   if(ch.id==='prologue'){TAB='world';WD.M=null;setTimeout(()=>toast('铁叔在站台上找你，头上有「!」的人有事相托'),900);}
   dotUpdate();render();save();
-  const nx=S.pending.map(id=>STORY.find(c=>c.id===id)).find(c=>c&&c.side);if(nx)setTimeout(()=>{if(OV_FREE()&&!SC&&!BT)playStory(nx.id);},400);}
+  const nx=S.pending.map(id=>STORY.find(c=>c.id===id)).find(c=>c&&c.side&&shortCh(c));if(nx)setTimeout(()=>{if(OV_FREE()&&!SC&&!BT)playStory(nx.id);},400);}
 
 /* ---------- NPC 对话 ---------- */
 function npcTalk(k){const npc=NPCS[k];if(!npc||BT)return;const ready=QUESTS.find(q=>q.npc===k&&qSt(q.id)==='ready');const avail=QUESTS.find(q=>q.npc===k&&qAvail(q));

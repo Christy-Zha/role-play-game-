@@ -17,7 +17,7 @@ const skOk=s=>s.root?(hasRoot(s.root)&&realmIdx()>=(s.rl||0)):s.book?S.learned.i
 const penD=(a,t)=>t.def*(1-(a.pen||0));
 const BTB={town:{sky:['#0c100e','#232a24'],far:'wall',fl:'tile'},0:{sky:['#030505','#14221e'],far:'arch',fl:'gravel'},1:{sky:['#2a1418','#d07a42'],far:'city',fl:'asphalt'},2:{sky:['#0a1610','#2c4a3a'],far:'trees',fl:'grass'},
  3:{sky:['#4a5a60','#a8b4b4'],far:'cranes',fl:'plank'},4:{sky:['#0a0816','#2c2244'],far:'lab',fl:'metal'},5:{sky:['#160806','#6a2414'],far:'ruins',fl:'basalt'},6:{sky:['#fff4d0','#a8883e'],far:'light',fl:'gold'},7:{sky:['#05040a','#20123a'],far:'void',fl:'pstone'},8:{sky:['#03040c','#141a3a'],far:'void',fl:'star'},9:{sky:['#fff8e8','#c8b07a'],far:'light',fl:'jadeT'},10:{sky:['#04020a','#2a0a24'],far:'void',fl:'ashv'}};
-const btSpd=()=>BT&&BT.auto?1.8:1;
+const btSpd=()=>BT&&BT.auto?2.6:1.25;
 let STREAK=0;/* 连斩：连续打赢的场数，只在本次出行内有效，不进存档 */
 const bwait=ms=>new Promise(r=>setTimeout(r,ms/btSpd()));
 function tween(o,to,ms){return new Promise(res=>{const fr={};for(const k in to)fr[k]=o[k];const t0=performance.now(),D=Math.max(16,ms/btSpd());const f=t=>{const k=Math.min(1,(t-t0)/D),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;for(const p in to)o[p]=fr[p]+(to[p]-fr[p])*e;if(k<1)requestAnimationFrame(f);else res();};requestAnimationFrame(f);});}
@@ -192,7 +192,7 @@ async function btLose(){BT.phase='end';btSetCmd('','idle');await bwait(600);if(!
 function btEnd(kind){const o=BT.opt;if(kind==='flee'){STREAK=0;const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btClose();toast('你脱身了。');o.onFlee&&o.onFlee();}}
 function btResult(title,lines,cls,btn,fn){const el=$('#btRes');if(!el)return;el.hidden=false;el.innerHTML=`<div class="box ${cls}"><h3>${title}</h3><ul>${lines.map(l=>`<li>${l}</li>`).join('')}</ul><button class="btn gold" id="btOk">${btn}</button></div>`;$('#btOk').onclick=fn;}
 function btClose(){const el=$('#bt');el.hidden=true;el.innerHTML='';BT=null;dotUpdate();if(TAB==='world')render();
- const nx=S.pending.map(id=>STORY.find(c=>c.id===id)).find(c=>c&&c.side);if(nx)setTimeout(()=>{if(OV_FREE()&&!SC&&!BT)playStory(nx.id);},300);}
+ const nx=S.pending.map(id=>STORY.find(c=>c.id===id)).find(c=>c&&c.side&&shortCh(c));if(nx)setTimeout(()=>{if(OV_FREE()&&!SC&&!BT)playStory(nx.id);},300);}
 
 /* ---------- 绘制 ---------- */
 function btBg(k,W,H){const K=BT.k;return cvMemo('hbg|'+k+'|'+Math.round(W)+'x'+Math.round(H)+'|'+K,()=>{const D=BTB[k]||BTB.town,cv=mkCv(Math.round(W*K),Math.round(H*K)),x=cv.getContext('2d');cv.ww=W;cv.hh=H;x.scale(K,K);
