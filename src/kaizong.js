@@ -167,7 +167,7 @@ const KS4_NEW=[
  {fn:()=>{if(KS_ZS())SC.q.unshift(
    ['zhaos','（站在最后一排）我也能签吗？我才来一年。'],
    ['tie','签了就算。']);}},
- ['hong','（从怀里摸出一张折了四折的纸）阿禾托车队捎回来的。她在承衡司那头走不开。'],
+ ['hong','（从怀里摸出一张折了四折的纸）阿禾托车队捎回来的。她人在外头，一时赶不回来。'],
  ['','纸上写着她的名字，旁边按了一个手印。墨洇开了一圈，像是按得太用力。'],
  ['tie','按了印就算。会写名字的都能签。'],
  ['chuyi','我会写。写得歪。'],
@@ -198,7 +198,7 @@ const KS4_OLD=[
  {fn:()=>{if(KS_ZS())SC.q.unshift(
    ['zhaos','（站在最后一排）我也能签吗？我才来一年。'],
    ['tie','签了就算。']);}},
- ['hong','（摸出一张折了四折的纸）阿禾托车队捎回来的，按了她的手印。她在承衡司那头走不开。'],
+ ['hong','（摸出一张折了四折的纸）阿禾托车队捎回来的，按了她的手印。她人在外头，一时赶不回来。'],
  ['tie','贴上。按了印就算。'],
  ['chuyi','我会写。写得歪。'],
  ['cm','歪的也算。'],
@@ -221,6 +221,8 @@ STORY.push({id:'ks_4',side:1,title:'青石·立派',g:'派',bg:'clan',
  // 旧存档已立派（不是这条线立的）→ 匾早挂好了；其余（含重读）→ 新立版本
  get lines(){return S&&S.clan&&S.clan.zong&&!F('kzNew')?KS4_OLD:KS4_NEW;},
  after:()=>{const c=S.clan;if(!c)return;
+  /* 社约只认第一次的选择：重读第四段不能借机换社约 */
+  if(F('kzLock'))S.flags.kzYue=F('kzLock');else if(F('kzYue'))S.flags.kzLock=F('kzYue');
   if(c.zong){ // 已立派：旧存档只补社约；这条线立的派重读时只提示社约
    if(!F('kzNew'))clLog('门派册补上了门规「'+(KS_YUE_N[F('kzYue')]||'')+'」，立门人补签齐了。');
    toast('社约：'+(KS_YUE_N[F('kzYue')]||'')+'。'+(KS_YUE_D[F('kzYue')]||''),'big');save();render();return;}

@@ -1,6 +1,6 @@
 /* ================= 行社 ================= */
 const CL_BLD={
- ci:{n:'议事堂',g:'祠',base:200,d:lv=>'社员上限 '+(3+lv*2)+'；其他建筑最高可升到 '+(lv+1)+' 级'},
+ ci:{n:'议事堂',g:'祠',base:200,d:lv=>'社员上限 '+(3+lv*2+(typeof ksYue==='function'&&ksYue('ming')?1:0))+'；其他建筑最高可升到 '+(lv+1)+' 级'},
  tian:{n:'灵田',g:'田',base:150,d:lv=>lv?'每天产出灵石 '+fmt(tianRate(lv)*2)+'，最多囤 6 天':'开垦后每天产出灵石'},
  dan:{n:'丹房',g:'丹',base:180,d:lv=>lv?'每 '+Math.max(1,Math.round(danEvery(lv)/7200))+' 天炼成一颗疗伤药，最多囤 '+(4+lv)+' 颗':'修建后自动炼制疗伤药'},
  qi:{n:'炼器坊',g:'器',base:300,d:lv=>lv?'可合成宝石（'+lv*4+'% 几率多出一颗）；派遣带回宝石 +'+lv*3+'%':'修建后可在行囊合成宝石'},
@@ -31,7 +31,7 @@ const clRank=m=>m.lv+m.apt*3;
 const clZones=()=>ZORD.filter(z=>zoneUnlocked(z));
 const clDiff=(z,t)=>ZORD.indexOf(z)*4+t*3+2;
 let clP=(m,z,t)=>Math.max(.08,Math.min(.96,.55+(clRank(m)-clDiff(z,t))*.06));
-const clLevel=()=>{const f=S.clan.fame;return f>=800?'名门望族':f>=300?'一方豪族':f>=100?'新兴行社':f>=30?'小有名气':'寒门初立';};
+const clLevel=()=>{const f=S.clan.fame;return f>=800?'名门望族':f>=300?'一方豪族':f>=100?(S.clan.zong?'新立门派':'新兴行社'):f>=30?'小有名气':'寒门初立';};
 function clanSync(){const c=S.clan;if(!c)return;for(const id in CL_STORY){const D=CL_STORY[id];if(c.mem.some(m=>m.sid===id))continue;if(!safe(D.cond))continue;
   c.mem.push({id:S.uid++,sid:id,name:D.name,k:D.k,role:D.role,apt:D.apt,lv:D.lv,exp:0,busy:null,spy:D.spy||0});clLog(D.name+'加入了行社。');toast(D.name+' 加入了'+c.name+'。');}}
 function openClanFound(){const def='青石行社';let nm=def;
