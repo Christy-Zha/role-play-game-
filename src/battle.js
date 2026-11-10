@@ -18,6 +18,7 @@ const penD=(a,t)=>t.def*(1-(a.pen||0));
 const BTB={town:{sky:['#0c100e','#232a24'],far:'wall',fl:'tile'},0:{sky:['#030505','#14221e'],far:'arch',fl:'gravel'},1:{sky:['#2a1418','#d07a42'],far:'city',fl:'asphalt'},2:{sky:['#0a1610','#2c4a3a'],far:'trees',fl:'grass'},
  3:{sky:['#4a5a60','#a8b4b4'],far:'cranes',fl:'plank'},4:{sky:['#0a0816','#2c2244'],far:'lab',fl:'metal'},5:{sky:['#160806','#6a2414'],far:'ruins',fl:'basalt'},6:{sky:['#fff4d0','#a8883e'],far:'light',fl:'gold'},7:{sky:['#05040a','#20123a'],far:'void',fl:'pstone'},8:{sky:['#03040c','#141a3a'],far:'void',fl:'star'},9:{sky:['#fff8e8','#c8b07a'],far:'light',fl:'jadeT'},10:{sky:['#04020a','#2a0a24'],far:'void',fl:'ashv'}};
 const btSpd=()=>BT&&BT.auto?1.8:1;
+let STREAK=0;/* 连斩：连续打赢的场数，只在本次出行内有效，不进存档 */
 const bwait=ms=>new Promise(r=>setTimeout(r,ms/btSpd()));
 function tween(o,to,ms){return new Promise(res=>{const fr={};for(const k in to)fr[k]=o[k];const t0=performance.now(),D=Math.max(16,ms/btSpd());const f=t=>{const k=Math.min(1,(t-t0)/D),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;for(const p in to)o[p]=fr[p]+(to[p]-fr[p])*e;if(k<1)requestAnimationFrame(f);else res();};requestAnimationFrame(f);});}
 function mkParty(){const st=stats(),mm0=Math.round(20+S.stage*3),mm=Math.round(mm0*(1+st.mp));
@@ -168,7 +169,7 @@ function btFoeDie(e){S.slain++;
 /* ---------- 结算 ---------- */
 async function btWin(){BT.phase='end';btSetCmd('','idle');await bwait(550);if(!BT)return;sfx('win');
  if(BT.opt.jie){const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btResult('渡劫成功',['九道雷光散尽，云开见日。','你身上的旧伤，被雷火一并烧去了。'],'gold','破境',()=>{const o=BT.opt;btClose();o.onWin&&o.onWin();});return;}let st=0;const L=[],lk=1+stats().luck,lootM=lk*omenMul('loot');let nIt=0;BT.foes.forEach(f=>st+=f.stones||0);st=Math.ceil(st*lk*omenMul('stone'));S.stones+=st;
- const qi=req(S.stage)*QI_BATTLE*(BT.opt.farm&&FARM?zYield(FARM.z):1)*omenMul('bqi')*BT.foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);addQi(qi,true);L.push('灵石 +'+fmt(st),'灵气 +'+fmt(qi));
+ STREAK++;const stk=BT.opt.farm?0:Math.min(.5,.1*(STREAK-1));const qi=req(S.stage)*QI_BATTLE*(1+stk)*(BT.opt.farm&&FARM?zYield(FARM.z):1)*omenMul('bqi')*BT.foes.reduce((s,f)=>s+(f.boss?4:f.elite?2:1),0);addQi(qi,true);L.push('灵石 +'+fmt(st),'灵气 +'+(qi<10?qi.toFixed(1):fmt(qi)));if(stk>0)L.push('连斩 ×'+STREAK+'，灵气多得 '+Math.round(stk*100)+'%');
  if(BT.uniq){const u=BT.uniq;if(S.bag.length<BAG_MAX){S.bag.push(u);L.push(`<span class="r-chuan"><span class="iname">传说 · ${u.n}</span></span>`);}else{S.stones+=u.sell;L.push(u.n+'（行囊已满，已换成灵石）');}}
  const MD={};BT.foes.forEach(f=>{const o=matDrops(f);for(const k in o){MD[k]=(MD[k]||0)+o[k];S.mats[k]=(S.mats[k]||0)+o[k];}});if(Object.keys(MD).length)L.push(matLine(MD));
  BT.foes.forEach(f=>{if(f.special==='zhou'||f.noLoot)return;const fz=Math.max(0,f.z||0);let gp=Math.random()<(f.boss?.35:f.elite?.15:.04)*lootM;if(f.boss){S.pity.gem=(S.pity.gem||0)+1;if(S.pity.gem>=5)gp=true;}if(gp){if(f.boss)S.pity.gem=0;L.push(gGem(null,gemTierFor(fz)).trim());}if(f.boss&&Math.random()<.06*lootM){L.push(gBook().trim());}
@@ -188,7 +189,7 @@ function farmNext(){if(!FARM)return;FARM.n++;if(FARM.z!==7&&FARM.n>1){advanceDay
 function farmEnd(lost){if(!FARM)return;const F0=FARM;FARM=null;if(WD.M&&WD.M.kind==='abyss'){WD.M.ents=WD.M.ents.filter(e=>!(e.kind==='foe'&&e.abyss));abyssGuard(WD.M);wHud();}save();setTimeout(()=>modal(`<h3>${F0.z===7?'深渊闯关结束':'连战结束'}</h3><p>${F0.z===7?'从第 '+(F0.a0+1)+' 层闯到第 '+(S.abyss+(lost?1:0))+' 层，连破 <b>'+(S.abyss-F0.a0)+'</b> 层':'共挑战 <b>'+F0.n+'</b> 场'}${lost?'，最后一场败下阵来':''}。</p><p>灵石 <b>${fmt(F0.st)}</b> · 灵气 <b>${fmt(F0.qi)}</b> · 装备 <b>${F0.items}</b> 件</p>`,[{t:'好',cls:'gold'}]),200);}
 async function btLose(){BT.phase='end';btSetCmd('','idle');await bwait(600);if(!BT)return;S.hpF=1;S.mpF=1;save();const inTown=!WD.M||WD.M.kind==='town';
  btResult('败下阵来',[inTown?'你被扶回帐篷里歇了一阵。':'你被击倒了。站里的人把你抬了回去。','这一趟拿到的东西都还在身上。'],'red',inTown?'起身':'回青石站',()=>{const o=BT.opt;btClose();if(o.onLose)o.onLose();else if(!inTown)goTown(true);});}
-function btEnd(kind){const o=BT.opt;if(kind==='flee'){const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btClose();toast('你脱身了。');o.onFlee&&o.onFlee();}}
+function btEnd(kind){const o=BT.opt;if(kind==='flee'){STREAK=0;const h=BT.party[0];S.hpF=Math.max(.05,h.hp/h.max);S.mpF=h.mp/h.mmax;btClose();toast('你脱身了。');o.onFlee&&o.onFlee();}}
 function btResult(title,lines,cls,btn,fn){const el=$('#btRes');if(!el)return;el.hidden=false;el.innerHTML=`<div class="box ${cls}"><h3>${title}</h3><ul>${lines.map(l=>`<li>${l}</li>`).join('')}</ul><button class="btn gold" id="btOk">${btn}</button></div>`;$('#btOk').onclick=fn;}
 function btClose(){const el=$('#bt');el.hidden=true;el.innerHTML='';BT=null;dotUpdate();if(TAB==='world')render();
  const nx=S.pending.map(id=>STORY.find(c=>c.id===id)).find(c=>c&&c.side);if(nx)setTimeout(()=>{if(OV_FREE()&&!SC&&!BT)playStory(nx.id);},300);}

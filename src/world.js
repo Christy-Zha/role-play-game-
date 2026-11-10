@@ -128,9 +128,9 @@ function wLoad(M,st){WD.M=M;const P=mkEnt({kind:'player',c:st[0],r:st[1],spd:4.4
 function followers(){const L=[{k:'mo'}];if(WD.M&&WD.M.kind!=='town'){if(F('zeroSaved')&&qDone('zero1'))L.push({k:'zero'});if(qDone('zhou1'))L.push({k:'zhou'});}
  return L.map((f,i)=>mkEnt(Object.assign({kind:'fol',c:WD.P.x,r:WD.P.y,idx:i+1},f)));}
 function wFade(fn){const f=$('#wfade');if(!f){fn();return;}f.classList.add('on');setTimeout(()=>{try{fn();}finally{setTimeout(()=>f.classList.remove('on'),60);}},260);}
-function goTown(defeat){WD.prev=null;const doit=()=>{S.hpF=1;S.mpF=1;S.loc='town';wLoad(buildTown(),defeat?[13,5]:[24,3]);const t=$('#travel');if(t)t.hidden=true;if(defeat)setTimeout(()=>toast('你被抬回了青石站，伤已经养好了。'),300);save();};
+function goTown(defeat){WD.prev=null;STREAK=0;const doit=()=>{S.hpF=1;S.mpF=1;S.loc='town';wLoad(buildTown(),defeat?[13,5]:[24,3]);const t=$('#travel');if(t)t.hidden=true;if(defeat)setTimeout(()=>toast('你被抬回了青石站，伤已经养好了。'),300);save();};
  if(TAB!=='world'){TAB='world';render();doit();}else wFade(doit);}
-function goZone(z){if(!zoneUnlocked(z))return;WD.prev=null;advanceDays(1,'trip');wFade(()=>{S.loc='z'+z;wLoad(z===7?buildAbyss():buildZone(z),z===7?[6,9]:[2,2]);const t=$('#travel');if(t)t.hidden=true;
+function goZone(z){if(!zoneUnlocked(z))return;WD.prev=null;STREAK=0;advanceDays(1,'trip');wFade(()=>{S.loc='z'+z;wLoad(z===7?buildAbyss():buildZone(z),z===7?[6,9]:[2,2]);const t=$('#travel');if(t)t.hidden=true;
   if(!S.visited.includes(z))S.visited.push(z);checkStory();save();});}
 function wTravel(){if(TAB!=='world'){TAB='world';render();}const t=$('#travel');if(!t)return;t.innerHTML=travelHTML();t.hidden=false;requestAnimationFrame(()=>{drawTravel();const sc=t.querySelector('.travel-scroll'),cur=t.querySelector('.tsp.cur');if(sc&&cur)sc.scrollTop=Math.max(0,cur.offsetTop-sc.clientHeight/2);});}
 

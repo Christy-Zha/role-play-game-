@@ -100,7 +100,7 @@ function bnFight(){const ni=nextInfo();if(!ni.bn||S.qi<needQ()||BT)return;if(inj
    onLose:()=>{injSet(2);toast(BN_NAME[b]+'没闯过去。养好伤再来。','bad');save();}});}
 /* 修炼节奏（第一至第十卷：炼气一层 → 筑基大圆满）
    亲自历练一趟（约三天）≈ 本境界两成半修为；扫荡同价但灵脉会枯；闭关最省事，但同样的日子只有历练的五分之一左右。 */
-const QI_BATTLE=.012;
+const QI_BATTLE=.02;
 const qiRetreat=d=>req(S.stage)*.04*Math.pow(d,.75)*Math.min(3,idleRate()/(.5*Math.pow(1.17,S.stage)))*(S.path==='yin'?1.3:1);
 const idleRate=()=>(.5+.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb()*(F('taiyi')?1.25:1)*(1+(S.learned.includes('julingp')?.15:0)+clanBonus().idle+(partners().length?.1+.1*partners().length:0)+((S.sworn||[]).includes('mo')?.1:0))*omenMul('qi')*(injOn()?.6:1);
 const tapGain=()=>(1+.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb()*omenMul('qi');
@@ -371,7 +371,7 @@ function modal(html,btns,bg){const ov=$('#ov');ov.hidden=false;ov.className='';c
   if(bg)requestAnimationFrame(()=>paintTo($('#vbg'),bg));
   ov.querySelectorAll('.modal .row button').forEach(el=>el.onclick=()=>{ov.hidden=true;ov.innerHTML='';const b=btns[+el.dataset.i];b.fn&&b.fn();});}
 function toast(t,a,b){let act=null,fn=null,cls='';if(typeof b==='function'){act=a;fn=b;}else if(a==='big'||a==='bad')cls=a;if(cls==='big'&&t.length>16)cls='big2';
-  const box=$('#toasts');while(box.children.length>=3)box.firstChild.remove();const d=document.createElement('div');d.className='toast '+cls;d.textContent=t;
+  const box=$('#toasts');[...box.children].forEach(c=>{if(c.firstChild&&c.firstChild.textContent===t)c.remove();});while(box.children.length>=3)box.firstChild.remove();const d=document.createElement('div');d.className='toast '+cls;d.textContent=t;
   if(fn){const bt=document.createElement('button');bt.textContent=act;bt.onclick=()=>{d.remove();fn();};d.appendChild(bt);}
   box.appendChild(d);setTimeout(()=>d.remove(),fn?7000:2800);}
 
