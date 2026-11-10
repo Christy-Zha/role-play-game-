@@ -32,7 +32,7 @@ function d3Blit(scene,cam,ctx,pw,ph,dx,dy,dw,dh){const R=D3.R;
 function d3Tex(cv){let t=D3.tex.get(cv);if(t){D3.tex.delete(cv);D3.tex.set(cv,t);return t;}
  t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;
  t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;D3.tex.set(cv,t);
- if(D3.tex.size>120){const [k,o]=D3.tex.entries().next().value;D3.tex.delete(k);o.dispose();}return t;}
+ if(D3.tex.size>300){const [k,o]=D3.tex.entries().next().value;D3.tex.delete(k);o.dispose();}return t;}
 /* 画能不能当贴图（跨域图片会让画布「变脏」，WebGL 不让用） */
 function d3Clean(cv){try{const c=document.createElement('canvas');c.width=c.height=1;const x=c.getContext('2d');x.drawImage(cv,0,0,1,1);const d=x.getImageData(0,0,1,1).data;return [d[0],d[1],d[2]];}catch(e){return null;}}
 let _d3Dot=null;function d3DotTex(){if(_d3Dot)return _d3Dot;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);
@@ -149,3 +149,126 @@ function d3Battle(x,W,H,sh){if(!BT||!d3Ready())return null;let B=BT.d3;if(B===fa
  const P=B.piv.clone().project(B.cam),dx=P.x/2*W,dy=-(P.y+.3)/2*H;
  const [pw,ph]=d3Px(W*BT.k,H*BT.k);x.save();x.globalAlpha=1;d3Blit(B.scene,B.cam,x,pw,ph,sh,0,W,H);x.restore();
  return {dx,dy};}
+
+/* ---------- 江湖行走：立体地形 + 立起来的纸片 ----------
+   地砖铺成真正的 3D 地面（原来斜着画的菱形砖，转回正方形当贴图），
+   地图边上露出断崖侧面；树、房子、人物、妖兽都是立着的纸片，太阳斜照投影子。
+   镜头带透视、俯角约 34°，和原来的斜视角接近，所以人物比例、点选手感不变。
+   遮挡顺序沿用 2D 的「c+r 越大越靠前」，点选、名字标签按 3D 镜头重新换算。 */
+const W3K=1/(16*Math.SQRT2);/* 原来斜视角里的 1 像素 = 多少 3D 长度 */
+const W3={M:null,sig:'',chk:0,scene:null,cam:null,sun:null,water:[],obj:new Map(),seen:0,pitch:.6,fov:44,d:10,fail:0,live:false,up:null,right:null,fwd:null};
+const w3X=(c,r)=>(c-r)/Math.SQRT2,w3Z=(c,r)=>(c+r)/Math.SQRT2;
+const w3Wet=ty=>{const T=TL[ty];return !!(T&&(T.water||ty==='lava'||ty==='puddle'));};
+function w3Sig(M){return M.g.join(',');}
+function w3Free(){if(!W3.scene)return;W3.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(o.userData.atlas&&o.material.map)o.material.map.dispose();o.material.dispose();}if(o.customDepthMaterial)o.customDepthMaterial.dispose();});W3.scene=null;W3.obj=new Map();W3.water=[];}
+/* 菱形砖 → 正方形贴图，拼成一张大图。
+   斜视角里：砖的上角 = 正方形左上，右角 = 右上，左角 = 左下，下角 = 右下 */
+function w3Atlas(keys){const n=keys.length,N=n>240?64:128,cols=Math.min(16,Math.max(1,n)),rows=Math.ceil(n/cols);const cv=document.createElement('canvas');cv.width=cols*N;cv.height=Math.max(N,rows*N);const x=cv.getContext('2d'),at=new Map();
+ keys.forEach((k,i)=>{const [ty,v]=k.split('|'),T=TL[ty]||TL.tile,src=tileCv(ty,+v),w=src.width,h=src.height,ox=(i%cols)*N,oy=Math.floor(i/cols)*N;
+  x.setTransform(1,0,0,1,0,0);x.fillStyle=T.c?T.c[0]:'#444';x.fillRect(ox,oy,N,N);
+  x.save();x.beginPath();x.rect(ox,oy,N,N);x.clip();const s=1.05,cx=ox+N/2,cy=oy+N/2;/* 放大一点盖住菱形边上的接缝 */
+  x.setTransform(N*s/w,-N*s/w,N*s/h,N*s/h,cx-N*s,cy);x.drawImage(src,0,0);x.restore();at.set(k,[ox/cv.width,oy/cv.height,(ox+N)/cv.width,(oy+N)/cv.height]);});
+ x.setTransform(1,0,0,1,0,0);const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;t.anisotropy=4;t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;return {t,at,px:cv.width};}
+function w3Build(M){w3Free();W3.M=M;W3.sig=w3Sig(M);W3.chk=WD.t;const sc=new THREE.Scene();sc.background=new THREE.Color(M.bg||'#0c0b09');W3.scene=sc;
+ const keys=new Set();for(let r=0;r<M.H;r++)for(let c=0;c<M.W;c++){const i=gi(M,c,r),ty=M.g[i],T=TL[ty];if(T&&T.none)continue;if(w3Wet(ty))for(let v=0;v<4;v++)keys.add(ty+'|'+v);else keys.add(ty+'|'+M.gv[i]);}
+ const A=w3Atlas([...keys]),mat=new THREE.MeshBasicMaterial({map:A.t,side:THREE.DoubleSide});
+ const isNone=(c,r)=>{if(c<0||r<0||c>=M.W||r>=M.H)return true;const T=TL[M.g[gi(M,c,r)]];return !!(T&&T.none);};
+ /* 地面：普通砖一块，水面四块（四帧轮流显示，水就会动） */
+ const mk=()=>({p:[],u:[],i:[]}),land=mk(),wf=[mk(),mk(),mk(),mk()],side={p:[],c:[],i:[]},e=.5/A.px;
+ const quad=(B,c,r,uv)=>{const n=B.p.length/3;[[c-.5,r-.5],[c+.5,r-.5],[c+.5,r+.5],[c-.5,r+.5]].forEach(([a,b])=>B.p.push(w3X(a,b),0,w3Z(a,b)));
+  B.u.push(uv[0]+e,uv[1]+e,uv[2]-e,uv[1]+e,uv[2]-e,uv[3]-e,uv[0]+e,uv[3]-e);B.i.push(n,n+1,n+2,n,n+2,n+3);};
+ /* 断崖侧面：上浅下深的土色 */
+ const DEP=.85,wall=(a0,b0,a1,b1,col)=>{const n=side.p.length/3,top=new THREE.Color(pSh(col,-.28)),bot=new THREE.Color(pSh(col,-.72));
+  side.p.push(w3X(a0,b0),0,w3Z(a0,b0),w3X(a1,b1),0,w3Z(a1,b1),w3X(a1,b1),-DEP,w3Z(a1,b1),w3X(a0,b0),-DEP,w3Z(a0,b0));
+  [top,top,bot,bot].forEach(k=>side.c.push(k.r,k.g,k.b));side.i.push(n,n+1,n+2,n,n+2,n+3);};
+ for(let r=0;r<M.H;r++)for(let c=0;c<M.W;c++){const i=gi(M,c,r),ty=M.g[i],T=TL[ty]||TL.tile;if(TL[ty]&&TL[ty].none)continue;
+  if(w3Wet(ty))for(let f=0;f<4;f++)quad(wf[f],c,r,A.at.get(ty+'|'+((M.gv[i]+f)%4)));else quad(land,c,r,A.at.get(ty+'|'+M.gv[i]));
+  const col=T.c?T.c[0]:'#444';if(isNone(c,r+1))wall(c-.5,r+.5,c+.5,r+.5,col);if(isNone(c+1,r))wall(c+.5,r-.5,c+.5,r+.5,col);}
+ const geo=B=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(B.p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(B.u,2));g.setIndex(B.i);g.computeBoundingSphere();return g;};
+ if(land.i.length){const m=new THREE.Mesh(geo(land),mat);m.userData.atlas=1;sc.add(m);}
+ W3.water=wf.map(B=>{if(!B.i.length)return null;const m=new THREE.Mesh(geo(B),mat);sc.add(m);return m;}).filter(Boolean);
+ if(side.i.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(side.p,3));g.setAttribute('color',new THREE.Float32BufferAttribute(side.c,3));g.setIndex(side.i);sc.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide})));}
+ /* 影子：一盏斜上方的太阳 + 只显示影子的透明地面 */
+ const sun=new THREE.DirectionalLight(0xffffff,1);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-11,right:11,top:11,bottom:-11,near:.5,far:40});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0008;sun.shadow.radius=2.5;
+ sc.add(sun,sun.target);W3.sun=sun;
+ const ext=(M.W+M.H)/Math.SQRT2+4,g0=new THREE.Mesh(new THREE.PlaneGeometry(ext*2,ext*2),new THREE.ShadowMaterial({opacity:M.dark>.3?.25:.38,depthWrite:false}));
+ g0.rotation.x=-Math.PI/2;g0.position.set(w3X(M.W/2,M.H/2),.004,w3Z(M.W/2,M.H/2));g0.receiveShadow=true;g0.renderOrder=1;sc.add(g0);
+ W3.cam=W3.cam||new THREE.PerspectiveCamera(W3.fov,1,.1,200);}
+/* 纸片：底边中点为原点，按 c+r 排先后，不做深度测试（和原来的 2D 遮挡一样） */
+function w3Card(key){let o=W3.obj.get(key);if(o)return o;const g=new THREE.PlaneGeometry(1,1);g.translate(0,.5,0);
+ const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({transparent:true,depthTest:false,depthWrite:false,alphaTest:.02,side:THREE.DoubleSide}));
+ m.castShadow=true;m.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5,side:THREE.DoubleSide});
+ W3.scene.add(m);o={m,seen:0};W3.obj.set(key,o);return o;}
+const _w3a=typeof THREE!=="undefined"?new THREE.Vector3():null;
+/* 摆一张纸片：cv 图、(x,y) 站的格子、ax/ay 原图里「脚下那一点」离左边/上边多远、w/h 原图显示尺寸、d 前后顺序、al 透明度、lift 往上抬几像素 */
+function w3Put(key,cv,x,y,ax,ay,w,h,d,al,lift){const o=w3Card(key),m=o.m;o.seen=W3.seen;m.visible=al>.01;if(!m.visible)return;
+ const tex=d3Tex(cv);if(m.material.map!==tex){m.material.map=tex;m.material.needsUpdate=true;m.customDepthMaterial.map=tex;m.customDepthMaterial.needsUpdate=true;}
+ m.material.opacity=al;m.renderOrder=1000+Math.round(d*40);m.quaternion.copy(W3.cam.quaternion);m.scale.set(w*W3K,h*W3K,1);
+ _w3a.set(w3X(x,y),0,w3Z(x,y));m.position.copy(_w3a).addScaledVector(W3.right,-(ax-w/2)*W3K).addScaledVector(W3.up,(-(h-ay)+(lift||0))*W3K);}
+function w3Sync(M,P,t){W3.seen++;const psx=(P.x-P.y)*16,psy=(P.x+P.y)*8,pd=P.x+P.y;
+ M.props.forEach(p=>{if(p.hid&&!(WD.soul>0))return;if(p.type==='portal'||p.type==='spark')return;const pc=propCv(p.type,p.v,M.z),sx=(p.c-p.r)*16,sy=(p.c+p.r)*8;
+  let al=1;if(pc.tall&&p.c+p.r>pd+.3&&Math.abs(psx-sx)<pc.w/2+2&&psy<sy+4&&psy>sy-pc.ay+4)al=.42;
+  w3Put(p,pc.cv,p.c,p.r,pc.ax,pc.ay,pc.w,pc.h,p.c+p.r+(p.blocks?0:-.45),al);});
+ const ent=(e,d)=>{if(e.kind==='foe'){const s=e.boss?1.1:.72,base=monCv(e.look,s,e.tint),cv=(e.dir===1||e.dir===3)?cvMemo('fl|'+e.look+'|'+s+'|'+(e.tint?1:0),()=>flipCv(base)):base;
+   const bob=Math.round(Math.sin(t*4+(e.home?e.home[0]:0))*1),w=dw(cv),h=dh(cv);w3Put(e,cv,e.x,e.y,w/2,h-2,w,h,d,e.stun>0?.55:1,-bob);return;}
+  const key=e.kind==='player'?(S.gender==='f'?'hero_f':'hero_m'):e.k,sp=typeof key==='string'?CH[key]:key,ghost=sp&&sp.ghost;
+  const fr=e.moving&&!ghost?[1,0,2,0][Math.floor(e.ft*9)%4]:0,cv=chSpr(key,e.dir,fr);let lift=0,al=1;
+  if(ghost){lift=9+Math.round(Math.sin(t*2.5)*2);al=.75;}if(e.kind==='player'&&e.inv>0&&Math.floor(t*10)%2)al=.45;if(e.kind==='player'&&WD.fly)lift+=7+Math.sin(t*4)*1.5;
+  w3Put(e,cv,e.x,e.y,10,dh(cv)-2,20,32,d,al,lift);};
+ M.ents.forEach(e=>{if(!e.dead)ent(e,e.x+e.y+.02);});WD.F.forEach(f=>ent(f,f.x+f.y-.03));ent(P,P.x+P.y+.03);
+ for(const [k,o] of W3.obj)if(o.seen!==W3.seen){W3.scene.remove(o.m);o.m.geometry.dispose();o.m.material.dispose();o.m.customDepthMaterial.dispose();W3.obj.delete(k);}}
+/* 3D 点 → 画面坐标（和 WD.W/WD.H 同一套单位）；h 是往上抬几像素 */
+const _w3p=typeof THREE!=="undefined"?new THREE.Vector3():null;
+function w3P(x,y,h){_w3p.set(w3X(x,y),0,w3Z(x,y));if(h)_w3p.addScaledVector(W3.up,h*W3K);_w3p.project(W3.cam);return [(_w3p.x+1)/2*WD.W,(1-_w3p.y)/2*WD.H];}
+/* 这一点相对画面中心的远近缩放（近大远小） */
+function w3S(x,y){_w3p.set(w3X(x,y),0,w3Z(x,y)).sub(W3.cam.position);return W3.d/Math.max(.01,_w3p.dot(W3.fwd));}
+function w3Cam(){const W=WD.W,H=WD.H,cam=W3.cam;cam.aspect=W/H;cam.fov=W3.fov;cam.updateProjectionMatrix();
+ const d=H*W3K/(2*Math.tan(W3.fov*Math.PI/360));W3.d=d;const T=new THREE.Vector3(WD.cam.x*W3K,0,WD.cam.y*2*W3K);
+ cam.position.set(T.x,Math.sin(W3.pitch)*d,T.z+Math.cos(W3.pitch)*d);cam.lookAt(T);cam.updateMatrixWorld(true);
+ W3.up=new THREE.Vector3(0,1,0).applyQuaternion(cam.quaternion);W3.right=new THREE.Vector3(1,0,0).applyQuaternion(cam.quaternion);W3.fwd=new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion);
+ W3.sun.position.set(T.x-5,11,T.z+4);W3.sun.target.position.copy(T);W3.sun.target.updateMatrixWorld();}
+function w3Render(){const M=WD.M,x=WD.cx,P=WD.P;if(!M||!x||!P)return;const W=WD.W,H=WD.H,t=WD.t;WD.fid++;
+ if(W3.M!==M||!W3.scene)w3Build(M);else if(t-W3.chk>1||t<W3.chk){W3.chk=t;if(w3Sig(M)!==W3.sig)w3Build(M);}
+ w3Cam();const an=Math.floor(t*2.5)%4;W3.water.forEach((m,i)=>m.visible=i===an%Math.max(1,W3.water.length));w3Sync(M,P,t);
+ x.setTransform(WD.k,0,0,WD.k,0,0);x.imageSmoothingEnabled=true;const [pw,ph]=d3Px(W*WD.k,H*WD.k);d3Blit(W3.scene,W3.cam,x,pw,ph,0,0,W,H);
+ /* 叠在上面的 2D 效果：点地标记、传送门、灵光、篝火、首领红光 */
+ if(WD.tap&&t-WD.tap.t<.8){const [sx,sy]=w3P(WD.tap.c,WD.tap.r),k=w3S(WD.tap.c,WD.tap.r);x.globalAlpha=1-(t-WD.tap.t)/.8;x.strokeStyle='#e3b862';x.beginPath();x.moveTo(sx-10*k,sy);x.lineTo(sx,sy-6*k);x.lineTo(sx+10*k,sy);x.lineTo(sx,sy+6*k);x.closePath();x.stroke();x.globalAlpha=1;}
+ M.props.forEach(p=>{if(p.hid&&!(WD.soul>0))return;const isP=p.type==='portal',isS=p.type==='spark',fire=PR[p.type]&&PR[p.type].fire&&!p.used;if(!isP&&!isS&&!fire)return;
+  const [sx,sy]=w3P(p.c,p.r);if(sx<-60||sx>W+60||sy<-40||sy>H+60)return;if(isP)drawPortal(x,sx,sy,t,p.rift);else if(isS)drawSpark(x,sx,sy,p.gold,t+p.c);else drawFlame(x,sx,sy-1,t);});
+ M.ents.forEach(e=>{if(e.dead||e.kind!=='foe'||!(e.boss||e.elite))return;const cv=monCv(e.look,e.boss?1.1:.72,e.tint),[sx,sy]=w3P(e.x,e.y,dh(cv)/2),k=w3S(e.x,e.y),r=(e.boss?30:18)*k;
+  x.globalCompositeOperation='lighter';const g=x.createRadialGradient(sx,sy,0,sx,sy,r);g.addColorStop(0,e.boss?'rgba(255,60,40,.3)':'rgba(255,90,60,.2)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(sx-r,sy-r,r*2,r*2);x.globalCompositeOperation='source-over';});
+ /* 夜里、洞里：原来的「挖亮光」做法，光源位置改用 3D 镜头换算 */
+ if(M.dark>0){const lx=WD.lx;lx.globalCompositeOperation='source-over';lx.clearRect(0,0,W,H);lx.fillStyle='rgba(3,4,8,'+M.dark+')';lx.fillRect(0,0,W,H);lx.globalCompositeOperation='destination-out';
+  const ls=M.lights.map(l=>{const q=w3P(l.c,l.r,l.h||0);return {x:q[0],y:q[1],rad:l.rad*w3S(l.c,l.r),col:l.col};}).filter(l=>l.x>-l.rad&&l.x<W+l.rad&&l.y>-l.rad&&l.y<H+l.rad);
+  const q=w3P(P.x,P.y,12);ls.push({x:q[0],y:q[1],rad:(M.dark>.3?66:40)*w3S(P.x,P.y)});
+  ls.forEach(l=>{const g=lx.createRadialGradient(l.x,l.y,0,l.x,l.y,l.rad);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.5,'rgba(0,0,0,.7)');g.addColorStop(1,'rgba(0,0,0,0)');lx.fillStyle=g;lx.fillRect(l.x-l.rad,l.y-l.rad,l.rad*2,l.rad*2);});
+  x.drawImage(WD.lc,0,0);x.globalCompositeOperation='lighter';ls.forEach(l=>{if(!l.col)return;const r=l.rad*.7,g=x.createRadialGradient(l.x,l.y,0,l.x,l.y,r);g.addColorStop(0,l.col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(l.x-r,l.y-r,r*2,r*2);});x.globalCompositeOperation='source-over';}
+ WD.parts.forEach(p=>{const a=Math.max(0,Math.min(1,Math.min(p.age,p.life-p.age)));x.globalAlpha=a*(p.big?.06:.8);x.fillStyle=p.c;if(p.big)x.fillRect(Math.round(p.x),Math.round(p.y),40,10);else x.fillRect(Math.round(p.x),Math.round(p.y),1,p.t==='drip'?2:1);});x.globalAlpha=1;
+ if(WD.soul>0){x.fillStyle='rgba(60,110,200,'+Math.min(.22,WD.soul*.05)+')';x.fillRect(0,0,W,H);}
+ w3Labels();wHudLive();}
+/* 名字、任务标记、对话泡泡：和 wLabels 一样，只是位置按 3D 换算 */
+function w3Labels(){const M=WD.M,K=WD.k/WD.dpr,out=[];const at=(x,y,h)=>{const [gx,gy]=w3P(x,y,h);return [WD.ox+gx*K,WD.oy+gy*K,gx,gy];};const on=q=>q[2]>-20&&q[2]<WD.W+20&&q[3]>-10&&q[3]<WD.H+30;
+ M.ents.forEach(e=>{if(e.dead)return;if(!on(at(e.x,e.y,0)))return;
+  if(e.kind==='npc'&&!e.vill){const mk=e.special||e.qfight?'!':(NPCS[e.k]&&!e.ev?npcMark(e.k):'');const nm=e.name||(NPCS[e.k]?NPCS[e.k].name:'');out.push({id:'n'+e.k+(e.special||''),h:(mk?`<b class="mk ${mk==='?'?'rd':''}">${mk}</b>`:'')+`<span>${nm}</span>`,p:at(e.x,e.y,28)});}
+  if(e.kind==='foe'&&e.boss)out.push({id:'boss',h:`<span class="bn">${e.name}</span>`,p:at(e.x,e.y,e.abyss||monIsHuman(e.look)?30:42)});
+  if(e.bub&&e.bub.t>WD.t)out.push({id:'bub'+(e.k.id||e.k)+e.x,h:`<span class="bub">${esc(e.bub.s)}</span>`,p:at(e.x,e.y,30),cls:'b'});});
+ const mo=WD.F.find(f=>f.k==='mo');if(mo){const m=npcMark('mo');if(m)out.push({id:'mo',h:`<b class="mk ${m==='?'?'rd':''}">${m}</b>`,p:at(mo.x,mo.y,38)});}
+ M.props.forEach(p=>{if(!p.lab||!p.act||(p.hid&&!(WD.soul>0)))return;if(!on(at(p.c,p.r,0)))return;const h=p.type==='spark'||p.type==='portal'?24:propCv(p.type,p.v,M.z).ay+2;out.push({id:'p'+p.c+'_'+p.r,h:`<span class="pl ${p.gold?'g':''} ${p.rift?'rf':''}">${p.lab}</span>`,p:at(p.c,p.r,h)});});
+ const seen=new Set();out.forEach(o=>{let L=WD.labs.get(o.id);if(!L){const el=document.createElement('div');el.className='wl '+(o.cls||'');WD.lay.appendChild(el);L={el,h:''};WD.labs.set(o.id,L);}
+  if(L.h!==o.h){L.el.innerHTML=o.h;L.h=o.h;}L.el.style.transform=`translate(${o.p[0].toFixed(1)}px,${o.p[1].toFixed(1)}px)`;seen.add(o.id);});
+ WD.labs.forEach((L,id)=>{if(!seen.has(id)){L.el.remove();WD.labs.delete(id);}});}
+/* 点选：先在 3D 画面里找点中的人或物；没点中就沿视线落到地面上的那一格。
+   最后换回原来斜视角的坐标交给 wTap，后面的走路、对话逻辑一行不改。 */
+function w3TapIso(gx,gy){const M=WD.M,ox=Math.round(WD.W/2-WD.cam.x),oy=Math.round(WD.H/2-WD.cam.y),iso=(x,y,up)=>[(x-y)*16+ox,(x+y)*8+oy-(up||0)];let best=null,bd=-1e9;
+ const test=(x,y,l,r,top,bot,d,up)=>{const [sx,sy]=w3P(x,y),k=w3S(x,y);if(gx>=sx+l*k&&gx<=sx+r*k&&gy>=sy-top*k&&gy<=sy+bot*k&&d>bd){bd=d;best=iso(x,y,up);}};
+ M.ents.forEach(e=>{if(e.dead)return;if(e.kind==='foe'){const cv=monCv(e.look,e.boss?1.1:.72,e.tint);test(e.x,e.y,-dw(cv)/2-3,dw(cv)/2+3,dh(cv)+3,3,e.x+e.y,4);}else test(e.x,e.y,-10,10,30,2,e.x+e.y,10);});
+ WD.F.forEach(f=>{if(f.k==='mo')test(f.x,f.y,-10,10,40,-8,f.x+f.y+.5,20);});
+ M.props.forEach(p=>{if(!p.act||(p.hid&&!(WD.soul>0)))return;if(p.type==='spark'||p.type==='portal'){test(p.c,p.r,-12,12,24,6,p.c+p.r,8);return;}const o=propCv(p.type,p.v,M.z);test(p.c,p.r,-o.ax,o.w-o.ax,o.ay,o.h-o.ay,p.c+p.r-.1,Math.max(0,Math.min(o.ay-2,8)));});
+ if(best)return best;
+ const R=new THREE.Raycaster();R.setFromCamera(new THREE.Vector2(gx/WD.W*2-1,1-gy/WD.H*2),W3.cam);const r=R.ray;if(r.direction.y>-1e-4)return null;
+ const q=r.origin.clone().addScaledVector(r.direction,-r.origin.y/r.direction.y),c=(q.z+q.x)/Math.SQRT2,rr=(q.z-q.x)/Math.SQRT2;return iso(c,rr,0);}
+const _wRender2d=wRender;
+wRender=function(){if(!D3.on||W3.fail||!d3Ready()||!WD.M||!WD.cx){W3.live=false;return _wRender2d();}
+ try{w3Render();W3.live=true;}catch(e){console.error(e);W3.fail=1;W3.live=false;_wRender2d();}};
+const _wTap3=wTap;
+wTap=function(gx,gy){if(W3.live&&W3.cam&&W3.up){const q=w3TapIso(gx,gy);if(!q)return;gx=q[0];gy=q[1];}return _wTap3(gx,gy);};
