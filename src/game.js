@@ -100,10 +100,10 @@ function bnFight(){const ni=nextInfo();if(!ni.bn||S.qi<needQ()||BT)return;if(inj
    onLose:()=>{injSet(2);toast(BN_NAME[b]+'没闯过去。养好伤再来。','bad');save();}});}
 /* 修炼节奏（第一至第十卷：炼气一层 → 筑基大圆满）
    亲自历练一趟（约三天）≈ 本境界两成半修为；扫荡同价但灵脉会枯；闭关最省事，但同样的日子只有历练的五分之一左右。 */
-const QI_BATTLE=.02;
+const QI_BATTLE=.05;
 /* 深渊馈赠：只在一趟深渊里有效的临时加成，不进存档 */
-const RUN={atk:0,def:0,hp:0,crit:0,stone:0,qi:0,n:0,names:[]};
-const runReset=()=>{Object.assign(RUN,{atk:0,def:0,hp:0,crit:0,stone:0,qi:0,n:0,names:[]});};
+const RUN={};
+const runReset=()=>{for(const k in RUN)delete RUN[k];Object.assign(RUN,{atk:0,def:0,hp:0,crit:0,stone:0,qi:0,n:0,names:[],cd:0,pen:0,dr:0,ls:0,dodge:0,luck:0,after:0,tags:{},reso:[]});};runReset();
 const qiRetreat=d=>req(S.stage)*.04*Math.pow(d,.75)*Math.min(3,idleRate()/(.5*Math.pow(1.17,S.stage)))*(S.path==='yin'?1.3:1);
 const idleRate=()=>(.5+.5*S.ups.tuna)*Math.pow(1.17,S.stage)*rb()*(F('taiyi')?1.25:1)*(1+(S.learned.includes('julingp')?.15:0)+clanBonus().idle+(partners().length?.1+.1*partners().length:0)+((S.sworn||[]).includes('mo')?.1:0))*omenMul('qi')*(injOn()?.6:1);
 const tapGain=()=>(1+.8*S.ups.yinqi)*Math.pow(1.17,S.stage)*rb()*omenMul('qi');
@@ -115,6 +115,9 @@ const disc=()=>Math.max(.65,(1-.03*Math.max(0,S.rep.caravan))*(F('trustHong')?.9
 const pillCost=()=>Math.ceil(25*Math.pow(2.6,realmIdx())*disc());
 const qiPillCost=()=>Math.ceil(6*Math.pow(2.6,realmIdx())*disc());
 const upCost=u=>Math.ceil(u.base*Math.pow(u.g,S.ups[u.k]));
+/* 强化面板：直接写出下一重的实际变化，例如「攻击 70 → 78」 */
+function upPreview(u){if(u.k!=='yujian'&&u.k!=='jingang')return '';try{const a=stats();S.ups[u.k]++;const b=stats();S.ups[u.k]--;
+ return u.k==='yujian'?'<br>攻击 '+fmt(a.atk)+' → '+fmt(b.atk):'<br>生命 '+fmt(a.hp)+' → '+fmt(b.hp)+' · 防御 '+fmt(a.def)+' → '+fmt(b.def);}catch(e){return '';}}
 const karmaName=()=>S.karma>=3?'仁心':S.karma<=-3?'魔心':'本心';
 const ZORD=[0,1,2,3,4,5,6,8,9,10];const maxZone=()=>{let m=0;ZORD.forEach(z=>{if(zoneUnlocked(z))m=z;});return m;};
 const stTier=()=>{const r=S.rep.station;return r>=10?'青石之主':r>=6?'仙师':r>=3?'守站人':'拾荒者';};
@@ -122,9 +125,9 @@ function gearAff(){const A={};for(const k of SLOT5){const it=S.gear[k];if(!it)co
   (it.gems||[]).forEach(g=>{const T=GEM_T[g[0]];if(!T)return;const key={a:'atkP',d:'defP',h:'hpP',c:'critA'}[g[0]];A[key]=(A[key]||0)+T.v[+g[1]-1];});}
   S.learned.forEach(b=>{const fx=BOOKS[b]&&BOOKS[b].fx;if(fx)for(const k in fx)A[k]=(A[k]||0)+fx[k];});const B=buildFx();for(const k in B)A[k]=(A[k]||0)+B[k];return A;}
 function stats(){const g=Math.pow(1.19,S.stage)*rb()*(1+.12*STAGES[S.stage].r),u=S.ups,A=gearAff(),cb=clanBonus();
-  let atk=8*g*(1+.12*u.yujian),hp=60*g*(1+.12*u.jingang),def=3*g*(1+.12*u.jingang),crit=.08;
+  let atk=8*g,hp=60*g,def=3*g,crit=.08;
   for(const k of SLOT5){const it=S.gear[k];if(it){atk+=it.atk||0;def+=it.def||0;hp+=it.hp||0;crit+=it.crit||0;}}
-  atk*=1+(A.atkP||0)+cb.atk+RUN.atk;def*=1+(A.defP||0)+cb.def+RUN.def;hp*=1+(A.hpP||0)+RUN.hp;crit+=(A.critA||0)+RUN.crit;
+  /* 御剑术、金刚体的百分比算在「基础 + 装备」的总值上 */atk*=1+(A.atkP||0)+cb.atk+RUN.atk+.12*u.yujian;def*=1+(A.defP||0)+cb.def+RUN.def+.12*u.jingang;hp*=1+(A.hpP||0)+RUN.hp+.12*u.jingang;crit+=(A.critA||0)+RUN.crit;
   if(S.karma<=-3)crit+=.07;return {atk,hp,def,crit:Math.min(crit,.75),heal:S.karma>=3?.45:.35,ls:A.ls||0,cd:A.cd||0,spd:A.spd||0,mp:A.mp||0,pen:Math.min(.6,A.pen||0),mreg:A.mreg||0,dr:Math.min(.6,A.dr||0),luck:A.luck||0,dodge:Math.min(.4,A.dodge||0),healP:A.healP||0,regen:A.regen||0};}
 const GATE=r1=>r1<=8?Math.min(r1-1,6):r1===9?'fs':r1===10?8:r1===11?9:10;
 function nextInfo(){const s=S.stage;if(s>=LAST)return {final:true};
@@ -396,7 +399,7 @@ VIEWS.cult=()=>`<section class="cult">
   <div class="rates"><span>药力 <b id="cYao"></b></span><span>炼化 <b id="cIdle"></b>/秒</span><span>丹毒 <b id="cTox"></b>/100</span></div>
   <div class="break" id="cBreak"></div></section>${cultMore()}
   <h2 class="sec" style="margin-top:24px">功法 <small>以灵石参悟${F('taiyi')?' · 已得太一吐纳 +25%':''}</small></h2>
-  ${UPS.filter(u=>!u.need||u.need()).map(u=>{const lv=S.ups[u.k],max=u.max&&lv>=u.max,c=upCost(u);return `<div class="row2"><div class="in"><div class="iname">${u.n}<span class="lv">第 ${lv} 重</span></div><div class="istat">${u.d}</div></div><button class="btn sm" data-act="up" data-arg="${u.k}" ${max||S.stones<c?'disabled':''}>${max?'已圆满':fmt(c)+' 灵石'}</button></div>`;}).join('')}
+  ${UPS.filter(u=>!u.need||u.need()).map(u=>{const lv=S.ups[u.k],max=u.max&&lv>=u.max,c=upCost(u);return `<div class="row2"><div class="in"><div class="iname">${u.n}<span class="lv">第 ${lv} 重</span></div><div class="istat">${u.d}${upPreview(u)}</div></div><button class="btn sm" data-act="up" data-arg="${u.k}" ${max||S.stones<c?'disabled':''}>${max?'已圆满':fmt(c)+' 灵石'}</button></div>`;}).join('')}
   <p class="tip">${S.rebirth?'第 '+(S.rebirth+1)+' 世 · 仙缘 +'+(S.rebirth*25)+'% · ':''}修为只从历练和丹药来：打怪、委托、剧情直接涨修为；服丹得药力，打坐（点画面）把药力炼成修为。每三层一道瓶颈，要去闯一场历练。丹药吃多了积丹毒，满了要停药。跨大境界要亲手冲关。</p>`;
 let breakSig='';
 function breakHTML(){const ni=nextInfo(),full=S.qi>=needQ();
