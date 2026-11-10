@@ -66,7 +66,7 @@ function thirdPortrait(key){return `<img class="porimg" src="art/por_${key}.webp
 Object.entries(THIRD_PORTRAITS).forEach(([key,file])=>{PORTRAIT[key]=()=>thirdPortrait(file);});
 const _thirdMo=PORTRAIT.mo,_thirdXie=PORTRAIT.xie;
 PORTRAIT.mo=()=>S.seen.includes('v11_10')?thirdPortrait('mo_lamp'):_thirdMo();
-PORTRAIT.xie=()=>S.seen.includes('v11_10')?thirdPortrait('xie_lamp'):(_thirdXie?_thirdXie():sealPortrait('xie'));
+PORTRAIT.xie=()=>S.seen.includes('v11_10')?thirdPortrait('xie_lamp'):(_thirdXie?_thirdXie():thirdPortrait('xie'));
 const THIRD_ENEMIES={'晏枢':'yans','乌衡':'wuh2','冻息叶':'dongxi','主槽守卫':'zhucao','持杖的守卫':'zhucao'};
 const _thirdBtPortrait=btPortrait;btPortrait=function(a){
  const key=a.side==='e'&&THIRD_ENEMIES[a.n||a.name];if(!key)return _thirdBtPortrait.apply(this,arguments);
@@ -79,7 +79,9 @@ Object.assign(CG,{jiedan:'此身',chudeng:'灯下人',xuanhe:'潮从何来',lala
 const FOURTH_SCENE_KEYS=new Set('chiliang zhexing huiting qingshi_po yanhu tianxi taiyi lufu tieliang fudeng gongfang yancang'.split(' '));
 const _fourthSceneCanvas=sceneCanvas;sceneCanvas=function(key,w,h){if(FOURTH_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _fourthSceneCanvas(key,w,h);};
 const _fourthBtBg=btBg;btBg=function(key,w,h){if(FOURTH_SCENE_KEYS.has(key))requestThirdArt('scene_'+key,'jpg');return _fourthBtBg(key,w,h);};
-const FOURTH_PORTRAITS={heq:'heq',hey:'heq',hengd:'hengd',mengq:'mengq',lhd:'lhd',wenq:'wenq',sangf:'sangf',aying:'aying',xman:'xman',chengw:'chengw',yutan:'yut',liangl:'liangl',qiw:'qiw',luoy:'luoy',duh:'duh'};
+const FOURTH_PORTRAITS={heq:'heq',hey:'heq',hengd:'hengd',mengq:'mengq',lhd:'lhd',wenq:'wenq',sangf:'sangf',aying:'aying',xman:'xman',chengw:'chengw',yutan:'yut',liangl:'liangl',qiw:'qiw',luoy:'luoy',duh:'duh',
+ /* 临时头像：从人物总览图裁出（chy…zhouyi），分辨率低、背景带景物；谢照临的 por_xie 同属此类。出了正式立绘后直接覆盖同名文件即可 */
+ chy:'chy',yeh:'yeh',shaop:'shaop',jiangq:'jiangq',kid:'kid',menl:'menl',tianq:'tianq',jiy:'jiy',luc:'luc',luod:'luod',zhouyi:'zhouyi'};
 Object.entries(FOURTH_PORTRAITS).forEach(([key,file])=>{PORTRAIT[key]=()=>thirdPortrait(file);});
 const FOURTH_ENEMIES=({'负碑鼋':'fubei','衡渡':'hengd','镜中错影':'hengd','孟确':'mengq','寄焰藤':'jiyan','寄焰藤根':'jiyan','护炉架':'hulu','晶翼':'jingyi','盲鳗':'mangman',
  '盐壳螯群':'yanqiao','岩鬃獾':'yanzong','晶背蛾':'jingbeie','晶背蛾群':'jingbeie','晶背兽':'jingbeis','蒙面人':'mengmian','翻船帮的蒙面人':'mengmian','持弩的蒙面人':'mengmian','雾鲨':'wusha1','寒壳蟹':'hanke'});
