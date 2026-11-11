@@ -116,42 +116,198 @@ LATE.push(()=>{
  const _sv=VIEWS.save;VIEWS.save=()=>_sv().replace(/(id="bgmBtn">[^<]*<\/button>)/,`$1 <button class="btn sm ghost" data-act="d3" id="d3Btn">${D3.on&&D3.ok!==false?'画面 3D':'画面 2D'}</button>`);
 });
 
-/* ---------- 战斗：立体战场 + 纸片人 ----------
+/* ---------- 战斗：立体战场 + 纸片人 + 电影镜头 ----------
    战场背景还是 btBg 画的那张，折成地面和远景；人物、妖兽是立在地上的纸片，
-   一盏斜上方的主光给每张纸片在地上投影子。站位、点选、伤害数字仍用 2D 的坐标，
-   所以镜头只做很轻的晃动，并把 2D 特效层跟着挪一点，两边对得上。 */
-function d3BtFree(B){try{B.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){o.material.dispose();}if(o.customDepthMaterial)o.customDepthMaterial.dispose();});}catch(e){}}
+   一盏斜上方的主光给每张纸片在地上投影子。
+   镜头会动：开场从高处侧面飞进来；谁出手就往谁推一点；暴击猛推一下；
+   大招、首领变身时大幅横摇。2D 那一层（血条、箭头、伤害数字、点选、特效）
+   每一帧都按当前镜头把人物脚下的点重新换算到屏幕上，所以始终对得上：
+   - a.bx0/a.by0 是原来的布局站位（固定不动），3D 地面上的位置由它决定；
+   - a.bx/a.by 每帧改成「脚下这一点此刻在屏幕上的位置」，a.sk 是远近缩放，
+     btSpr 返回的宽高会乘上 a.sk，所以血条高度、点选范围跟着镜头变。
+   景深：远景先画进一张离屏画板（带深度），再整屏模糊一遍（离人物越远越糊），
+   人物、影子、光晕最后画在上面，保持清楚。关掉 3D（BT.d3===false）时一切照旧。 */
+function d3BtFree(B){try{[B.bg,B.scene,B.pscene].forEach(sc=>sc&&sc.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){o.material.dispose();}if(o.customDepthMaterial)o.customDepthMaterial.dispose();}));
+ if(B.tex)B.tex.dispose();if(B.rt){if(B.rt.depthTexture)B.rt.depthTexture.dispose();B.rt.dispose();}}catch(e){}}
+/* 景深 + 暗角 + 技能闪光：整屏一遍 */
+const D3_DOF_FS=`#include <packing>
+uniform sampler2D tC;uniform sampler2D tD;uniform vec2 px;uniform float cn,cf,f0,f1,n0,mr,vig;uniform vec3 fl;varying vec2 vUv;
+float vz(vec2 u){return -perspectiveDepthToViewZ(texture2D(tD,u).x,cn,cf);}
+void main(){float z=vz(vUv);float c=mr*(smoothstep(f0,f1,z)+.55*(1.-smoothstep(n0*.5,n0,z)));
+ vec3 s=texture2D(tC,vUv).rgb;float w=1.;
+ if(c>.35){for(int i=0;i<16;i++){float fi=float(i);float r=sqrt((fi+.5)/16.)*c;float a=fi*2.39996;s+=texture2D(tC,vUv+vec2(cos(a),sin(a))*r*px).rgb;w+=1.;}}
+ s/=w;vec2 q=vUv-.5;s*=1.-vig*dot(q,q)*1.7;s+=fl*(1.-dot(q,q));
+ gl_FragColor=vec4(s,1.);
+ #include <colorspace_fragment>
+}`;
+/* 飞剑、雷光的贴图 */
+let _d3Sword=null;function d3SwordTex(){if(_d3Sword)return _d3Sword;const c=document.createElement('canvas');c.width=32;c.height=256;const x=c.getContext('2d');
+ let g=x.createLinearGradient(0,0,32,0);g.addColorStop(0,'rgba(140,255,220,0)');g.addColorStop(.5,'rgba(170,255,230,.55)');g.addColorStop(1,'rgba(140,255,220,0)');x.fillStyle=g;x.fillRect(0,0,32,256);
+ g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#ffffff');g.addColorStop(.75,'#e8fff4');g.addColorStop(1,'#b8e8d8');x.fillStyle=g;x.beginPath();x.moveTo(16,256);x.lineTo(20,40);x.lineTo(12,40);x.closePath();x.fill();
+ x.fillStyle='#e0b85a';x.fillRect(5,30,22,6);x.fillRect(13,0,6,30);_d3Sword=new THREE.CanvasTexture(c);_d3Sword.colorSpace=THREE.SRGBColorSpace;return _d3Sword;}
+let _d3Bolt=null;function d3BoltTex(){if(_d3Bolt)return _d3Bolt;_d3Bolt=[0,1,2].map(v=>{const c=document.createElement('canvas');c.width=128;c.height=512;const x=c.getContext('2d'),R=rng(v*17+5);
+  const P=[[64,0]];let X=64,Y=0;while(Y<512){Y+=22+R()*26;X=Math.max(20,Math.min(108,X+(R()-.5)*46));P.push([X,Math.min(512,Y)]);}
+  x.globalCompositeOperation='lighter';x.lineJoin='round';[[18,'rgba(120,170,255,.18)'],[9,'rgba(170,210,255,.45)'],[3.5,'rgba(235,248,255,1)']].forEach(([w,c2])=>{x.strokeStyle=c2;x.lineWidth=w;x.beginPath();P.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();});
+  /* 分叉 */
+  for(let k=0;k<3;k++){const i=1+Math.floor(R()*(P.length-2));let [bx,by]=P[i];x.strokeStyle='rgba(200,225,255,.7)';x.lineWidth=2;x.beginPath();x.moveTo(bx,by);for(let j=0;j<3;j++){bx+=(R()-.5)*40;by+=20+R()*20;x.lineTo(bx,by);}x.stroke();}
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;});return _d3Bolt;}
+const D3_FXC={bolt:'#bfe0ff',fire:'#ff8a3a',swords:'#fff0b8',sweep:'#bfffe6',orb:'#7ff0ff'};
 function d3BtBuild(W,H){const bgc=btBg(BT.bgk,W,H),avg=d3Clean(bgc);if(!avg)return null;
- const asp=W/H,o={fov:44,h:1.6,pitch:.2,fold:.2,tex:1,geo:1.06,bend:0,near:.16};
- const rest=d3RestCam(asp,o),fold=d3Folder(rest,o),scene=new THREE.Scene(),tex=d3Tex(bgc);
- scene.add(d3Sheet(rest,fold,tex,o));
+ /* geo 比画面大很多：镜头横摇、拉远时边上还有东西（超出的部分拉伸边缘颜色，再被景深和雾盖住） */
+ const asp=W/H,o={fov:44,h:1.6,pitch:.2,fold:.2,tex:1,geo:2.2,bend:0,near:.16,sx:44,sy:72};
+ const rest=d3RestCam(asp,o),fold=d3Folder(rest,o),bg=new THREE.Scene(),scene=new THREE.Scene(),tex=new THREE.CanvasTexture(bgc);
+ /* 画面外的部分用镜像接上，比拉伸边缘自然 */tex.colorSpace=THREE.SRGBColorSpace;tex.minFilter=THREE.LinearFilter;tex.generateMipmaps=false;tex.wrapS=tex.wrapT=THREE.MirroredRepeatWrapping;
+ const haze=d3Lit(avg,.22);bg.background=haze.clone();bg.fog=new THREE.Fog(haze,fold.D*.5,fold.D*1.8);
+ bg.add(d3Sheet(rest,fold,tex,o));const mist=d3Mists(fold,d3Lit(avg,.45),4);mist.traverse(m=>{if(m.material)m.material.depthTest=false;});/* 薄雾片会插进地面，关掉深度比较免得切出一条横线 */bg.add(mist);
  const piv=fold.ground(0,-.3),sun=new THREE.DirectionalLight(0xffffff,1);sun.position.copy(piv).add(new THREE.Vector3(-4.6,4.4,3.4));sun.target.position.copy(piv);
  sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:.5,far:30});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0006;sun.shadow.radius=3;
  scene.add(sun,sun.target);
  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.ShadowMaterial({opacity:.6,depthWrite:false}));gnd.rotation.x=-Math.PI/2;gnd.position.y=.003;gnd.receiveShadow=true;gnd.renderOrder=-5;scene.add(gnd);
  scene.add(d3Motes(rest,fold,46,d3Lit(avg,.6),{up:.7}));
- return {W,H,bgk:BT.bgk,bgc,rest,fold,scene,cam:rest.clone(),act:new Map(),t:0,piv,up:new THREE.Vector3(0,1,0).applyQuaternion(rest.quaternion),lastT:BT.t};}
+ /* 技能光照在地上的光斑 */
+ const pools=[0,1,2].map(()=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:d3DotTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));m.rotation.x=-Math.PI/2;m.renderOrder=-3;m.visible=false;scene.add(m);return m;});
+ const post=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({uniforms:{tC:{value:null},tD:{value:null},px:{value:new THREE.Vector2(1,1)},cn:{value:.1},cf:{value:120},f0:{value:8},f1:{value:14},n0:{value:2},mr:{value:6},vig:{value:.55},fl:{value:new THREE.Vector3()}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:D3_DOF_FS,depthTest:false,depthWrite:false}));post.frustumCulled=false;
+ const pscene=new THREE.Scene();pscene.add(post);
+ const cam=rest.clone();cam.near=.1;cam.far=120;cam.updateProjectionMatrix();
+ const V=()=>new THREE.Vector3();
+ const B={W,H,bgk:BT.bgk,bgc,tex,rest,fold,bg,scene,cam,post,pscene,pcam:new THREE.OrthographicCamera(-1,1,1,-1,0,1),pools,act:new Map(),t:0,piv,P:piv.clone(),off:rest.position.clone().sub(piv),q0:rest.quaternion.clone(),
+  far:fold.at(0,o.fold),cc:{yaw:0,tilt:0,dist:1,roll:0,look:V()},ct:{yaw:0,tilt:0,dist:1,look:V()},sw:null,kick:null,intro:BT.t<.6&&!D3.still?{t0:0}:null,lights:[],fx3:[],dof:true,dofChk:false,
+  qb:new THREE.Quaternion(),fw:V(),upb:V(),tmp:V(),tq:new THREE.Quaternion(),lastT:BT.t};
+ return B;}
 function d3BtActor(B,a){let A=B.act.get(a);if(A)return A;
  const g=new THREE.PlaneGeometry(1,1);g.translate(0,.5,0);
  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({transparent:true,alphaTest:.03,depthWrite:false,side:THREE.DoubleSide}));
  m.castShadow=true;m.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,alphaTest:.5,side:THREE.DoubleSide});
  const b=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:d3BlobTex(),transparent:true,depthWrite:false}));b.rotation.x=-Math.PI/2;b.renderOrder=-4;
- B.scene.add(m,b);A={m,b,g:new THREE.Vector3(),v:new THREE.Vector3()};B.act.set(a,A);return A;}
+ /* 轮廓光（在纸片后面、稍大一圈、叠加发光）和受击闪白（在纸片前面） */
+ const gl=new THREE.Mesh(g,new THREE.MeshBasicMaterial({transparent:true,alphaTest:.2,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,opacity:0}));gl.visible=false;
+ const wh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide,opacity:0}));wh.visible=false;
+ B.scene.add(m,b,gl,wh);A={m,b,gl,wh,g:new THREE.Vector3(),v:new THREE.Vector3(),sx:0,sy:0,z:5,c:new THREE.Color()};B.act.set(a,A);return A;}
+/* ---- 镜头 ---- */
+const d3Ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+function d3BtAmp(){return D3.still?0:(BT&&BT.auto?.65:1);}
+function d3BtSpd(){return Math.max(1,btSpd()/1.25);}
+function d3BtMid(B,L){const m=new THREE.Vector3();let n=0;L.forEach(x=>{const A=x.alive&&B.act.get(x);if(A){m.add(A.g);n++;}});return n?m.multiplyScalar(1/n):null;}
+function d3BtFeet(B,a){const A=a&&B.act.get(a);return A?A.g:B.P;}
+function d3BtLight(B,p,col,I,dur,fl){if(!p)return;B.lights.push({p:p.clone(),c:new THREE.Color(col||'#ffffff'),I,t0:B.t,dur:dur/Math.sqrt(d3BtSpd()),fl:!!fl});if(B.lights.length>6)B.lights.shift();}
+function d3BtSwing(B,focus,A,dist,dur,min){const k=d3BtAmp(),sp=d3BtSpd();B.sw={t0:B.t,dur:dur/sp,A:A*k,dist:1-(1-dist)*k,tilt:-.07*k,look:focus.clone().sub(B.P).multiplyScalar(.55*k).setY(.12*k),min:B.t+min/sp,rel:0};}
+/* battle.js 在出手、暴击、大招、首领变身、回合结束时调用 */
+function d3BtCam(kind,a,b,c){const B=BT&&BT.d3;if(!B||!B.cc)return;const amp=d3BtAmp(),ct=B.ct;
+ if(kind==='rest'){ct.yaw=0;ct.tilt=0;ct.dist=1;ct.look.set(0,0,0);if(B.sw){if(B.t>=B.sw.min)B.sw=null;else B.sw.rel=1;}return;}
+ if(kind==='act'){const act=b||{},t=act.t,p=d3BtFeet(B,a),side=a&&a.side==='p'?1:-1;
+  if(act.type==='sk'&&act.sk){const sk=act.sk;d3BtLight(B,p,sk.el?EL[sk.el].c:sk.ty==='heal'?'#8fd6b5':'#e3b862',.9,.8);
+   if(sk.k==='feixian'||sk.pow>=3&&sk.ty==='one'){d3BtSwing(B,t?d3BtFeet(B,t):p,.42*side,.74,.8,1.1);return;}}
+  if(act.type==='shen'||act.type==='eall'||act.type==='etide'||act.type==='eheavy'||act.type==='echarge'){const q=t?d3BtFeet(B,t):act.type==='shen'?d3BtFeet(B,BT.foes.find(f=>f.alive)):p;
+   d3BtSwing(B,p.clone().lerp(q,.5),(act.type==='shen'?.38:.32)*side,.8,.8,.9);if(act.type!=='shen')d3BtLight(B,p,a.tint?'#b07aff':'#ff6a3a',1.1,.9);return;}
+  if(B.sw&&B.t<B.sw.min)return;B.sw=null;
+  /* 看向「出手的人 → 目标」的中间；群攻看向对面一群的中间；治疗、加护只看自己 */
+  let q=t&&B.act.get(t)?d3BtFeet(B,t):null;if(!q&&act.type!=='def'&&act.type!=='it'&&!(act.sk&&/heal|buff|self|shield/.test(act.sk.ty))&&act.type!=='cheal')q=d3BtMid(B,a&&a.side==='p'?BT.foes:BT.party);
+  const mid=q?p.clone().lerp(q,.45):p.clone();
+  ct.look.copy(mid).sub(B.P).multiplyScalar(.38*amp).setY(.1*amp);ct.dist=1-(act.type==='atk'||act.type==='eatk'?.15:.1)*amp;ct.yaw=.11*side*amp*amp;ct.tilt=-.025*amp;return;}
+ if(kind==='big'){const ts=b||[],fx=c,p=d3BtFeet(B,a),m=new THREE.Vector3();let n=0;ts.forEach(t=>{const A=B.act.get(t);if(A){m.add(A.g);n++;}});if(n)m.multiplyScalar(1/n);else m.copy(B.P);
+  const side=a&&a.side==='p'?1:-1,A=fx==='swords'?.44:fx==='sweep'?.28:.38;d3BtSwing(B,p.clone().lerp(m,.7),A*side,fx==='swords'?.74:.8,.8,1.1);
+  d3BtLight(B,m,D3_FXC[fx]||'#e3b862',fx==='bolt'?1.6:1.3,1.1,fx==='bolt');return;}
+ if(kind==='crit'){const p=d3BtFeet(B,a);B.kick={t0:B.t,dur:.45/Math.sqrt(d3BtSpd()),look:p.clone().sub(B.P).multiplyScalar(.3).setY(.08),s:Math.random()<.5?1:-1};d3BtLight(B,p,'#ffe6b0',1.2,.4);return;}
+ if(kind==='phase'){const p=d3BtFeet(B,a);d3BtSwing(B,p,-.4,.76,.9,1.4);d3BtLight(B,p,a&&a.tint?'#b07aff':'#ff5a3a',1.5,1.3);BT.shake=Math.max(BT.shake,.5);}}
+function d3BtCamUpd(B,dt){const c=B.cc,sp=d3BtSpd(),amp=d3BtAmp();let ty,tt,td,tl=B.tmp;
+ if(B.sw&&(B.sw.rel&&B.t>=B.sw.min||B.t>B.sw.t0+6))B.sw=null;
+ if(B.sw){const w=B.sw,e=d3Ease(Math.min(1,(B.t-w.t0)/w.dur));ty=w.A*e;tt=w.tilt;td=w.dist;tl.copy(w.look);}
+ else{ty=B.ct.yaw;tt=B.ct.tilt;td=B.ct.dist;tl.copy(B.ct.look);}
+ const r=1-Math.exp(-dt*(B.sw?5.5:4.5)*sp);c.yaw+=(ty-c.yaw)*r;c.tilt+=(tt-c.tilt)*r;c.dist+=(td-c.dist)*r;c.look.lerp(tl,r);c.roll+=(0-c.roll)*r;
+ let yaw=c.yaw,tilt=c.tilt,dist=c.dist,roll=c.roll;const look=B.tmp.copy(c.look);
+ /* 开场：从高处、侧面飞进来 */
+ if(B.intro){const k=(B.t-B.intro.t0)/(1.3/Math.max(1,sp*.75));if(k>=1)B.intro=null;else{const u=1-d3Ease(k);yaw+=-.3*u;tilt+=.34*u;dist+=.45*u;look.y+=.35*u;}}
+ /* 暴击：猛推一下，带一点侧倾 */
+ if(B.kick){const k=(B.t-B.kick.t0)/B.kick.dur;if(k>=1)B.kick=null;else{const env=k<.25?k/.25:Math.pow((1-k)/.75,1.5);dist*=1-.17*env*Math.max(.6,amp);roll+=.04*env*B.kick.s*Math.max(.6,amp);look.addScaledVector(B.kick.look,env);}}
+ /* 平时轻轻晃；受击时抖 */
+ yaw+=amp*(.02*Math.sin(B.t*.21)+.01*Math.sin(B.t*.077));tilt+=amp*.006*Math.sin(B.t*.16+1);
+ if(BT.shake>0){const j=Math.min(1,BT.shake*1.6)*Math.max(.5,amp);yaw+=.012*j*Math.sin(B.t*61);tilt+=.009*j*Math.sin(B.t*47+1);roll+=.008*j*Math.sin(B.t*39+2);}
+ const X=new THREE.Vector3(1,0,0),Y=new THREE.Vector3(0,1,0),qy=B.qb.setFromAxisAngle(Y,yaw),qt=B.tq.setFromAxisAngle(X,-tilt);
+ const cam=B.cam,off=new THREE.Vector3().copy(B.off).multiplyScalar(dist).applyQuaternion(qt).applyQuaternion(qy);
+ cam.position.copy(B.P).add(look).add(off);cam.quaternion.copy(qy).multiply(qt).multiply(B.q0);if(roll)cam.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),roll));
+ cam.updateMatrixWorld(true);B.qb.copy(qy).multiply(B.q0);/* 纸片只跟着横摇转，不跟着俯仰，保持立着 */
+ B.fw.set(0,0,-1).applyQuaternion(cam.quaternion);B.upb.set(0,1,0).applyQuaternion(B.qb);}
+/* 屏幕点 ↔ 立体点 */
+function d3BtProj(B,p,out){const v=B.tmp.copy(p).project(B.cam);out[0]=(v.x+1)/2*B.W;out[1]=(1-v.y)/2*B.H;return out;}
+function d3BtUnproj(B,sx,sy,z){const C=B.cam.position,r=new THREE.Vector3(sx/B.W*2-1,1-sy/B.H*2,.5).unproject(B.cam).sub(C).normalize(),df=r.dot(B.fw);return C.clone().addScaledVector(r,z/Math.max(.05,df));}
+/* 原来布局里地面上的一点 → 此刻屏幕上的位置（给 2D 里写死位置的东西用，例如领域法阵） */
+function d3BtPt(x,y){const B=BT&&BT.d3;if(!B||!B.cc)return [x,y];const g=B.fold.ground(x/B.W*2-1,1-y/B.H*2,new THREE.Vector3());return d3BtProj(B,g,[0,0]);}
+/* 新出现的 2D 特效：按出现那一刻的镜头记下它在立体空间里的位置（深度取最近的人物），之后每帧重新换算，
+   镜头动了也跟着人物走。飞剑、雷光改成真正的立体物件，2D 那份不再画（f.d3） */
+function d3BtFxIn(B){const L=[...B.act.entries()].filter(([a])=>a.alpha>.01);
+ for(const f of BT.fx){if(f._w)continue;f._w=[];
+  if((f.k==='fall'||f.k==='bolt')&&d3BtFx3(B,f)){f.d3=1;continue;}
+  for(const [kx,ky] of [['x','y'],['x0','y0'],['x1','y1']]){if(typeof f[kx]!=='number'||typeof f[ky]!=='number')continue;let z=6,bd=1e9;
+   for(const [a,A] of L){const d=Math.abs(f[kx]-A.sx)+Math.abs(f[ky]-A.sy);if(d<bd){bd=d;z=A.z;}}f._w.push([kx,ky,d3BtUnproj(B,f[kx],f[ky],z)]);}}}
+function d3BtFxMove(B){const o=[0,0];for(const f of BT.fx){if(!f._w||!f._w.length)continue;for(const [kx,ky,p] of f._w){d3BtProj(B,p,o);f[kx]=o[0];f[ky]=o[1];}}}
+function d3BtFx3(B,f){const C=B.cam.position,r=new THREE.Vector3(f.x/B.W*2-1,1-f.y/B.H*2,.5).unproject(B.cam).sub(C);if(r.y>-1e-3)return false;
+ const g=C.clone().addScaledVector(r,-C.y/r.y),u=g.clone().sub(C).dot(B.fw)*2*Math.tan(B.cam.fov*Math.PI/360)/B.H;let o;
+ if(f.k==='fall'){o=new THREE.Group();const mat=new THREE.MeshBasicMaterial({map:d3SwordTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+  /* 两片交叉，从哪个角度看都有剑身；贴图剑尖在下，底边就是剑尖 */const sg=new THREE.PlaneGeometry(1,1);sg.translate(0,.5,0);for(let i=0;i<2;i++){const m=new THREE.Mesh(sg,mat);m.rotation.y=i*Math.PI/2;m.scale.set(9*u,48*u,1);o.add(m);}o.userData.h=(140+Math.random()*60)*u;o.userData.r=(Math.random()-.5)*.3;}
+ else{o=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:d3BoltTex()[0],transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));o.geometry.translate(0,.5,0);o.scale.set(72*u,260*u,1);
+  d3BtLight(B,g,'#bfe0ff',.9,.45,true);}
+ o.visible=false;B.scene.add(o);B.fx3.push({o,f,g,u});return true;}
+function d3BtFx3Upd(B){for(let i=B.fx3.length-1;i>=0;i--){const q=B.fx3[i],f=q.f,p=(BT.t-f.t0)/f.dur,o=q.o;
+  if(p>1||!BT.fx.includes(f)){B.scene.remove(o);o.traverse(m=>{if(m.geometry)m.geometry.dispose();});if(o.material)o.material.dispose();else if(o.children[0])o.children[0].material.dispose();B.fx3.splice(i,1);continue;}
+  if(p<0){o.visible=false;continue;}o.visible=true;
+  if(f.k==='fall'){const e=p*p;o.position.copy(q.g).setY(q.g.y+o.userData.h*(1-e)+(1-e)*.0);o.quaternion.copy(B.qb);o.rotateZ(o.userData.r*(1-p));o.children[0].material.opacity=p<.85?1:(1-p)/.15;}
+  else{o.position.copy(q.g);o.quaternion.copy(B.qb);o.material.opacity=(1-p)*(Math.random()<.25?.45:1);const T=d3BoltTex(),k=Math.floor(BT.t*24)%3;if(o.material.map!==T[k]){o.material.map=T[k];}}}}
+/* 技能光：照亮附近的人物（颜色调亮 + 轮廓光），地上一块光斑，整屏一点色光 */
+function d3BtLights(B){const out=[];for(let i=B.lights.length-1;i>=0;i--){const L=B.lights[i],k=(B.t-L.t0)/L.dur;if(k>=1){B.lights.splice(i,1);continue;}
+  let e=k<.08?k/.08:Math.pow(1-(k-.08)/.92,1.6);if(L.fl)e*=Math.sin(B.t*70)>-.2?1:.35;out.push({L,e:e*L.I});}
+ B.pools.forEach((m,i)=>{const q=out[i];if(!q){m.visible=false;return;}m.visible=true;m.position.set(q.L.p.x,.01,q.L.p.z);const s=3.4*(1+.3*q.e);m.scale.set(s,s*.8,1);m.material.color.copy(q.L.c);m.material.opacity=Math.min(.8,.4*q.e);});
+ const fl=B.post.material.uniforms.fl.value.set(0,0,0);out.forEach(q=>fl.set(fl.x+q.L.c.r*q.e*.045,fl.y+q.L.c.g*q.e*.045,fl.z+q.L.c.b*q.e*.045));return out;}
+/* 先画远景到离屏画板，再整屏景深，最后把人物叠上去 */
+function d3BtRender(B,ctx,pw,ph,W,H){const R=D3.R;
+ if(pw>D3.W||ph>D3.H){D3.W=Math.max(D3.W,pw);D3.H=Math.max(D3.H,ph);R.setSize(D3.W,D3.H,false);}
+ const u=B.post.material.uniforms;
+ if(B.dof){try{if(!B.rt||B.rt.width!==pw||B.rt.height!==ph){if(B.rt){B.rt.depthTexture.dispose();B.rt.dispose();}
+    const rt=new THREE.WebGLRenderTarget(pw,ph,{depthBuffer:true});rt.texture.colorSpace=THREE.SRGBColorSpace;rt.texture.generateMipmaps=false;rt.depthTexture=new THREE.DepthTexture(pw,ph);B.rt=rt;u.tC.value=rt.texture;u.tD.value=rt.depthTexture;u.px.value.set(1/pw,1/ph);}
+   R.setRenderTarget(B.rt);R.setScissorTest(false);R.render(B.bg,B.cam);R.setRenderTarget(null);
+   R.setViewport(0,0,pw,ph);R.setScissor(0,0,pw,ph);R.setScissorTest(true);
+   if(!B.dofChk){B.dofChk=true;const d=R.debug,old=d.onShaderError;let bad=false;d.onShaderError=()=>{bad=true;};try{R.render(B.pscene,B.pcam);}catch(e){bad=true;}d.onShaderError=old;if(bad)B.dof=false;}
+   else R.render(B.pscene,B.pcam);}catch(e){B.dof=false;R.setRenderTarget(null);}}
+ if(!B.dof){R.setViewport(0,0,pw,ph);R.setScissor(0,0,pw,ph);R.setScissorTest(true);R.render(B.bg,B.cam);}
+ R.autoClear=false;R.clearDepth();R.render(B.scene,B.cam);R.autoClear=true;
+ ctx.drawImage(R.domElement,0,D3.H-ph,pw,ph,0,0,W,H);}
 function d3Battle(x,W,H,sh){if(!BT||!d3Ready())return null;let B=BT.d3;if(B===false)return null;
- if(!B||B.W!==W||B.H!==H||B.bgk!==BT.bgk||B.bgc!==btBg(BT.bgk,W,H)){if(B)d3BtFree(B);if(D3.bt&&D3.bt!==B)d3BtFree(D3.bt);B=BT.d3=d3BtBuild(W,H);D3.bt=B;if(!B){BT.d3=false;return null;}}
- const dt=Math.max(0,Math.min(.1,BT.t-B.lastT));B.lastT=BT.t;B.t+=dt;
- const C=B.fold.C,f=B.fold.f,tf=2*Math.tan(B.rest.fov*Math.PI/360)/H;
- for(const a of [...BT.foes,...BT.party]){const A=d3BtActor(B,a),m=A.m,b=A.b;if(a.alpha<=.01){m.visible=b.visible=false;continue;}m.visible=b.visible=true;
-  const s=btSpr(a),bob=a.alive&&a.side==='e'?Math.sin(BT.t*3+a.idx)*1.5:0,X=a.bx+a.ox,Y=a.by+a.oy;
+ /* 只是背景图换了（插画晚到、缓存被清）：换贴图就行，镜头不重来 */
+ if(B&&B.W===W&&B.H===H&&B.bgk===BT.bgk){const nb=btBg(BT.bgk,W,H);if(B.bgc!==nb){const avg=d3Clean(nb);if(avg){B.bgc=nb;B.tex.image=nb;B.tex.needsUpdate=true;const hz=d3Lit(avg,.22);B.bg.background.copy(hz);B.bg.fog.color.copy(hz);}}}
+ if(!B||B.W!==W||B.H!==H||B.bgk!==BT.bgk){if(B)d3BtFree(B);if(D3.bt&&D3.bt!==B)d3BtFree(D3.bt);const O=B;B=BT.d3=d3BtBuild(W,H);D3.bt=B;if(!B){BT.d3=false;return null;}
+  /* 战场大小变了（下方指令栏换了行数）：镜头接着原来的走，不跳回去 */if(O&&O.cc){['cc','ct','sw','kick','intro','lights','t','lastT'].forEach(k=>B[k]=O[k]);}}
+ const dt=Math.max(0,Math.min(.1,BT.t-B.lastT));B.lastT=BT.t;B.t+=dt;BT.live3=1;
+ d3BtFxIn(B);d3BtCamUpd(B,dt);const lit=d3BtLights(B);
+ const C=B.fold.C,f=B.fold.f,cam=B.cam,tf=2*Math.tan(B.rest.fov*Math.PI/360)/H,o=[0,0];let z0=1e9,z1=0;
+ for(const a of [...BT.foes,...BT.party]){const A=d3BtActor(B,a),m=A.m,b=A.b;if(a.bx0===undefined){a.bx0=a.bx;a.by0=a.by;}
+  if(a.alpha<=.01){m.visible=b.visible=A.gl.visible=A.wh.visible=false;continue;}m.visible=b.visible=true;
+  const s0=btSpr(a),s=s0.src||s0,bob=a.alive&&a.side==='e'?Math.sin(BT.t*3+a.idx)*1.5:0,X=a.bx0+a.ox,Y=a.by0+a.oy;
   B.fold.ground(X/W*2-1,1-Y/H*2,A.g);const u=A.v.copy(A.g).sub(C).dot(f)*tf,big=a.big>0?1.35:1;
-  m.position.copy(A.g).addScaledVector(B.up,-bob*u);m.quaternion.copy(B.rest.quaternion);m.scale.set(s.ww*u*big,s.hh*u*big,1);
+  m.position.copy(A.g).addScaledVector(B.upb,-bob*u);m.quaternion.copy(B.qb);m.scale.set(s.ww*u*big,s.hh*u*big,1);
   const tex=d3Tex(s);if(m.material.map!==tex){m.material.map=tex;m.material.needsUpdate=true;m.customDepthMaterial.map=tex;m.customDepthMaterial.needsUpdate=true;}
   m.material.opacity=a.alpha;
-  b.position.set(A.g.x,.006,A.g.z);const bw=s.ww*u*.75;b.scale.set(bw,bw*.45,1);b.material.opacity=a.alpha;}
- d3Tick(B.scene,B.t,dt);d3Sway(B.cam,B.rest,B.fold,B.t,BT.shake>0?.55:.3);
- const P=B.piv.clone().project(B.cam),dx=P.x/2*W,dy=-(P.y+.3)/2*H;
- const [pw,ph]=d3Px(W*BT.k,H*BT.k);x.save();x.globalAlpha=1;d3Blit(B.scene,B.cam,x,pw,ph,sh,0,W,H);x.restore();
- return {dx,dy};}
+  b.position.set(A.g.x,.006,A.g.z);const bw=s.ww*u*.75;b.scale.set(bw,bw*.45,1);b.material.opacity=a.alpha;
+  /* 技能光照到身上 */
+  const lc=A.c.setRGB(0,0,0);for(const q of lit){const d=A.g.distanceTo(q.L.p),k=q.e/(1+d*d*.5);lc.r+=q.L.c.r*k;lc.g+=q.L.c.g*k;lc.b+=q.L.c.b*k;}
+  m.material.color.setRGB(1+lc.r*.8,1+lc.g*.8,1+lc.b*.8);
+  const lm=Math.max(lc.r,lc.g,lc.b);let ga=lm*.7,gc=lm>0?lc.multiplyScalar(1/lm):lc;if(a.boss&&a.alive){const bc=a.tint?[.65,.4,1]:[1,.3,.18],bk=.32+.1*Math.sin(BT.t*2.2);if(bk>ga){ga=bk;gc=B.tmp.set(...bc);}}
+  else if(a===BT.cur&&BT.phase==='cmd'&&a.alive){const ck=.28+.08*Math.sin(BT.t*4);if(ck>ga){ga=ck;gc=B.tmp.set(.55,.95,.75);}}
+  const needW=ga>.02||a.flash>0;if(needW){const wt=d3Tex(btWhite(a,s));if(A.gl.material.map!==wt){A.gl.material.map=wt;A.gl.material.needsUpdate=true;A.wh.material.map=wt;A.wh.material.needsUpdate=true;}}
+  A.gl.visible=ga>.02;if(A.gl.visible){A.gl.position.copy(m.position).addScaledVector(B.fw,.03).addScaledVector(B.upb,-.02*s.hh*u);A.gl.quaternion.copy(B.qb);A.gl.scale.set(m.scale.x*1.1,m.scale.y*1.06,1);A.gl.material.color.setRGB(Math.min(1,gc.r),Math.min(1,gc.g),Math.min(1,gc.b));A.gl.material.opacity=Math.min(.9,ga)*a.alpha;}
+  A.wh.visible=a.flash>0;if(A.wh.visible){A.wh.position.copy(m.position).addScaledVector(B.fw,-.01);A.wh.quaternion.copy(B.qb);A.wh.scale.copy(m.scale);A.wh.material.opacity=a.alpha*Math.min(1,a.flash);}
+  /* 换回屏幕：给 2D 那一层用 */
+  d3BtProj(B,A.g,o);const zc=A.v.copy(A.g).sub(cam.position).dot(B.fw);A.z=zc;A.sx=o[0];A.sy=o[1]-s.hh*.5;
+  a.sk=Math.max(.3,Math.min(3,(u/tf)/Math.max(.05,zc)));a.bx=o[0]-a.ox;a.by=o[1]-a.oy;A.sy=o[1]-s.hh*a.sk*.5;
+  if(zc<z0)z0=zc;if(zc>z1)z1=zc;}
+ d3BtFxMove(B);d3BtFx3Upd(B);
+ /* 景深：人物所在的深度最清楚，往远处越来越糊，脚下很近的地面也略糊 */
+ {const u=B.post.material.uniforms,zb=B.tmp.copy(B.far).sub(cam.position).dot(B.fw);if(z1<=0){z0=4;z1=8;}
+  u.cn.value=cam.near;u.cf.value=cam.far;u.f0.value=z1*1.06;u.f1.value=Math.max(z1*1.06+1,zb*.9);u.n0.value=z0*.8;u.mr.value=3.2*(B.rt?B.rt.width:W)/W;}
+ const [pw,ph]=d3Px(W*BT.k,H*BT.k);x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;d3BtRender(B,x,pw,ph,x.canvas.width,x.canvas.height);x.restore();
+ return {dx:0,dy:0};}
+/* 3D 战场开着时，btSpr 给出的宽高跟着镜头远近缩放（贴图本身不变，原图在 .src） */
+{const bs3=btSpr;btSpr=function(a){const s=bs3.apply(this,arguments),k=a&&a.sk;if(!s||!k||!BT||!BT.d3||Math.abs(k-1)<.003)return s;return {ww:s.ww*k,hh:s.hh*k,src:s,width:s.width,height:s.height};};}
+if(location.hash==='#debug')window.__d3={D3,d3BtCam,get B(){return BT&&BT.d3;}};
 
 /* ---------- 江湖行走：立体地形 + 立起来的纸片 ----------
    地砖铺成真正的 3D 地面（原来斜着画的菱形砖，转回正方形当贴图），地图边上露出断崖侧面，
