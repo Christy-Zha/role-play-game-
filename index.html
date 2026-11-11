@@ -13310,25 +13310,162 @@ function d3Sway(cam,rest,fold,t,amp){const piv=fold.C.clone().addScaledVector(fo
  off.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);off.applyAxisAngle(new THREE.Vector3(1,0,0).applyQuaternion(rest.quaternion),pit);off.multiplyScalar(1-dol);
  cam.position.copy(piv).add(off);cam.lookAt(piv);cam.updateMatrixWorld(true);}
 
-/* ---------- 布景：剧情背景、页面上方的场景图 ---------- */
-const D3_OVER=1.2;
+/* ---------- 布景：剧情背景、页面上方的场景图 ----------
+   一张插画拆成好几层纵深：
+   1. 「地面 + 远景」折纸（d3Folder）打底；
+   2. 每张图再算一张小小的「远近图」（d3Depth）：颜色越暗、越艳越近，越亮、越灰越远（像空气里的远山），
+      模糊之后把画上每个点沿视线前后推一点。点是沿「镜头 → 这个点」的视线挪的，镜头在原位时画面不变；
+   3. 景深（d3DofDraw）：中景清楚，近处地面和最远处略虚；
+   4. 前景：斜斜的光柱（d3Shafts）、镜头前的大光斑（d3Bokeh）、灵气光点和薄雾。
+   手指拖动背景、或者倾斜手机（d3Tilt*），镜头跟着转，松手弹回。 */
+const D3_OVER=1.3;
+/* 远近图：48 列的小图，值在 -1（远）… 1（近），四周淡到 0，免得边上被推出缝 */
+const _d3Dep=new WeakMap();
+function d3Depth(src){let d=_d3Dep.get(src);if(d)return d;
+ const w=48,h=Math.max(8,Math.round(48*src.height/Math.max(1,src.width))),n=w*h,c=document.createElement('canvas');c.width=w;c.height=h;
+ const x=c.getContext('2d');x.drawImage(src,0,0,w,h);const px=x.getImageData(0,0,w,h).data,L=new Float32Array(n),S=new Float32Array(n);let mL=0,mS=0;
+ for(let i=0;i<n;i++){const r=px[i*4]/255,g=px[i*4+1]/255,b=px[i*4+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);L[i]=.3*r+.59*g+.11*b;S[i]=mx>.03?(mx-mn)/mx:0;mL+=L[i];mS+=S[i];}
+ mL/=n;mS/=n;let lw=0,lx=0;for(let y=0;y<h*.5;y++)for(let i=0;i<w;i++){const q=Math.max(0,L[y*w+i]-mL)**2;lw+=q;lx+=q*(i/(w-1)*2-1);}lx=lw>1e-6?lx/lw:0;let vL=0,vS=0;for(let i=0;i<n;i++){vL+=(L[i]-mL)**2;vS+=(S[i]-mS)**2;}const sL=Math.sqrt(vL/n)+.04,sS=Math.sqrt(vS/n)+.04;
+ let a=new Float32Array(n);for(let i=0;i<n;i++)a[i]=Math.max(-1,Math.min(1,(-.65*(L[i]-mL)/sL+.35*(S[i]-mS)/sS)/2));
+ /* 横竖各模糊两遍：远近只在大块上变化，人脸、细线不会被扯歪 */
+ const rad=Math.max(2,Math.round(w*.07)),bl=(A,hor)=>{const B=new Float32Array(n);for(let y=0;y<h;y++)for(let i=0;i<w;i++){let s=0,k=0;
+   for(let j=-rad;j<=rad;j++){const xx=hor?i+j:i,yy=hor?y:y+j;if(xx<0||xx>=w||yy<0||yy>=h)continue;s+=A[yy*w+xx];k++;}B[y*w+i]=s/k;}return B;};
+ a=bl(bl(bl(bl(a,1),0),1),0);
+ for(let y=0;y<h;y++)for(let i=0;i<w;i++){const e=Math.min(i/(w-1),1-i/(w-1),y/(h-1),1-y/(h-1));a[y*w+i]*=Math.min(1,e/.12);}
+ /* u 从左到右、v 从下到上（和贴图坐标一致），超出范围就取边上 */
+ d={lx,at(u,v){const fx=Math.max(0,Math.min(w-1,u*(w-1))),fy=Math.max(0,Math.min(h-1,(1-v)*(h-1))),x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(w-1,x0+1),y1=Math.min(h-1,y0+1),tx=fx-x0,ty=fy-y0;
+  return (a[y0*w+x0]*(1-tx)+a[y0*w+x1]*tx)*(1-ty)+(a[y1*w+x0]*(1-tx)+a[y1*w+x1]*tx)*ty;}};
+ _d3Dep.set(src,d);return d;}
+/* 带远近起伏的画：在折纸的基础上，每个点沿视线前后推 o.relief 那么多 */
+function d3SheetD(fold,tex,o,dep){const sx=o.asp<1?40:72,sy=o.asp<1?80:44,g=new THREE.PlaneGeometry(2,2,sx,sy),pos=g.attributes.position,uv=g.attributes.uv,p=new THREE.Vector3();
+ for(let i=0;i<pos.count;i++){const nx=pos.getX(i)*o.geo,ny=pos.getY(i)*o.geo,u=(nx/o.tex+1)/2,v=(ny/o.tex+1)/2;fold.at(nx,ny,p);
+  const r=dep?dep.at(u,v):0;p.sub(fold.C).multiplyScalar(1-o.relief*r).add(fold.C);pos.setXYZ(i,p.x,p.y,p.z);uv.setXY(i,u,v);}
+ pos.needsUpdate=true;uv.needsUpdate=true;g.computeBoundingSphere();
+ const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:tex,depthWrite:true}));m.renderOrder=-10;return m;}
+/* 光柱：一条中间亮、两边淡、越往下越淡的光 */
+let _d3Shaft=null;function d3ShaftTex(){if(_d3Shaft)return _d3Shaft;const c=document.createElement('canvas');c.width=64;c.height=256;const x=c.getContext('2d');
+ let g=x.createLinearGradient(0,0,64,0);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,256);
+ x.globalCompositeOperation='destination-in';g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.12,'rgba(0,0,0,1)');g.addColorStop(.45,'rgba(0,0,0,.6)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,64,256);
+ _d3Shaft=new THREE.CanvasTexture(c);_d3Shaft.colorSpace=THREE.SRGBColorSpace;return _d3Shaft;}
+function d3Shafts(fold,col,n,op,lx){const G=new THREE.Group(),R=rng(53),tilt=-Math.max(-1,Math.min(1,lx*2))*.42;
+ /* 光从画里最亮的那一侧斜照下来：lx 是上半张图亮处的左右位置（-1 左 … 1 右） */
+ for(let i=0;i<n;i++){const d=fold.D*(.5+R()*.4),p=fold.at(Math.max(-.85,Math.min(.85,lx*.5-.6+1.2*(i+R()*.6)/n)),.25+R()*.3),w=d*(.05+R()*.06);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d*.95),new THREE.MeshBasicMaterial({map:d3ShaftTex(),color:col,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));
+  const s=fold.C.clone().addScaledVector(fold.f,d);m.position.set(p.x,p.y,s.z);m.lookAt(fold.C);m.rotateZ(tilt);
+  m.userData={x0:m.position.x,ph:R()*6.28,sp:.05+R()*.06,op:op*(.55+R()*.45),w};G.add(m);}
+ G.userData.tick=t=>G.children.forEach(m=>{const u=m.userData;m.position.x=u.x0+Math.sin(t*u.sp+u.ph)*u.w*.8;m.material.opacity=u.op*(.6+.4*Math.sin(t*u.sp*3+u.ph));});return G;}
+/* 镜头前的大光斑：离镜头很近、又大又虚，镜头一动它们挪得最多 */
+let _d3Bok=null;function d3BokTex(){if(_d3Bok)return _d3Bok;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,31);
+ g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.7,'rgba(255,255,255,.45)');g.addColorStop(.88,'rgba(255,255,255,.5)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);
+ _d3Bok=new THREE.CanvasTexture(c);_d3Bok.colorSpace=THREE.SRGBColorSpace;return _d3Bok;}
+function d3Bokeh(fold,n,col){const g=new THREE.BufferGeometry(),P=new Float32Array(n*3),V=[],R=rng(n*17+3),p=new THREE.Vector3();
+ for(let i=0;i<n;i++){const d=fold.D*(.13+R()*.14),side=i%2?1:-1,nx=side*(.25+R()*.85),ny=R()*1.8-.9;const r=fold.ray(nx,ny,new THREE.Vector3());p.copy(fold.C).addScaledVector(r,d/r.dot(fold.f));
+  P[i*3]=p.x;P[i*3+1]=p.y;P[i*3+2]=p.z;V.push({x0:p.x,y0:p.y,ph:R()*6.28,sp:.08+R()*.1,a:d*.04});}
+ g.setAttribute('position',new THREE.BufferAttribute(P,3));
+ const m=new THREE.Points(g,new THREE.PointsMaterial({color:col,size:fold.D*.016,map:d3BokTex(),transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,opacity:.22,sizeAttenuation:true}));
+ m.renderOrder=5;m.userData.tick=t=>{for(let i=0;i<n;i++){const v=V[i];P[i*3]=v.x0+Math.sin(t*v.sp+v.ph)*v.a;P[i*3+1]=v.y0+Math.sin(t*v.sp*.7+v.ph*2)*v.a*.7;}g.attributes.position.needsUpdate=true;m.material.opacity=.11+.04*Math.sin(t*.5);};
+ return m;}
+/* 镜头：在 d3Sway 那种慢慢绕行之上，再加上手指 / 手机倾斜带来的偏转（px、py 大约 -1…1） */
+function d3Look(cam,rest,fold,t,amp,px,py){const piv=fold.C.clone().addScaledVector(fold.f,fold.D*.55),off=rest.position.clone().sub(piv);
+ let yaw=(Math.sin(t*.21)*.035+Math.sin(t*.077)*.02)*amp-px*.075,pit=Math.sin(t*.16+1)*.012*amp-py*.032;
+ /* 转太多会露出画的边，这里软软地限住 */
+ yaw=.1*Math.tanh(yaw/.1);pit=.045*Math.tanh(pit/.045);const dol=(.5+.5*Math.sin(t*.12))*.05*amp;
+ off.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);off.applyAxisAngle(new THREE.Vector3(1,0,0).applyQuaternion(rest.quaternion),pit);off.multiplyScalar(1-dol);
+ cam.position.copy(piv).add(off);cam.lookAt(piv);cam.updateMatrixWorld(true);}
 function d3Diorama(key,w,h){const id=key+'|'+Math.round(w)+'x'+Math.round(h);let D=D3.dio.get(id);
  const src=sceneCanvas(key,w*D3_OVER,h*D3_OVER);if(D&&D.src===src){D3.dio.delete(id);D3.dio.set(id,D);return D;}
  if(D){d3Free(D);D3.dio.delete(id);}
  const avg=d3Clean(src);if(!avg)return null;
- const asp=w/h,o={fov:asp<1?50:40,h:1.7,pitch:asp<1?.16:.2,fold:asp<1?.02:.08,tex:D3_OVER,geo:D3_OVER*1.04,bend:.12,near:.34};
+ const asp=w/h,o={fov:asp<1?50:40,h:1.7,pitch:asp<1?.16:.2,fold:asp<1?.02:.08,tex:D3_OVER,geo:D3_OVER*1.04,bend:.12,near:.34,relief:.13,asp};
  const rest=d3RestCam(asp,o),fold=d3Folder(rest,o),scene=new THREE.Scene(),tex=new THREE.CanvasTexture(src);tex.colorSpace=THREE.SRGBColorSpace;tex.minFilter=THREE.LinearFilter;tex.generateMipmaps=false;
- scene.add(d3Sheet(rest,fold,tex,o));const lite=d3Lit(avg,.55);scene.add(d3Mists(fold,d3Lit(avg,.35),3));scene.add(d3Motes(rest,fold,asp<1?70:90,lite));
+ let dep=null;try{dep=d3Depth(src);}catch(e){}
+ scene.add(d3SheetD(fold,tex,o,dep));const lite=d3Lit(avg,.55),lum=(avg[0]*.3+avg[1]*.59+avg[2]*.11)/255;
+ scene.add(d3Shafts(fold,d3Lit(avg,.7),asp<1?4:5,.12+.2*lum,dep?dep.lx:0));scene.add(d3Mists(fold,d3Lit(avg,.35),3));scene.add(d3Motes(rest,fold,asp<1?70:90,lite));scene.add(d3Bokeh(fold,asp<1?8:10,d3Lit(avg,.6)));
  D={id,key,src,tex,scene,rest,fold,cam:rest.clone(),t:Math.random()*40};D3.dio.set(id,D);
  if(D3.dio.size>4){const [k,o2]=D3.dio.entries().next().value;D3.dio.delete(k);d3Free(o2);}return D;}
 function d3Free(D){try{D.tex.dispose();D.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==undefined)o.material.dispose();});}catch(e){}}
 function d3Tick(obj,t,dt){obj.traverse(o=>{if(o.userData.tick)o.userData.tick(t,dt);});}
+/* 景深：先画进一块离屏画板（带深度），再整屏糊一遍：越偏离中景，取样圈越大 */
+const D3_DOF={ok:true,rt:new Map(),P:null};
+function d3RT(w,h){const k=w+'x'+h;let t=D3_DOF.rt.get(k);if(t){D3_DOF.rt.delete(k);D3_DOF.rt.set(k,t);return t;}
+ t=new THREE.WebGLRenderTarget(w,h,{depthBuffer:true,depthTexture:new THREE.DepthTexture(w,h),minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,generateMipmaps:false});
+ t.texture.colorSpace=THREE.SRGBColorSpace;D3_DOF.rt.set(k,t);
+ if(D3_DOF.rt.size>2){const [k2,o]=D3_DOF.rt.entries().next().value;D3_DOF.rt.delete(k2);try{o.depthTexture.dispose();o.dispose();}catch(e){}}return t;}
+function d3Post(){if(D3_DOF.P)return D3_DOF.P;
+ const mat=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,
+  uniforms:{tC:{value:null},tD:{value:null},px:{value:new THREE.Vector2(1,1)},cn:{value:.05},cf:{value:400},fN:{value:6},fF:{value:10},kN:{value:1.7},kF:{value:4},mx:{value:4}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+  fragmentShader:['#include <packing>',
+   'uniform sampler2D tC;uniform sampler2D tD;uniform vec2 px;uniform float cn,cf,fN,fF,kN,kF,mx;varying vec2 vUv;',
+   'float coc(vec2 u){float z=-perspectiveDepthToViewZ(texture2D(tD,u).x,cn,cf);return z<fN?clamp((fN-z)/fN*kN,0.,1.):clamp((z-fF)/fF*kF,0.,1.);}',
+   'void main(){float c=coc(vUv);vec4 acc=texture2D(tC,vUv);float wt=1.;',
+   ' if(c>.03){for(int i=1;i<14;i++){float fi=float(i);float a=fi*2.39996;vec2 q=vUv+vec2(cos(a),sin(a))*sqrt(fi/13.)*c*mx*px;',
+   '  float w=mix(.3,1.,coc(q));acc+=texture2D(tC,q)*w;wt+=w;}}',
+   ' gl_FragColor=vec4(acc.rgb/wt,1.);',
+   ' #include <colorspace_fragment>',
+   '}'].join('\n')});
+ const q=new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat);q.frustumCulled=false;const sc=new THREE.Scene();sc.add(q);
+ D3_DOF.P={mat,scene:sc,cam:new THREE.Camera(),chk:0};return D3_DOF.P;}
+function d3DofDraw(D,ctx,pw,ph,dw,dh){const R=D3.R;if(!D3_DOF.ok||!R.capabilities.isWebGL2)return false;
+ try{const P=d3Post(),rt=d3RT(pw,ph);R.setRenderTarget(rt);R.render(D.scene,D.cam);R.setRenderTarget(null);
+  const u=P.mat.uniforms,c=D.cam,Dd=D.fold.D;u.tC.value=rt.texture;u.tD.value=rt.depthTexture;u.px.value.set(1/pw,1/ph);u.cn.value=c.near;u.cf.value=c.far;
+  u.fN.value=Dd*.58;u.fF.value=Dd*1.02;u.mx.value=Math.max(2,ph/340);
+  d3Blit(P.scene,P.cam,ctx,pw,ph,0,0,dw,dh);
+  if(!P.chk){P.chk=1;const pr=R.properties.get(P.mat).currentProgram;if(pr&&pr.diagnostics&&pr.diagnostics.runnable===false){D3_DOF.ok=false;return false;}}
+  return true;}catch(e){D3_DOF.ok=false;try{R.setRenderTarget(null);}catch(e2){}return false;}}
 function d3DrawView(V,dt){const cv=V.cv,r=cv.getBoundingClientRect();if(r.width<4||r.height<4)return;const D=d3Diorama(V.key,r.width,r.height);if(!D){D3.views.delete(cv);return;}
- D.t+=dt;d3Tick(D.scene,D.t,dt);d3Sway(D.cam,D.rest,D.fold,D.t,1);
- const [pw,ph]=d3Px(cv.width,cv.height);d3Blit(D.scene,D.cam,cv.getContext('2d'),pw,ph,0,0,cv.width,cv.height);}
+ D.t+=dt;d3Tick(D.scene,D.t,dt);/* 页面上方的小舞台上还站着 2D 的人物，转得轻一点，免得人像在石头上滑 */
+ const k=D3.still?0:cv.id==='vbg'?1:.65;d3Look(D.cam,D.rest,D.fold,D.t,cv.id==='vbg'?1.4:1.1,(D3P.x+D3T.x*.9)*k,(D3P.y+D3T.y*.6)*k);
+ const [pw,ph]=d3Px(cv.width,cv.height),ctx=cv.getContext('2d');
+ if(!d3DofDraw(D,ctx,pw,ph,cv.width,cv.height))d3Blit(D.scene,D.cam,ctx,pw,ph,0,0,cv.width,cv.height);}
+/* ---------- 手指拖动 / 手机倾斜 → 镜头偏转 ----------
+   D3P：拖动带来的偏转，松手后像弹簧一样回到 0；D3T：手机倾斜，平滑过，并且慢慢把「当前拿法」当成正中。
+   点一下仍是翻页；拖过 10 像素才算拖动，这一下不翻页。 */
+const D3P={x:0,y:0,vx:0,vy:0,tx:0,ty:0},D3T={lis:null,raw:null,s:null,b:null,x:0,y:0,asked:false};
+const d3Wrap=a=>((a+540)%360)-180;
+function d3PanStep(dt){for(let n=Math.max(1,Math.ceil(dt*240)),h=dt/n,i=0;i<n;i++){
+  D3P.vx+=(90*(D3P.tx-D3P.x)-12*D3P.vx)*h;D3P.vy+=(90*(D3P.ty-D3P.y)-12*D3P.vy)*h;D3P.x+=D3P.vx*h;D3P.y+=D3P.vy*h;}
+ const T=D3T;if(!T.raw)return;if(!T.s){T.s=T.raw.slice();T.b=T.raw.slice();}
+ const a=1-Math.exp(-dt*7),a2=1-Math.exp(-dt/4);
+ for(let i=0;i<2;i++){T.s[i]+=d3Wrap(T.raw[i]-T.s[i])*a;T.b[i]+=d3Wrap(T.s[i]-T.b[i])*a2;}
+ T.x=Math.max(-1,Math.min(1,d3Wrap(T.s[0]-T.b[0])/18));T.y=Math.max(-1,Math.min(1,d3Wrap(T.s[1]-T.b[1])/18));}
+function d3TiltOn(){if(D3T.lis||D3.still||typeof window.DeviceOrientationEvent==='undefined')return;
+ D3T.lis=e=>{if(e.beta==null||e.gamma==null)return;let b=e.beta,g=e.gamma;const an=(screen.orientation&&screen.orientation.angle)||window.orientation||0;
+  if(an===90){const t=b;b=-g;g=t;}else if(an===-90||an===270){const t=b;b=g;g=-t;}D3T.raw=[g,b];};
+ window.addEventListener('deviceorientation',D3T.lis);}
+function d3TiltOff(){if(D3T.lis)window.removeEventListener('deviceorientation',D3T.lis);D3T.lis=null;D3T.raw=D3T.s=D3T.b=null;D3T.x=D3T.y=0;}
+const d3TiltPref=()=>{try{return localStorage.getItem('lingchao_tilt');}catch(e){return null;}};
+const d3TiltSave=v=>{try{localStorage.setItem('lingchao_tilt',v);}catch(e){}};
+/* iPhone 要在点按里请求一次「动作与方向」权限；答复记在 localStorage，拒绝了就不再问 */
+function d3TiltAsk(){const DO=window.DeviceOrientationEvent;if(!DO||D3.still)return Promise.resolve(false);
+ if(typeof DO.requestPermission!=='function'){d3TiltOn();return Promise.resolve(true);}
+ D3T.asked=true;let p;try{p=DO.requestPermission();}catch(e){return Promise.resolve(false);}
+ return Promise.resolve(p).then(r=>{const ok=r==='granted';d3TiltSave(ok?'1':'0');if(ok)d3TiltOn();return ok;}).catch(()=>false);}
+if(d3TiltPref()!=='0'&&typeof window.DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission!=='function')d3TiltOn();
+const D3IN={cv:null,x0:0,y0:0,w:1,h:1,ky:1,moved:false,until:0};
+function d3InCv(t){if(D3.still||!t||!t.closest||t.closest('button,a,input,select,textarea,label,[data-act],.st-log,.st-choices'))return null;
+ let v=null;const ov=t.closest('#ov');if(ov){if(!ov.classList.contains('vn'))return null;v=ov.querySelector('#vbg');}else{const st=t.closest('.stage');v=st&&st.querySelector('canvas.bgc');}
+ return v&&D3.views.has(v)?v:null;}
+function d3InStart(x,y,t){const cv=d3InCv(t);D3IN.cv=cv;if(!cv)return;const r=cv.getBoundingClientRect();
+ Object.assign(D3IN,{x0:x,y0:y,w:Math.max(80,r.width),h:Math.max(80,r.height),ky:cv.id==='vbg'?1:.5,moved:false});}
+function d3InMove(x,y){if(!D3IN.cv)return;const dx=x-D3IN.x0,dy=y-D3IN.y0;if(!D3IN.moved&&Math.hypot(dx,dy)>10)D3IN.moved=true;if(!D3IN.moved)return;
+ D3P.tx=Math.tanh(dx/(D3IN.w*.42))*1.25;D3P.ty=Math.tanh(dy/(D3IN.h*.32))*1.25*D3IN.ky;}
+function d3InEnd(){if(!D3IN.cv)return;if(D3IN.moved)D3IN.until=performance.now()+400;D3IN.cv=null;D3P.tx=D3P.ty=0;}
+window.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0)d3InStart(e.clientX,e.clientY,e.target);},true);
+window.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')d3InMove(e.clientX,e.clientY);},true);
+window.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')d3InEnd();},true);
+window.addEventListener('touchstart',e=>{if(e.touches.length===1){const t=e.touches[0];d3InStart(t.clientX,t.clientY,e.target);}else d3InEnd();},{capture:true,passive:true});
+window.addEventListener('touchmove',e=>{const t=e.touches[0];if(t)d3InMove(t.clientX,t.clientY);},{capture:true,passive:true});
+window.addEventListener('touchend',d3InEnd,{capture:true,passive:true});window.addEventListener('touchcancel',d3InEnd,{capture:true,passive:true});
+/* 拖动后松手的那一下「点击」不算翻页；剧情里第一次点按时顺便请求倾斜权限 */
+window.addEventListener('click',e=>{if(performance.now()<D3IN.until){D3IN.until=0;e.stopPropagation();e.preventDefault();return;}
+ if(!D3T.asked&&!D3T.lis&&d3TiltPref()!=='0'&&D3.on&&e.target&&e.target.closest&&e.target.closest('#ov.vn'))d3TiltAsk();},true);
 function d3Loop(t){requestAnimationFrame(d3Loop);if(!D3.views.size||document.hidden||!d3Ready())return;const dt=Math.min(.1,(t-(D3.last||t))/1000);if(t-D3.last<30&&D3.last)return;D3.last=t;
- for(const [cv,V] of D3.views){if(!cv.isConnected){D3.views.delete(cv);continue;}if(D3.still&&V.done)continue;try{d3DrawView(V,dt);V.done=1;}catch(e){D3.views.delete(cv);}}}
+ d3PanStep(dt);const ov=document.getElementById('ov'),cover=!!(ov&&!ov.hidden);
+ for(const [cv,V] of D3.views){if(!cv.isConnected){D3.views.delete(cv);continue;}if(cover&&cv.id!=='vbg')continue;/* 被剧情盖住的页面背景先不画，省电 */
+  if(D3.still&&V.done)continue;try{d3DrawView(V,dt);V.done=1;}catch(e){D3.views.delete(cv);}}}
 requestAnimationFrame(d3Loop);
+if(location.hash==='#debug')window.__d3={D3,D3P,D3T,D3_DOF};
 /* 只接管大的背景画布：剧情背景 #vbg、页面上方的 .bgc。小缩略图仍用 2D */
 const _paintTo2d=paintTo;
 paintTo=function(cv,key){_paintTo2d(cv,key);if(!cv||!key||!cv.isConnected)return;if(!(cv.id==='vbg'||(cv.classList&&cv.classList.contains('bgc'))))return;
@@ -13337,7 +13474,11 @@ paintTo=function(cv,key){_paintTo2d(cv,key);if(!cv||!key||!cv.isConnected)return
 /* ---------- 设置：存档页里加「画面 3D / 2D」 ---------- */
 LATE.push(()=>{
  ACT.d3=()=>{if(D3.ok===false&&!D3.on){toast('这台设备暂时不支持 3D 画面');return;}d3Set(!D3.on);if(D3.on&&!d3Ready()){D3.on=false;toast('这台设备暂时不支持 3D 画面');}render();};
- const _sv=VIEWS.save;VIEWS.save=()=>_sv().replace(/(id="bgmBtn">[^<]*<\/button>)/,`$1 <button class="btn sm ghost" data-act="d3" id="d3Btn">${D3.on&&D3.ok!==false?'画面 3D':'画面 2D'}</button>`);
+ /* 「晃动手机」：倾斜手机时剧情背景跟着转。点这个按钮本身就是一次点按，iPhone 可以在这里请求权限 */
+ ACT.d3tilt=()=>{if(D3T.lis){d3TiltOff();d3TiltSave('0');render();return;}d3TiltSave('1');
+  d3TiltAsk().then(ok=>{if(!ok)toast('没能读到手机的方向，可在浏览器设置里允许「动作与方向」');render();});};
+ const _sv=VIEWS.save;VIEWS.save=()=>_sv().replace(/(id="bgmBtn">[^<]*<\/button>)/,`$1 <button class="btn sm ghost" data-act="d3" id="d3Btn">${D3.on&&D3.ok!==false?'画面 3D':'画面 2D'}</button>`
+  +(D3.on&&D3.ok!==false&&!D3.still&&typeof window.DeviceOrientationEvent!=='undefined'?` <button class="btn sm ghost" data-act="d3tilt" id="d3TiltBtn">${D3T.lis?'晃动手机：开':'晃动手机：关'}</button>`:''));
 });
 
 /* ---------- 战斗：立体战场 + 纸片人 ----------
