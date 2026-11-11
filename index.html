@@ -13457,21 +13457,22 @@ function d3InStart(x,y,t){const cv=d3InCv(t);D3IN.cv=cv;if(!cv)return;const r=cv
 function d3InMove(x,y){if(!D3IN.cv)return;const dx=x-D3IN.x0,dy=y-D3IN.y0;if(!D3IN.moved&&Math.hypot(dx,dy)>10)D3IN.moved=true;if(!D3IN.moved)return;
  D3P.tx=Math.tanh(dx/(D3IN.w*.42))*1.25;D3P.ty=Math.tanh(dy/(D3IN.h*.32))*1.25*D3IN.ky;}
 function d3InEnd(){if(!D3IN.cv)return;if(D3IN.moved)D3IN.until=performance.now()+400;D3IN.cv=null;D3P.tx=D3P.ty=0;}
-window.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0)d3InStart(e.clientX,e.clientY,e.target);},true);
-window.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')d3InMove(e.clientX,e.clientY);},true);
-window.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')d3InEnd();},true);
-window.addEventListener('touchstart',e=>{if(e.touches.length===1){const t=e.touches[0];d3InStart(t.clientX,t.clientY,e.target);}else d3InEnd();},{capture:true,passive:true});
-window.addEventListener('touchmove',e=>{const t=e.touches[0];if(t)d3InMove(t.clientX,t.clientY);},{capture:true,passive:true});
-window.addEventListener('touchend',d3InEnd,{capture:true,passive:true});window.addEventListener('touchcancel',d3InEnd,{capture:true,passive:true});
+const d3On=(t,f,o)=>{try{if(typeof window.addEventListener==='function')window.addEventListener(t,f,o);}catch(e){}};
+d3On('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0)d3InStart(e.clientX,e.clientY,e.target);},true);
+d3On('pointermove',e=>{if(e.pointerType==='mouse')d3InMove(e.clientX,e.clientY);},true);
+d3On('pointerup',e=>{if(e.pointerType==='mouse')d3InEnd();},true);
+d3On('touchstart',e=>{if(e.touches.length===1){const t=e.touches[0];d3InStart(t.clientX,t.clientY,e.target);}else d3InEnd();},{capture:true,passive:true});
+d3On('touchmove',e=>{const t=e.touches[0];if(t)d3InMove(t.clientX,t.clientY);},{capture:true,passive:true});
+d3On('touchend',d3InEnd,{capture:true,passive:true});d3On('touchcancel',d3InEnd,{capture:true,passive:true});
 /* 拖动后松手的那一下「点击」不算翻页；剧情里第一次点按时顺便请求倾斜权限 */
-window.addEventListener('click',e=>{if(performance.now()<D3IN.until){D3IN.until=0;e.stopPropagation();e.preventDefault();return;}
+d3On('click',e=>{if(performance.now()<D3IN.until){D3IN.until=0;e.stopPropagation();e.preventDefault();return;}
  if(!D3T.asked&&!D3T.lis&&d3TiltPref()!=='0'&&D3.on&&e.target&&e.target.closest&&e.target.closest('#ov.vn'))d3TiltAsk();},true);
 function d3Loop(t){requestAnimationFrame(d3Loop);if(!D3.views.size||document.hidden||!d3Ready())return;const dt=Math.min(.1,(t-(D3.last||t))/1000);if(t-D3.last<30&&D3.last)return;D3.last=t;
  d3PanStep(dt);const ov=document.getElementById('ov'),cover=!!(ov&&!ov.hidden);
  for(const [cv,V] of D3.views){if(!cv.isConnected){D3.views.delete(cv);continue;}if(cover&&cv.id!=='vbg')continue;/* 被剧情盖住的页面背景先不画，省电 */
   if(D3.still&&V.done)continue;try{d3DrawView(V,dt);V.done=1;}catch(e){D3.views.delete(cv);}}}
 requestAnimationFrame(d3Loop);
-if(location.hash==='#debug')window.__d3={D3,D3P,D3T,D3_DOF};
+if(location.hash==='#debug')window.__d3vn={D3,D3P,D3T,D3_DOF};
 /* 只接管大的背景画布：剧情背景 #vbg、页面上方的 .bgc。小缩略图仍用 2D */
 const _paintTo2d=paintTo;
 paintTo=function(cv,key){_paintTo2d(cv,key);if(!cv||!key||!cv.isConnected)return;if(!(cv.id==='vbg'||(cv.classList&&cv.classList.contains('bgc'))))return;
