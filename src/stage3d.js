@@ -167,7 +167,7 @@ const W3K=1/(16*Math.SQRT2);/* 原来斜视角里的 1 像素 = 多少 3D 长度
 const W3ZMIN=.62,W3ZMAX=1.7,W3SINK=.2,W3Q=Math.PI/4;
 const W3={M:null,sig:'',chk:0,scene:null,cam:null,sun:null,amb:null,water:[],obj:new Map(),spec:new Map(),rk:new Map(),seen:0,
  pitch:.56,fov:42,d:10,fail:0,live:false,up:null,right:null,fwd:null,fl:null,vs:1,UP:null,
- yaw:0,yawT:0,zoom:1,zoomT:1,tc:0,tr:0,snap:1,lt:0,cy:0,pl:[],post:null,nofx:0,ema:0,nf:0,R:null,gest:0};
+ yaw:0,yawT:0,HOLE:{value:typeof THREE!=='undefined'?new THREE.Vector3(0,0,1):null},zoom:1,zoomT:1,tc:0,tr:0,snap:1,lt:0,cy:0,pl:[],post:null,nofx:0,ema:0,nf:0,R:null,gest:0};
 try{const c=JSON.parse(localStorage.getItem('lingchao_w3cam')||'{}');if(isFinite(c.y))W3.yaw=W3.yawT=+c.y;if(isFinite(c.z))W3.zoom=W3.zoomT=Math.max(W3ZMIN,Math.min(W3ZMAX,+c.z));}catch(e){}
 function w3SaveCam(){try{localStorage.setItem('lingchao_w3cam',JSON.stringify({y:+W3.yawT.toFixed(3),z:+W3.zoomT.toFixed(3)}));}catch(e){}}
 const w3X=(c,r)=>(c-r)/Math.SQRT2,w3Z=(c,r)=>(c+r)/Math.SQRT2;
@@ -213,6 +213,10 @@ function w3Build(M){w3Free();W3.M=M;W3.sig=w3Sig(M);W3.chk=WD.t;W3.snap=1;const 
  W3.water=wf.map(B=>{if(!B.i.length)return null;const m=new THREE.Mesh(geo(B),wmat);m.receiveShadow=true;sc.add(m);return m;}).filter(Boolean);
  if(side.i.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(side.p,3));g.setAttribute('color',new THREE.Float32BufferAttribute(side.c,3));g.setIndex(side.i);g.computeVertexNormals();
   const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));m.receiveShadow=true;sc.add(m);}
+ /* 断崖下面的「谷底」：一大片低一截的地，用这张图最常见的地砖颜色压暗，远处融进雾里，地图边外不会是一个黑洞 */
+ {const cnt=new Map();M.g.forEach(ty=>{const T=TL[ty];if(T&&!T.none&&T.c)cnt.set(ty,(cnt.get(ty)||0)+1);});let top=null,n=-1;cnt.forEach((v,k)=>{if(v>n){n=v;top=k;}});
+  const col=top?TL[top].c[0]:(M.bg||'#222'),ext=(M.W+M.H)*1.6+40,m=new THREE.Mesh(new THREE.PlaneGeometry(ext,ext),new THREE.MeshLambertMaterial({color:new THREE.Color(pSh(col,-.62)).lerp(bg,.35)}));
+  m.rotation.x=-Math.PI/2;m.position.set(w3X(M.W/2,M.H/2),-DEP,w3Z(M.W/2,M.H/2));m.receiveShadow=true;sc.add(m);}
  /* 地面画完先清掉深度：纸片人脚下那几像素会伸到地面以下，照旧显示；方块和纸片之间才真正比远近 */
  const clr=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,0,0,0,0,0,0],3)),new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false,depthTest:false}));
  clr.frustumCulled=false;clr.renderOrder=5;clr.onBeforeRender=R=>{R.state.buffers.depth.setMask(true);R.clearDepth();};sc.add(clr);
@@ -266,10 +270,14 @@ function w3MkSpec(type,v,zi){if(W3NOBOX.has(type))return null;const D=PR[type]||
  let res=null;if(left>rc.width*rc.height*.012){rx.globalCompositeOperation='copy';rx.putImageData(id,0,0);res=rc;}
  return {geo:g,tex,mat,res,top,rad,w:pc.w,h:pc.h,ax,ay};}
 /* 摆一个方块物件 */
+/* 挡住自己的方块：不整块变透明（会露出所有面，像个幽灵盒子），而是在自己身边挖一个边缘细碎的椭圆洞，
+   洞里看得到自己，方块其余部分照常实心。洞的位置、大小每帧更新（W3.HOLE，单位是画板像素） */
+function w3Hole(m){const on={value:0};m.userData.on=on;m.material.onBeforeCompile=sh=>{sh.uniforms.uHole=W3.HOLE;sh.uniforms.uOn=on;
+  sh.fragmentShader='uniform vec3 uHole;uniform float uOn;\n'+sh.fragmentShader.replace('void main() {','void main() {\n if(uOn>.5){vec2 q=gl_FragCoord.xy-uHole.xy;q.y*=.62;float d=length(q)/uHole.z;float n=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));if(d<1.&&n>smoothstep(.45,1.,d))discard;}');};
+ m.material.customProgramCacheKey=()=>'w3hole';}
 function w3Box(p,sp,al,ord){let o=W3.obj.get(p);if(o&&o.sp!==sp){w3Drop(p,o);o=null;}
- if(!o){const m=new THREE.Mesh(sp.geo,sp.mat.clone());m.castShadow=true;m.receiveShadow=true;m.renderOrder=10;W3.scene.add(m);o={m,sp,box:1,seen:0,fa:1};W3.obj.set(p,o);}
- o.seen=W3.seen;const m=o.m;m.position.set(w3X(p.c,p.r),0,w3Z(p.c,p.r));m.scale.set(1,W3.vs,1);
- const f=al<.99;if(f!==(o.fa<.99)){m.material.transparent=f;m.material.depthWrite=!f;m.material.alphaTest=f?.05:.45;m.material.needsUpdate=true;}o.fa=al;m.material.opacity=al;m.renderOrder=f?1000+Math.round((ord+400)*40):10;}
+ if(!o){const m=new THREE.Mesh(sp.geo,sp.mat.clone());w3Hole(m);m.castShadow=true;m.receiveShadow=true;m.renderOrder=10;W3.scene.add(m);o={m,sp,box:1,seen:0};W3.obj.set(p,o);}
+ o.seen=W3.seen;const m=o.m;m.position.set(w3X(p.c,p.r),0,w3Z(p.c,p.r));m.scale.set(1,W3.vs,1);m.userData.on.value=al<.99?1:0;}
 function w3Drop(k,o){W3.scene.remove(o.m);if(!o.box)o.m.geometry.dispose();o.m.material.dispose();if(o.m.customDepthMaterial)o.m.customDepthMaterial.dispose();W3.obj.delete(k);}
 /* 纸片：底边中点为原点，竖直立着、左右转向镜头；按镜头方向的远近排先后 */
 function w3Card(key){let o=W3.obj.get(key);if(o)return o;const g=new THREE.PlaneGeometry(1,1);g.translate(0,.5,0);
@@ -313,13 +321,18 @@ function w3S(x,y){_w3p.set(w3X(x,y),0,w3Z(x,y)).sub(W3.cam.position);const z=_w3
 /* 镜头：跟着自己走，绕自己转（yaw），远近（zoom）；拉近时俯角稍微放低，更有纵深 */
 function w3Cam(t){const W=WD.W,H=WD.H,cam=W3.cam,P=WD.P,M=WD.M,dt=Math.max(0,Math.min(.1,t-W3.lt));W3.lt=t;
  const k=W3.snap?1:Math.min(1,dt*7),kz=W3.snap?1:Math.min(1,dt*9);W3.yaw+=(W3.yawT-W3.yaw)*kz;W3.zoom+=(W3.zoomT-W3.zoom)*kz;
- /* 镜头中心：跟着自己，但离地图边至少两格半，免得一大半是空的 */
- const cl=(v,n)=>n<6?(n-1)/2:Math.max(2.5,Math.min(n-3.5,v));const gc=cl(P.x,M.W),gr=cl(P.y,M.H);W3.tc+=(gc-W3.tc)*k;W3.tr+=(gr-W3.tr)*k;W3.snap=0;
  cam.aspect=W/H;cam.fov=W3.fov;cam.updateProjectionMatrix();
- const d=H*W3K/(2*Math.tan(W3.fov*Math.PI/360));W3.d=d;const T=new THREE.Vector3(w3X(W3.tc,W3.tr),0,w3Z(W3.tc,W3.tr)),
-  drift=D3.still?0:Math.sin(t*.11)*.045+Math.sin(t*.047+1)*.025,yaw=W3.yaw+drift,p=W3.pitch+(W3.zoom-1)*.14,D=d*W3.zoom;
- W3.cy=yaw;W3.vs=1/Math.cos(p);
- cam.position.set(T.x+Math.sin(yaw)*Math.cos(p)*D,Math.sin(p)*D,T.z+Math.cos(yaw)*Math.cos(p)*D);cam.lookAt(T);cam.updateMatrixWorld(true);
+ const d=H*W3K/(2*Math.tan(W3.fov*Math.PI/360));W3.d=d;
+ const drift=D3.still?0:Math.sin(t*.11)*.045+Math.sin(t*.047+1)*.025,yaw=W3.yaw+drift,p=W3.pitch+(W3.zoom-1)*.14,D=d*W3.zoom;W3.cy=yaw;W3.vs=1/Math.cos(p);
+ const T=new THREE.Vector3(),place=(c,r)=>{T.set(w3X(c,r),0,w3Z(c,r));cam.position.set(T.x+Math.sin(yaw)*Math.cos(p)*D,Math.sin(p)*D,T.z+Math.cos(yaw)*Math.cos(p)*D);cam.lookAt(T);cam.updateMatrixWorld(true);};
+ /* 镜头中心：跟着自己，但按镜头此刻真正看得到的那片地（下边两角、下边中间、两侧中段）往回收，
+    让画面下半部分和两侧始终是地面，不会露出大块空洞；地图比画面还小时就居中 */
+ let gc=P.x,gr=P.y;const v=new THREE.Vector3(),C=new THREE.Vector3(),SP=[[-1,-1],[0,-1],[1,-1],[-1,-.35],[1,-.35],[-.6,.25],[.6,.25]],lo=-.9;
+ for(let it=0;it<4;it++){place(gc,gr);C.copy(cam.position);let c0=0,c1=0,r0=0,r1=0;
+  for(const [nx,ny] of SP){v.set(nx,ny,.5).unproject(cam).sub(C);if(v.y>-1e-3)continue;v.multiplyScalar(-C.y/v.y).add(C);const c=(v.z+v.x)/Math.SQRT2,r=(v.z-v.x)/Math.SQRT2;
+   c0=Math.max(c0,lo-c);c1=Math.max(c1,c-(M.W-1-lo));r0=Math.max(r0,lo-r);r1=Math.max(r1,r-(M.H-1-lo));}
+  const dc=c0&&c1?(c0-c1)/2:c0-c1,dr=r0&&r1?(r0-r1)/2:r0-r1;if(Math.abs(dc)<.01&&Math.abs(dr)<.01)break;gc+=dc;gr+=dr;}
+ W3.tc+=(gc-W3.tc)*k;W3.tr+=(gr-W3.tr)*k;W3.snap=0;place(W3.tc,W3.tr);
  W3.up=new THREE.Vector3(0,1,0).applyQuaternion(cam.quaternion);W3.right=new THREE.Vector3(1,0,0).applyQuaternion(cam.quaternion);W3.fwd=new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion);
  W3.fl=new THREE.Vector3(W3.fwd.x,0,W3.fwd.z).normalize();W3.UP=new THREE.Vector3(0,W3.vs,0);
  /* 太阳固定在世界的西北上方：转视角时影子方向跟着变 */
@@ -344,6 +357,7 @@ void main(){float y=vUv.y;float b=smoothstep(.6,1.,y)+(1.-smoothstep(.0,.22,y))*
  vec2 q=vUv-.5;c.rgb*=1.-.55*dot(q,q);gl_FragColor=linearToOutputTexel(vec4(c.rgb,1.));}`});
  const sc=new THREE.Scene(),q=new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat);q.frustumCulled=false;sc.add(q);W3.post={rt,mat,sc,cam:new THREE.OrthographicCamera(-1,1,1,-1,0,1)};return W3.post;}
 function w3Draw(x,W,H){const R=D3.R,[pw,ph]=d3Px(W*WD.k,H*WD.k),t0=performance.now();
+ {const P=WD.P,q=w3P(P.x,P.y,16),k=w3S(P.x,P.y);W3.HOLE.value.set(q[0]/W*pw,(1-q[1]/H)*ph,Math.max(1,24*k*pw/W));}
  /* 手机太吃力就自动减配：按两帧之间的间隔算，连续偏慢（低于约 18 帧）先关移轴，再关影子 */
  const gap=t0-(W3.tf||t0);W3.tf=t0;if(gap>0&&gap<250){W3.ema=W3.ema?W3.ema*.95+gap*.05:gap;if(++W3.nf>120&&W3.ema>56){W3.nf=0;W3.ema=0;if(!W3.nofx)W3.nofx=1;else if(W3.sun.castShadow){W3.sun.castShadow=false;}}}
  if(!W3.nofx){try{const F=w3Post();if(F.rt.width!==pw||F.rt.height!==ph)F.rt.setSize(pw,ph);F.mat.uniforms.px.value.set(1/pw,1/ph);F.mat.uniforms.amt.value=Math.min(1.6,pw/700);
